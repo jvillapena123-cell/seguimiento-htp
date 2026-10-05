@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seguimiento de compromisos y hallazgos · HTP</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azul:#1F3A6E; --naranja:#E8804A; --azul-claro:#4A6FA5; --gris:#E8E8EC;
+  --bg:#F6F6F8; --surface:#FFFFFF; --text:#1A2233; --muted:#5A6478; --line:#D9DBE3;
+  --rojo-bg:#FBE1DE; --rojo:#A3261B; --nar-bg:#FCE6D8; --nar:#A0450F;
+  --ok-bg:#DDF1E3; --ok:#1E6B3A; --info-bg:#E1E8F4; --head:var(--azul);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10172A; --surface:#18213A; --text:#E8ECF5; --muted:#A3ADC2; --line:#2C3756;
+    --gris:#232E4D; --rojo-bg:#4A1F1C; --rojo:#FFB3AA; --nar-bg:#4A2C17; --nar:#FFC49E;
+    --ok-bg:#183A26; --ok:#9BE0B2; --info-bg:#22325A; --head:#162B54;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10172A; --surface:#18213A; --text:#E8ECF5; --muted:#A3ADC2; --line:#2C3756;
+  --gris:#232E4D; --rojo-bg:#4A1F1C; --rojo:#FFB3AA; --nar-bg:#4A2C17; --nar:#FFC49E;
+  --ok-bg:#183A26; --ok:#9BE0B2; --info-bg:#22325A; --head:#162B54;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Montserrat,"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--naranja);outline-offset:2px}
+[hidden]{display:none!important}
+
+header.top{background:var(--head);color:#fff;padding:20px clamp(16px,4vw,40px) 0}
+.top-inner{max-width:1400px;margin:0 auto}
+.brand{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:clamp(19px,2.8vw,26px);font-weight:800;letter-spacing:-.01em}
+.brand p{margin:3px 0 0;opacity:.8;font-size:13px}
+.who{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px}
+.who-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.who-btn:hover{background:rgba(255,255,255,.2)}
+.sync{opacity:.85;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#9aa6bf}.dot.on{background:#5fd18a}
+
+.tabs{display:flex;gap:4px;margin-top:18px;overflow-x:auto}
+.tabs button{background:transparent;border:0;color:#fff;opacity:.75;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap}
+.tabs button:hover{opacity:1}
+.tabs button[aria-selected="true"]{opacity:1;background:var(--bg);color:var(--azul)}
+:root[data-theme="dark"] .tabs button[aria-selected="true"]{color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tabs button[aria-selected="true"]{color:#fff}}
+.tabs .cnt{display:inline-block;margin-left:6px;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.18)}
+.tabs button[aria-selected="true"] .cnt{background:var(--gris)}
+
+main{max-width:1400px;margin:0 auto;padding:0 clamp(16px,4vw,40px) 48px}
+/* Franja de estado */
+.strip{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;margin-bottom:16px;overflow:hidden}
+.strip button{background:none;border:0;text-align:left;padding:14px 16px 16px;cursor:pointer;border-right:1px solid var(--line);position:relative}
+.strip button:last-child{border-right:0}
+.strip button:hover{background:var(--gris)}
+.strip button[aria-pressed="true"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--naranja)}
+.strip b{display:block;font-size:clamp(22px,3.2vw,32px);font-weight:800;line-height:1.05;color:var(--azul)}
+:root[data-theme="dark"] .strip b{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .strip b{color:#BFD0EE}}
+.strip span{font-size:12px;color:var(--muted)}
+.strip .venc b{color:var(--rojo)}
+.progress{height:5px;background:var(--gris);border-radius:3px;margin-top:8px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--naranja);width:0;transition:width .4s}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{flex:1 1 240px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.toolbar select{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.btn{border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--naranja);color:#fff}.btn-primary:hover{filter:brightness(.95)}
+.btn-ghost{background:transparent;border:1px solid var(--line)}
+.btn-danger{background:transparent;color:var(--rojo);border:1px solid var(--rojo)}
+.btn-sm{padding:5px 10px;font-size:12.5px}
+
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+table.slim{min-width:640px}
+th{position:sticky;top:0;background:var(--gris);text-align:left;font-size:12px;font-weight:700;color:var(--muted);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th[data-sort]{cursor:pointer;user-select:none}th[data-sort]:hover{color:var(--text)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:color-mix(in srgb,var(--azul-claro) 7%,transparent)}
+tr.row td:first-child{border-left:4px solid transparent}
+tr.row.a-venc td:first-child{border-left-color:var(--rojo)}
+tr.row.a-porv td:first-child{border-left-color:var(--naranja)}
+tr.row.a-cerr td:first-child{border-left-color:var(--ok)}
+.num{font-weight:700;color:var(--azul-claro);white-space:nowrap}
+.desc{font-weight:600}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.p-venc{background:var(--rojo-bg);color:var(--rojo)}.p-porv{background:var(--nar-bg);color:var(--nar)}
+.p-plazo{background:var(--info-bg);color:var(--text)}.p-sin{background:var(--gris);color:var(--muted)}
+.p-cerr{background:var(--ok-bg);color:var(--ok)}
+.prio-Alta{color:var(--naranja);font-weight:700}
+td select.estado{padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:12px}
+
+/* Administración */
+.admin{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:20px;padding-top:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h2{margin:0 0 4px;font-size:16px;color:var(--azul)}
+:root[data-theme="dark"] .card h2{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card h2{color:#BFD0EE}}
+.card p.help{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.checks{display:flex;gap:16px;flex-wrap:wrap}
+.checks label{flex-direction:row;align-items:center;gap:6px;color:var(--text);font-weight:500;font-size:13.5px}
+.checks input{width:16px;height:16px;accent-color:var(--naranja)}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--info-bg);margin-right:4px}
+.tag.u{background:var(--nar-bg);color:var(--nar)}
+.inactive td{opacity:.5}
+.notice{padding:14px 16px;border-radius:8px;background:var(--info-bg);margin-top:20px}
+
+dialog{border:0;border-radius:12px;padding:0;width:min(760px,96vw);max-height:92vh;background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(10,20,40,.35)}
+dialog.small{width:min(440px,94vw)}
+dialog::backdrop{background:rgba(15,25,50,.6)}
+.dlg-head{background:var(--head);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+.dlg-head h2{margin:0;font-size:18px}
+.dlg-head button{background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+.body{padding:18px 22px;overflow:auto;max-height:calc(92vh - 140px)}
+fieldset{border:0;padding:0;margin:0 0 16px}
+legend{font-weight:700;color:var(--azul-claro);font-size:13px;margin-bottom:8px;padding:0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.grid .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+label input,label select,label textarea{padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);font-weight:500;font-size:14px}
+label textarea{min-height:64px;resize:vertical}
+.req{color:var(--naranja)}
+.detector{background:color-mix(in srgb,var(--naranja) 8%,transparent);border-radius:8px;padding:12px}
+.hist{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--muted)}
+.hist li{padding:6px 0;border-bottom:1px dashed var(--line)}
+.hist b{color:var(--text);font-weight:600}
+.dlg-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 22px;border-top:1px solid var(--line)}
+.dlg-foot .r{display:flex;gap:10px;margin-left:auto}
+.people{display:flex;flex-direction:column;gap:8px}
+.people button{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg);cursor:pointer}
+.people button:hover{border-color:var(--naranja)}
+.people b{font-weight:700}.people span{color:var(--muted);font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--azul);color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+.toast.show{opacity:1}
+
+.btn-close{background:var(--ok);color:#fff}.btn-close:hover{filter:brightness(.95)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.lock{font-size:12px;color:var(--muted)}
+.evid{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg)}
+.evid img{max-width:100%;max-height:320px;border-radius:6px;display:block;margin:8px 0}
+.evid .meta{font-size:12.5px;color:var(--muted)}
+.evid .com{white-space:pre-wrap;margin:6px 0 2px;font-weight:500}
+.closed-banner{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:10px 12px;font-weight:600;margin-bottom:14px}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--muted);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--naranja)}
+.drop input{display:none}
+.prev{margin-top:10px}
+.prev img{max-width:100%;max-height:220px;border-radius:6px}
+.warn{background:var(--nar-bg);color:var(--nar);border-radius:8px;padding:10px 12px;font-size:12.5px;margin-top:12px}
+@media (max-width:820px){
+  .admin{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .strip{grid-template-columns:repeat(3,1fr)}
+  .strip button:nth-child(n+4){border-top:1px solid var(--line)}
+  .grid{grid-template-columns:1fr}
+  .who{align-items:flex-start}
+  #list table{min-width:0}
+  #list thead{display:none}
+  #list tr.row{display:block;padding:12px;border-bottom:1px solid var(--line);border-left:4px solid transparent}
+  #list tr.row.a-venc{border-left-color:var(--rojo)}#list tr.row.a-porv{border-left-color:var(--naranja)}#list tr.row.a-cerr{border-left-color:var(--ok)}
+  #list tr.row td{display:block;border:0;padding:3px 0}
+  #list tr.row td:first-child{border-left:0}
+  #list td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Pantallas de acceso */
+.gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--head)}
+.gate-card{background:var(--surface);color:var(--text);border-radius:14px;width:min(420px,100%);padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.gate-card h1{margin:0 0 4px;font-size:21px;color:var(--azul)}
+:root[data-theme="dark"] .gate-card h1{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gate-card h1{color:#BFD0EE}}
+.gate-card p{color:var(--muted);margin:0 0 18px;font-size:13.5px}
+.gate-card .stack{gap:14px}
+.gate-card .btn{width:100%}
+.linkbtn{background:none;border:0;color:var(--azul-claro);font-weight:600;cursor:pointer;padding:4px 0;text-decoration:underline}
+.gate-msg{font-size:13px;margin-top:12px;min-height:1em}
+.gate-msg.err{color:var(--rojo)}
+.gate-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px}
+.seed{margin-top:16px}
+</style>
+</head>
+<body>
+<!-- ============ PANTALLA DE ACCESO ============ -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div id="g-login">
+      <h1>Seguimiento de compromisos y hallazgos</h1>
+      <p>Huachipato Terminal Portuario. Ingrese con su correo.</p>
+      <form id="f-login" class="stack">
+        <label>Correo<input type="email" name="email" required autocomplete="email"></label>
+        <label>Contraseña<input type="password" name="pass" required minlength="6" autocomplete="current-password"></label>
+        <button class="btn btn-primary" type="submit" id="b-login">Ingresar</button>
+      </form>
+      <div class="gate-links">
+        <button class="linkbtn" id="to-signup" type="button">Crear mi contraseña</button>
+        <button class="linkbtn" id="to-reset" type="button">Olvidé mi contraseña</button>
+      </div>
+    </div>
+    <div id="g-signup" hidden>
+      <h1>Crear mi contraseña</h1>
+      <p>Use el correo que el administrador registró para usted. Le enviaremos un enlace para verificarlo.</p>
+      <form id="f-signup" class="stack">
+        <label>Correo<input type="email" name="email" required autocomplete="email"></label>
+        <label>Contraseña (mínimo 6 caracteres)<input type="password" name="pass" required minlength="6" autocomplete="new-password"></label>
+        <button class="btn btn-primary" type="submit">Crear contraseña</button>
+      </form>
+      <div class="gate-links"><button class="linkbtn to-login" type="button">Volver a ingresar</button></div>
+    </div>
+    <div id="g-verify" hidden>
+      <h1>Verifique su correo</h1>
+      <p id="v-txt">Le enviamos un enlace de verificación. Ábralo y luego vuelva aquí.</p>
+      <div class="stack">
+        <button class="btn btn-primary" id="b-verified" type="button">Ya verifiqué mi correo</button>
+        <button class="btn btn-ghost" id="b-resend" type="button">Reenviar enlace</button>
+      </div>
+      <div class="gate-links"><button class="linkbtn b-out" type="button">Salir</button></div>
+    </div>
+    <div id="g-denied" hidden>
+      <h1>Acceso no autorizado</h1>
+      <p id="d-txt">Su correo no está en la lista de personas autorizadas. Pida al administrador que lo agregue.</p>
+      <div class="stack"><button class="btn btn-primary" id="b-retry" type="button">Reintentar</button></div>
+      <div class="gate-links"><button class="linkbtn b-out" type="button">Salir</button></div>
+    </div>
+    <div id="g-setup" hidden>
+      <h1>Falta configurar Firebase</h1>
+      <p>Complete el archivo <b>firebase-config.js</b> con los datos de su proyecto Firebase. Las instrucciones están en el README del repositorio.</p>
+    </div>
+    <div class="gate-msg" id="g-msg" role="status"></div>
+  </div>
+</div>
+
+<!-- ============ APLICACIÓN ============ -->
+<div id="app" hidden>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div>
+        <h1>Seguimiento de compromisos y hallazgos</h1>
+        <p>Huachipato Terminal Portuario · Operaciones Portuarias</p>
+      </div>
+      <div class="who">
+        <span id="who-name" style="font-weight:600"></span>
+        <button class="who-btn" id="b-logout">Salir</button>
+        <div class="sync" id="sync"><span class="dot"></span><span>Conectando…</span></div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-tab="Compromiso" aria-selected="true">Compromisos<span class="cnt" id="c-comp">0</span></button>
+      <button role="tab" data-tab="Hallazgo" aria-selected="false">Hallazgos<span class="cnt" id="c-hall">0</span></button>
+      <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden>Administración</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="list">
+    <nav class="strip" id="strip" aria-label="Filtrar por alerta">
+      <button data-f="" aria-pressed="true"><b id="k-total">0</b><span id="k-total-l">Registros</span></button>
+      <button data-f="Vencido" class="venc"><b id="k-venc">0</b><span>Vencidos</span></button>
+      <button data-f="Por vencer"><b id="k-porv">0</b><span>Vencen en 3 días o menos</span></button>
+      <button data-f="Sin fecha"><b id="k-sin">0</b><span>Sin fecha compromiso</span></button>
+      <button data-f="Cerrado"><b id="k-cerr">0%</b><span id="k-cerr-l">Cerrados</span><div class="progress"><i id="bar"></i></div></button>
+    </nav>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Buscar por descripción, zona, responsable o quien detectó…" aria-label="Buscar">
+      <select id="f-estado" aria-label="Estado"><option value="">Todos los estados</option></select>
+      <select id="f-resp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
+      <select id="f-cat" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+      <button class="btn btn-ghost" id="btn-csv">Exportar CSV</button>
+      <button class="btn btn-primary" id="btn-new">Registrar compromiso</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th data-sort="num">N°</th>
+          <th data-sort="descripcion" id="th-desc">Compromiso</th>
+          <th data-sort="zona">Zona</th>
+          <th data-sort="detectadoPor">Detectado por</th>
+          <th data-sort="responsable">Responsable</th>
+          <th data-sort="fechaCompromiso">Fecha compromiso</th>
+          <th data-sort="prioridad">Prioridad</th>
+          <th>Estado</th>
+          <th data-sort="alerta">Alerta</th>
+          <th>Cierre</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+    <div class="foot"><span id="count"></span><span>Toque una fila para ver el detalle, el historial o editar.</span></div>
+  </section>
+
+  <section id="admin" hidden>
+    <div class="admin">
+      <div class="card">
+        <h2 id="p-form-title">Agregar persona</h2>
+        <p class="help">El correo es con el que la persona ingresa. Para que un responsable pueda cerrar con evidencia, su acceso debe ser Usuario o Administrador.</p>
+        <form id="pfrm" class="stack">
+          <label>Nombre <span class="req">obligatorio</span><input name="nombre" required autocomplete="off"></label>
+          <label>Correo <span class="req">obligatorio</span><input type="email" name="correo" required autocomplete="off"></label>
+          <label>Cargo / empresa<input name="cargo" placeholder="Ej.: Jefe de turno HTP" autocomplete="off"></label>
+          <label>Acceso a la app<select name="acceso">
+            <option value="Usuario">Usuario: ve, registra y cierra lo asignado</option>
+            <option value="Lector">Lector: solo ve</option>
+            <option value="Administrador">Administrador: además gestiona personas</option>
+            <option value="Sin acceso">Sin acceso: solo figura como responsable</option>
+          </select></label>
+          <div class="checks"><label><input type="checkbox" name="responsable" checked> Puede ser responsable</label></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" type="submit" id="p-save">Agregar persona</button>
+            <button class="btn btn-ghost" type="button" id="p-cancel" hidden>Cancelar</button>
+          </div>
+        </form>
+        <div class="seed" id="seed-box" hidden>
+          <p class="help">No hay registros todavía. Puede cargar los 20 compromisos de la reunión del 05-10-2026.</p>
+          <button class="btn btn-ghost" id="b-seed" type="button">Cargar compromisos iniciales</button>
+        </div>
+      </div>
+      <div>
+        <div class="tablewrap">
+          <table class="slim">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Acceso</th><th>Responsable</th><th>Activo</th><th></th></tr></thead>
+            <tbody id="ptbody"></tbody>
+          </table>
+          <div class="empty" id="pempty" hidden>Aún no hay personas. Agregue la primera con el formulario.</div>
+        </div>
+        <div class="notice" id="orphans" hidden></div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<!-- ============ DETALLE / REGISTRO ============ -->
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <form id="frm">
+    <div class="dlg-head"><h2 id="dlg-title">Registrar</h2><button type="button" class="x" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <div class="closed-banner" id="closed-banner" hidden></div>
+      <fieldset id="cierre-box" hidden><legend>Evidencia de cierre</legend><div class="evid" id="cierre-evid"></div></fieldset>
+      <fieldset class="detector">
+        <legend>Detección</legend>
+        <div class="grid">
+          <label>Detectado por <span class="req">obligatorio</span><select name="detectadoPorCorreo" required></select></label>
+          <label>Fecha de detección <span class="req">obligatorio</span><input type="date" name="fechaDeteccion" required></label>
+          <label>Origen<select name="origen"><option>Reunión</option><option>Inspección</option><option>Recorrido en terreno</option><option>Reunión VIT</option><option>Auditoría</option><option>Reporte de trabajador</option><option>Otro</option></select></label>
+          <label>Tipo<select name="tipo"><option>Compromiso</option><option>Hallazgo</option></select></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Descripción</legend>
+        <div class="grid">
+          <label>Zona / área <span class="req">obligatorio</span><input name="zona" required list="dl-zonas" autocomplete="off"></label>
+          <label>Categoría<select name="categoria"></select></label>
+          <label class="full"><span id="lbl-desc">Descripción</span><input name="descripcion" required></label>
+          <label class="full">Acción requerida<textarea name="accion"></textarea></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Seguimiento</legend>
+        <div class="grid">
+          <label>Responsable<select name="responsableCorreo"></select></label>
+          <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
+          <label>Fecha compromiso<input type="date" name="fechaCompromiso"></label>
+          <label>Estado<select name="estado"></select></label>
+          <label class="full">Observaciones<textarea name="observaciones"></textarea></label>
+        </div>
+      </fieldset>
+      <fieldset id="hist-box" hidden><legend>Historial</legend><ul class="hist" id="hist"></ul></fieldset>
+    </div>
+    <div class="dlg-foot">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-danger" id="btn-del" hidden>Eliminar</button>
+        <button type="button" class="btn btn-ghost" id="btn-reopen" hidden>Reabrir</button>
+      </div>
+      <div class="r">
+        <button type="button" class="btn btn-close" id="btn-close-f" hidden>Cerrar con evidencia</button>
+        <button type="button" class="btn btn-ghost x">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btn-save">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ CIERRE CON EVIDENCIA ============ -->
+<dialog id="dlg-close" aria-labelledby="close-title">
+  <form id="cfrm">
+    <div class="dlg-head"><h2 id="close-title">Cerrar con evidencia</h2><button type="button" class="cx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" id="close-what" style="margin:0 0 14px"></p>
+      <div class="stack">
+        <label>Comentario de cierre <span class="req">obligatorio</span><textarea name="comentario" required placeholder="Describa qué se hizo para cerrar"></textarea></label>
+        <div>
+          <label style="margin-bottom:6px">Evidencia objetiva <span class="req">obligatorio</span></label>
+          <label class="drop" id="drop">
+            <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
+            <span id="drop-txt">Toque para adjuntar una foto o un PDF</span>
+          </label>
+          <div class="prev" id="prev"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost cx">Cancelar</button><button type="submit" class="btn btn-close" id="c-save">Cerrar con evidencia</button></div></div>
+  </form>
+</dialog>
+<datalist id="dl-zonas"></datalist>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, addDoc, writeBatch }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
+
+/* ---------- Utilidades ---------- */
+const ESTADOS=["Pendiente","En proceso","Cerrado","Bloqueado"], ABIERTOS=["Pendiente","En proceso","Bloqueado"];
+const CATS=["Orden y aseo","Seguridad / Orden","Residuos","Infraestructura","Infraestructura / Señalética","Equipos","Equipos / Calibración","Capacitación","Seguridad","Medio ambiente","Otro"];
+const OK_TYPES=["image/jpeg","image/png","image/webp","image/gif","application/pdf"];
+const MAX_DATAURL=950000; // límite de un documento Firestore (1 MiB) con margen
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nowISO=()=>new Date().toISOString();
+function hoyISO(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)}
+function fmt(iso){if(!iso)return"";const[y,m,d]=iso.split("-");return`${d}-${m}-${y}`}
+function fmtDT(iso){if(!iso)return"";const d=new Date(iso);return d.toLocaleDateString("es-CL")+" "+d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}
+function dias(iso){if(!iso)return null;return Math.round((new Date(iso+"T00:00:00")-new Date(hoyISO()+"T00:00:00"))/864e5)}
+function alerta(it){if(it.estado==="Cerrado")return"Cerrado";if(!it.fechaCompromiso)return"Sin fecha";const d=dias(it.fechaCompromiso);return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
+const pillCls={"Vencido":"p-venc","Por vencer":"p-porv","En plazo":"p-plazo","Sin fecha":"p-sin","Cerrado":"p-cerr"};
+const rowCls={"Vencido":"a-venc","Por vencer":"a-porv","Cerrado":"a-cerr"};
+const alertOrder={"Vencido":0,"Por vencer":1,"Sin fecha":2,"En plazo":3,"Cerrado":4};
+const prioOrder={"Alta":0,"Media":1,"Baja":2};
+const label=t=>t==="Hallazgo"?"hallazgo":"compromiso";
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2600)}
+function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"></span><span>${esc(txt)}</span>`}
+function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
+
+/* ---------- Estado ---------- */
+let auth, db, authUser=null, persona=null, isAdmin=false, items=[], personas=[], unsubs=[];
+let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=null, closeId=null, closeFile=null;
+const myEmail=()=>authUser?authUser.email.toLowerCase():"";
+const myName=()=>persona&&persona.nombre?persona.nombre:myEmail();
+const canWrite=()=>isAdmin||(persona&&persona.acceso==="Usuario");
+const activos=()=>personas.filter(p=>p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+const responsables=()=>activos().filter(p=>p.responsable);
+const nameOf=correo=>{const p=personas.find(x=>x.id===correo);return p?p.nombre:""};
+
+/* ---------- Pantallas de acceso ---------- */
+function showGate(view,msg="",err=false){
+  $("#gate").hidden=false;$("#app").hidden=true;
+  ["g-login","g-signup","g-verify","g-denied","g-setup"].forEach(id=>$("#"+id).hidden=id!==view);
+  const m=$("#g-msg");m.textContent=msg;m.className="gate-msg"+(err?" err":"");
+}
+const authMsg=c=>({"auth/invalid-credential":"Correo o contraseña incorrectos","auth/wrong-password":"Correo o contraseña incorrectos","auth/user-not-found":"Correo o contraseña incorrectos",
+  "auth/email-already-in-use":"Ese correo ya tiene contraseña. Use Ingresar u Olvidé mi contraseña","auth/weak-password":"La contraseña debe tener al menos 6 caracteres",
+  "auth/invalid-email":"El correo no es válido","auth/too-many-requests":"Demasiados intentos. Espere unos minutos","auth/network-request-failed":"Sin conexión a internet"}[c]||"No se pudo completar. Intente de nuevo");
+
+if(!firebaseConfig||!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith("PEGAR")){showGate("g-setup")}
+else{
+  const app=initializeApp(firebaseConfig); auth=getAuth(app); auth.languageCode="es"; db=getFirestore(app);
+  onAuthStateChanged(auth,u=>{authUser=u;boot()});
+}
+$("#f-login").addEventListener("submit",async e=>{e.preventDefault();const f=e.target;
+  try{await signInWithEmailAndPassword(auth,f.email.value.trim(),f.pass.value)}catch(err){showGate("g-login",authMsg(err.code),true)}});
+$("#f-signup").addEventListener("submit",async e=>{e.preventDefault();const f=e.target;
+  try{const c=await createUserWithEmailAndPassword(auth,f.email.value.trim(),f.pass.value);await sendEmailVerification(c.user)}catch(err){showGate("g-signup",authMsg(err.code),true)}});
+$("#to-signup").onclick=()=>showGate("g-signup");
+document.querySelectorAll(".to-login").forEach(b=>b.onclick=()=>showGate("g-login"));
+$("#to-reset").onclick=async()=>{const em=$("#f-login").email.value.trim();if(!em){showGate("g-login","Escriba su correo y vuelva a tocar Olvidé mi contraseña",true);return}
+  try{await sendPasswordResetEmail(auth,em);showGate("g-login",`Enviamos un enlace a ${em} para crear una nueva contraseña`)}catch(err){showGate("g-login",authMsg(err.code),true)}};
+$("#b-verified").onclick=async()=>{await authUser.reload();if(auth.currentUser.emailVerified){await auth.currentUser.getIdToken(true);authUser=auth.currentUser;boot()}else showGate("g-verify","Aún no aparece verificado. Abra el enlace del correo (revise también spam)",true)};
+$("#b-resend").onclick=async()=>{try{await sendEmailVerification(authUser);showGate("g-verify","Enlace reenviado")}catch(err){showGate("g-verify",authMsg(err.code),true)}};
+document.querySelectorAll(".b-out").forEach(b=>b.onclick=()=>signOut(auth));
+$("#b-logout").onclick=()=>signOut(auth);
+$("#b-retry").onclick=()=>boot();
+
+async function boot(){
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;
+  if(!authUser){showGate("g-login");return}
+  if(!authUser.emailVerified){$("#v-txt").textContent=`Le enviamos un enlace de verificación a ${authUser.email}. Ábralo y luego vuelva aquí.`;showGate("g-verify");return}
+  const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
+  try{const s=await getDoc(doc(db,"personas",myEmail()));persona=s.exists()?{id:s.id,...s.data()}:null}catch(e){persona=null}
+  const ok=bootstrap||(persona&&persona.activo!==false&&["Lector","Usuario","Administrador"].includes(persona.acceso));
+  if(!ok){$("#d-txt").textContent=`El correo ${authUser.email} no está autorizado para usar la aplicación. Pida al administrador que lo agregue con acceso Lector, Usuario o Administrador.`;showGate("g-denied");return}
+  isAdmin=bootstrap||persona.acceso==="Administrador";
+  $("#gate").hidden=true;$("#app").hidden=false;
+  $("#who-name").textContent=myName();
+  setSync(false,"Conectando…");
+  unsubs.push(onSnapshot(collection(db,"hallazgos"),snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));setSync(true,"Sincronizado");render()},
+    e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
+  unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const p=personas.find(x=>x.id===myEmail());if(p){persona=p;$("#who-name").textContent=myName()}render()},e=>console.error(e)));
+  render();
+}
+
+/* ---------- Selects fijos ---------- */
+const frm=$("#frm"), dlg=$("#dlg"), pfrm=$("#pfrm"), cfrm=$("#cfrm"), dlgc=$("#dlg-close");
+for(const e of ESTADOS)$("#f-estado").add(new Option(e));
+for(const c of CATS){$("#f-cat").add(new Option(c));frm.categoria.add(new Option(c))}
+
+/* ---------- Permiso de cierre ---------- */
+function closeBlock(it){
+  if(it.estado==="Cerrado")return"Ya está cerrado";
+  if(!it.responsableCorreo)return it.responsable?`Asigne a ${it.responsable} desde la lista de personas`:"Asigne un responsable para poder cerrar";
+  if(!canWrite())return"Solo lectura";
+  if(it.responsableCorreo!==myEmail())return`Solo ${it.responsable||it.responsableCorreo} puede cerrar`;
+  return"";
+}
+
+/* ---------- Render ---------- */
+function render(){
+  $("#c-comp").textContent=items.filter(i=>(i.tipo||"Compromiso")==="Compromiso").length;
+  $("#c-hall").textContent=items.filter(i=>i.tipo==="Hallazgo").length;
+  $("#tab-admin").hidden=!isAdmin;
+  if(tab==="admin"&&!isAdmin)tab="Compromiso";
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
+  $("#list").hidden=tab==="admin";$("#admin").hidden=tab!=="admin";
+  $("#btn-new").hidden=!canWrite();
+  if(tab==="admin"){renderAdmin();return}
+  const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value;
+  const all=items.filter(i=>(i.tipo||"Compromiso")===tab).map(it=>({...it,alerta:alerta(it)}));
+  const n=all.length,c=k=>all.filter(i=>i.alerta===k).length,cerr=c("Cerrado"),pct=n?Math.round(cerr/n*100):0;
+  $("#k-total").textContent=n;$("#k-total-l").textContent=tab==="Hallazgo"?"Hallazgos registrados":"Compromisos registrados";
+  $("#k-venc").textContent=c("Vencido");$("#k-porv").textContent=c("Por vencer");$("#k-sin").textContent=c("Sin fecha");
+  $("#k-cerr").textContent=pct+"%";$("#k-cerr-l").textContent=`Cerrados (${cerr} de ${n})`;$("#bar").style.width=pct+"%";
+  document.querySelectorAll("#strip button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===fAlerta)));
+  $("#btn-new").textContent=tab==="Hallazgo"?"Registrar hallazgo":"Registrar compromiso";
+  $("#th-desc").textContent=tab==="Hallazgo"?"Hallazgo":"Compromiso";
+  const rs=[...new Set(all.map(i=>i.responsable).filter(Boolean))].sort(), cur=fr;
+  $("#f-resp").innerHTML='<option value="">Todos los responsables</option><option value="__me">Asignados a mí</option>'+rs.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("");
+  $("#f-resp").value=cur;
+  let list=all.filter(i=>(!fAlerta||i.alerta===fAlerta)&&(!fe||i.estado===fe)&&(!fr||(fr==="__me"?i.responsableCorreo===myEmail():i.responsable===fr))&&(!fc||i.categoria===fc)&&
+    (!q||[i.descripcion,i.zona,i.responsable,i.detectadoPor,i.accion,i.observaciones].join(" ").toLowerCase().includes(q)));
+  list.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];
+    if(sortKey==="alerta"){x=alertOrder[x];y=alertOrder[y]}if(sortKey==="prioridad"){x=prioOrder[x]??9;y=prioOrder[y]??9}
+    if(x==null||x==="")return 1;if(y==null||y==="")return -1;return(x>y?1:x<y?-1:0)*sortDir});
+  $("#tbody").innerHTML=list.map(i=>{
+    const d=dias(i.fechaCompromiso);
+    const dtxt=i.estado==="Cerrado"?(i.fechaCierre?`Cerrado el ${fmt(i.fechaCierre)}`:""):(d==null?"":d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`);
+    const estadoCell=i.estado==="Cerrado"?'<span class="pill p-cerr">Cerrado</span>':canWrite()?`<select class="estado" data-id="${esc(i.id)}" aria-label="Estado">${ABIERTOS.map(e=>`<option ${e===i.estado?"selected":""}>${e}</option>`).join("")}</select>`:esc(i.estado);
+    const b=closeBlock(i);
+    const cierreCell=i.estado==="Cerrado"?`<span class="sub">${esc(i.cierre&&i.cierre.por||"")}</span>`:b?`<span class="lock">${esc(b)}</span>`:`<button class="btn btn-close btn-sm" data-close="${esc(i.id)}">Cerrar</button>`;
+    return `<tr class="row ${rowCls[i.alerta]||""}" data-id="${esc(i.id)}" tabindex="0">
+      <td class="num">${i.num?String(i.num).padStart(3,"0"):""}</td>
+      <td><span class="desc">${esc(i.descripcion)}</span>${i.accion?`<div class="sub">${esc(i.accion)}</div>`:""}</td>
+      <td data-l="Zona">${esc(i.zona)}</td>
+      <td data-l="Detectado por">${i.detectadoPor?esc(i.detectadoPor):'<span class="sub">Sin registrar</span>'}${i.fechaDeteccion?`<div class="sub">${fmt(i.fechaDeteccion)}</div>`:""}</td>
+      <td data-l="Responsable">${i.responsable?esc(i.responsable):'<span class="sub">Por asignar</span>'}</td>
+      <td data-l="Fecha compromiso">${fmt(i.fechaCompromiso)||'<span class="sub">—</span>'}${dtxt?`<div class="sub">${dtxt}</div>`:""}</td>
+      <td data-l="Prioridad" class="prio-${esc(i.prioridad)}">${esc(i.prioridad)}</td>
+      <td data-l="Estado">${estadoCell}</td>
+      <td><span class="pill ${pillCls[i.alerta]}">${i.alerta}</span></td>
+      <td>${cierreCell}</td></tr>`}).join("");
+  const em=$("#empty");
+  if(!list.length){em.hidden=false;em.textContent=n?"Ningún registro coincide con los filtros. Limpie la búsqueda o elija otro filtro.":`Aún no hay ${label(tab)}s.${canWrite()?` Use Registrar ${label(tab)} para crear el primero.`:""}`}else em.hidden=true;
+  $("#count").textContent=`Mostrando ${list.length} de ${n} ${label(tab)}s`;
+  $("#dl-zonas").innerHTML=[...new Set(items.map(i=>i.zona).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
+}
+
+/* ---------- Administración ---------- */
+function renderAdmin(){
+  const ps=[...personas].sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  $("#ptbody").innerHTML=ps.map(p=>`<tr class="${p.activo===false?"inactive":""}">
+    <td><b>${esc(p.nombre)}</b>${p.cargo?`<div class="sub">${esc(p.cargo)}</div>`:""}</td><td>${esc(p.id)}</td>
+    <td>${p.acceso==="Administrador"?'<span class="tag u">Administrador</span>':`<span class="tag">${esc(p.acceso||"Sin acceso")}</span>`}</td>
+    <td>${p.responsable?"Sí":"No"}</td>
+    <td><input type="checkbox" data-act="${esc(p.id)}" ${p.activo!==false?"checked":""} aria-label="Activo"></td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-edit="${esc(p.id)}">Editar</button> <button class="btn btn-danger btn-sm" data-delp="${esc(p.id)}">Quitar</button></td></tr>`).join("");
+  $("#pempty").hidden=ps.length>0;
+  $("#seed-box").hidden=items.length>0;
+  const msgs=[];
+  const orph=[...new Set(items.filter(i=>i.responsable&&!i.responsableCorreo&&i.estado!=="Cerrado").map(i=>i.responsable))];
+  if(orph.length)msgs.push(`<b>Responsables escritos sin persona asociada:</b> ${orph.map(esc).join(", ")}. Agregue a esas personas y reasígnelas en cada registro para que puedan cerrar.`);
+  const noAcc=personas.filter(p=>p.activo!==false&&p.responsable&&!["Usuario","Administrador"].includes(p.acceso)).map(p=>p.nombre);
+  if(noAcc.length)msgs.push(`<b>Responsables que no pueden cerrar</b> (acceso Lector o Sin acceso): ${noAcc.map(esc).join(", ")}.`);
+  const o=$("#orphans");o.hidden=!msgs.length;o.innerHTML=msgs.join("<br><br>");
+}
+function resetPform(){pEdit=null;pfrm.reset();pfrm.correo.disabled=false;$("#p-form-title").textContent="Agregar persona";$("#p-save").textContent="Agregar persona";$("#p-cancel").hidden=true}
+pfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const nombre=pfrm.nombre.value.trim(), correo=(pEdit||pfrm.correo.value.trim()).toLowerCase();
+  if(!nombre||!correo)return;
+  if(!pEdit&&personas.some(p=>p.id===correo)){toast("Ese correo ya está en la lista");return}
+  const prev=personas.find(p=>p.id===pEdit);
+  const data={...(prev||{activo:true,creado:nowISO()}),nombre,cargo:pfrm.cargo.value.trim(),acceso:pfrm.acceso.value,responsable:pfrm.responsable.checked};
+  delete data.id;
+  try{
+    await setDoc(doc(db,"personas",correo),data);
+    if(prev&&prev.nombre!==nombre){
+      const batch=writeBatch(db);let n=0;
+      for(const it of items){const u={};if(it.responsableCorreo===correo)u.responsable=nombre;if(it.detectadoPorCorreo===correo)u.detectadoPor=nombre;
+        if(Object.keys(u).length&&it.estado!=="Cerrado"){batch.update(doc(db,"hallazgos",it.id),u);n++}}
+      if(n)await batch.commit();
+    }
+    toast(prev?"Persona actualizada":"Persona agregada");resetPform();
+  }catch(err){fbErr(err,"guardar la persona")}
+});
+$("#p-cancel").onclick=resetPform;
+$("#ptbody").addEventListener("click",async e=>{
+  const ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-delp]");
+  if(ed){const p=personas.find(x=>x.id===ed.dataset.edit);pEdit=p.id;pfrm.nombre.value=p.nombre;pfrm.correo.value=p.id;pfrm.correo.disabled=true;
+    pfrm.cargo.value=p.cargo||"";pfrm.acceso.value=p.acceso||"Sin acceso";pfrm.responsable.checked=!!p.responsable;
+    $("#p-form-title").textContent="Editar persona";$("#p-save").textContent="Guardar cambios";$("#p-cancel").hidden=false;pfrm.nombre.focus()}
+  if(dl){const p=personas.find(x=>x.id===dl.dataset.delp);
+    if(p.id===myEmail()){toast("No puede quitarse a sí mismo");return}
+    if(confirm(`¿Quitar a ${p.nombre}? Perderá el acceso. Los registros conservan su nombre. Si solo quiere suspenderlo, desmarque Activo.`)){try{await deleteDoc(doc(db,"personas",p.id));toast("Persona quitada")}catch(err){fbErr(err,"quitar la persona")}}}
+});
+$("#ptbody").addEventListener("change",async e=>{const id=e.target.dataset.act;if(!id)return;
+  if(id===myEmail()&&!e.target.checked){e.target.checked=true;toast("No puede desactivarse a sí mismo");return}
+  try{await updateDoc(doc(db,"personas",id),{activo:e.target.checked})}catch(err){render();fbErr(err,"cambiar el estado")}});
+
+/* ---------- Carga inicial de compromisos ---------- */
+const SEED=[["Paradero","Paradero con basura","Retirar basura y mantener paradero limpio","Orden y aseo","","","Alta",""],["Baños","Limpieza de baños","Ejecutar limpieza y definir frecuencia de aseo","Orden y aseo","","","Alta",""],["Contenedor azul","Puerta del contenedor azul permanece abierta","Mantener puerta siempre cerrada","Seguridad / Orden","","","Media",""],["Muelle","Limpieza del muelle","Supervisor revisa limpieza del muelle","Orden y aseo","Supervisor","","Media",""],["Vías internas","Pintura de línea de tránsito","Repintar demarcación de tránsito","Infraestructura / Señalética","HTP","","Media",""],["Patio Gavitas","Ubicación de las tinas","Confirmar ubicación de tinas en patio Gavitas","Residuos","","","Media",""],["Patio Gavitas","Tinas para segregar","Disponer tinas para segregación de residuos","Residuos","","","Media",""],["Muelle","Limpieza losa muelle","Ejecutar limpieza de losa del muelle","Orden y aseo","","2026-10-08","Alta",""],["Muelle","Limpieza bajo losa","Ejecutar limpieza bajo losa del muelle","Orden y aseo","","2026-10-09","Alta",""],["Zona de soda","5S zona de soda","Aplicar 5S en zona de soda","Orden y aseo","","","Media",""],["Muelle","Limpieza de muelle","Limpieza general de muelle","Orden y aseo","","","Media","Verificar si corresponde al mismo compromiso del N° 004"],["Zona de soda","Recertificación de manómetro soda","Enviar manómetro a calibrar y obtener certificado","Equipos / Calibración","","","Alta",""],["Casilleros","Reparación de techo lado casillero","Reparar techo","Infraestructura","","","Media",""],["Pañol","Reparación de ventanas pañol","Reparar y cerrar ventanas","Infraestructura","","","Media",""],["Muelle","Reparación de tapas metálicas","Evelin enviará resumen de los eventos; definir reparación","Infraestructura","Evelin","","Alta","Pendiente resumen de eventos"],["Pañol","Portón pañol HTP","Reparar portón pañol","Infraestructura","Huaguito","","Media","Confirmar responsable"],["Capacitación","Capacitación Horquilla","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Capacitación","Capacitación Cargador Frontal","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Capacitación","Capacitación Grúa Nave","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Zona de soda","Carretilla de la soda","Revisar / gestionar carretilla de la soda","Equipos","","","Media",""]];
+$("#b-seed").onclick=async()=>{
+  if(items.length){toast("Ya hay registros cargados");return}
+  if(!confirm("¿Cargar los 20 compromisos de la reunión del 05-10-2026?"))return;
+  const batch=writeBatch(db);
+  SEED.forEach(([zona,descripcion,accion,categoria,responsable,fechaCompromiso,prioridad,observaciones],k)=>{
+    batch.set(doc(db,"hallazgos","c"+String(k+1).padStart(3,"0")),{num:k+1,tipo:"Compromiso",fechaDeteccion:"2026-10-05",detectadoPor:"",detectadoPorCorreo:"",origen:"Reunión",
+      zona,descripcion,accion,categoria,responsable,responsableCorreo:"",fechaCompromiso,prioridad,estado:"Pendiente",observaciones,fechaCierre:"",cierre:null,
+      registradoPor:myName(),creado:nowISO(),actualizado:nowISO(),actualizadoPor:myName(),historial:[{fecha:nowISO(),por:myName(),accion:"Cargó el compromiso desde la reunión del 05-10-2026"}]});
+  });
+  try{await batch.commit();toast("Compromisos cargados");tab="Compromiso";render()}catch(err){fbErr(err,"cargar los compromisos")}
+};
+
+/* ---------- Formulario de registro ---------- */
+function addHist(it,accion){const h=Array.isArray(it.historial)?it.historial.slice(-29):[];h.push({fecha:nowISO(),por:myName(),accion});return h}
+function fillPersonSelect(sel,people,val,valName,placeholder){
+  let html=placeholder!=null?`<option value="">${placeholder}</option>`:"";
+  html+=people.map(p=>`<option value="${esc(p.id)}" ${p.id===val?"selected":""}>${esc(p.nombre)}</option>`).join("");
+  if(val&&!people.some(p=>p.id===val))html+=`<option value="${esc(val)}" selected>${esc(valName||val)}</option>`;
+  sel.innerHTML=html;if(!val)sel.value="";
+}
+function openForm(it){
+  if(!it&&!canWrite())return;
+  editId=it?it.id:null;frm.reset();
+  const t=it?(it.tipo||"Compromiso"):tab, closed=!!it&&it.estado==="Cerrado";
+  $("#dlg-title").textContent=it?`${t} N° ${String(it.num||"").padStart(3,"0")}`:`Registrar ${label(t)}`;
+  $("#lbl-desc").innerHTML=`${t==="Hallazgo"?"Hallazgo detectado":"Compromiso"} <span class="req">obligatorio</span>`;
+  const v=it||{tipo:t,estado:"Pendiente",prioridad:"Media",categoria:"Orden y aseo",fechaDeteccion:hoyISO(),origen:t==="Hallazgo"?"Inspección":"Reunión",detectadoPorCorreo:myEmail()};
+  fillPersonSelect(frm.detectadoPorCorreo,activos(),v.detectadoPorCorreo,v.detectadoPor,"Seleccione…");
+  if(!v.detectadoPorCorreo&&v.detectadoPor)frm.detectadoPorCorreo.insertAdjacentHTML("beforeend",`<option value="__txt" selected>${esc(v.detectadoPor)}</option>`);
+  fillPersonSelect(frm.responsableCorreo,responsables(),v.responsableCorreo,v.responsable,v.responsable&&!v.responsableCorreo?`${v.responsable} (sin persona asociada)`:"Por asignar");
+  frm.estado.innerHTML=closed?"<option>Cerrado</option>":ABIERTOS.map(e=>`<option ${e===v.estado?"selected":""}>${e}</option>`).join("");
+  for(const k of ["fechaDeteccion","origen","tipo","zona","categoria","descripcion","accion","prioridad","fechaCompromiso","observaciones"])if(v[k]!=null)frm[k].value=v[k];
+  const lock=closed||!canWrite();
+  for(const el of frm.elements)if(el.name)el.disabled=lock;
+  // reasignar responsable: solo administrador, o si aún no tiene uno
+  if(!lock&&it&&it.responsableCorreo&&!isAdmin)frm.responsableCorreo.disabled=true;
+  $("#btn-save").hidden=lock;
+  $("#closed-banner").hidden=!closed;
+  if(closed)$("#closed-banner").textContent=`Cerrado el ${fmt(it.fechaCierre)} por ${it.cierre?it.cierre.por:"—"}.${isAdmin?" Puede reabrirlo si la evidencia no es suficiente.":""}`;
+  $("#btn-reopen").hidden=!(closed&&isAdmin);
+  $("#btn-del").hidden=!(it&&isAdmin);
+  const cb=it?closeBlock(it):"";const bc=$("#btn-close-f");bc.hidden=!it||closed||!canWrite();bc.disabled=!!cb;bc.title=cb;
+  $("#cierre-box").hidden=!(closed&&it.cierre);if(closed&&it.cierre)renderEvid(it.cierre,$("#cierre-evid"));
+  const h=(it&&it.historial)||[];$("#hist-box").hidden=!h.length;
+  $("#hist").innerHTML=[...h].reverse().map(x=>`<li><b>${esc(x.por)}</b> · ${esc(x.accion)}<br>${fmtDT(x.fecha)}</li>`).join("");
+  dlg.showModal();
+}
+frm.addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const prev=items.find(x=>x.id===editId);
+  if(prev&&prev.estado==="Cerrado")return;
+  const g=k=>frm[k].value.trim();
+  const data={tipo:g("tipo"),fechaDeteccion:g("fechaDeteccion"),origen:g("origen"),zona:g("zona"),categoria:g("categoria"),descripcion:g("descripcion"),
+    accion:g("accion"),prioridad:g("prioridad"),fechaCompromiso:g("fechaCompromiso"),estado:ABIERTOS.includes(g("estado"))?g("estado"):"Pendiente",observaciones:g("observaciones")};
+  const det=frm.detectadoPorCorreo.value;
+  if(det==="__txt"){data.detectadoPorCorreo="";data.detectadoPor=prev?prev.detectadoPor:""}else{data.detectadoPorCorreo=det;data.detectadoPor=nameOf(det)}
+  const rc=frm.responsableCorreo.disabled?(prev?prev.responsableCorreo:""):frm.responsableCorreo.value;
+  data.responsableCorreo=rc;data.responsable=rc?(nameOf(rc)||(prev&&prev.responsable)||rc):(prev&&!prev.responsableCorreo&&frm.responsableCorreo.value===""?prev.responsable||"":"");
+  let accion;
+  if(!prev)accion=`Registró el ${label(data.tipo)}`;
+  else{const ch=[];if(prev.estado!==data.estado)ch.push(`estado a ${data.estado}`);if((prev.responsableCorreo||"")!==data.responsableCorreo)ch.push(`responsable a ${data.responsable||"por asignar"}`);
+    if((prev.fechaCompromiso||"")!==data.fechaCompromiso)ch.push(`fecha compromiso a ${fmt(data.fechaCompromiso)||"sin fecha"}`);accion=ch.length?"Cambió "+ch.join(", "):"Editó el registro"}
+  const id=editId||("h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const it={...(prev||{fechaCierre:"",cierre:null}),...data,num:prev?prev.num:(items.reduce((m,x)=>Math.max(m,x.num||0),0)+1),
+    creado:prev?prev.creado:nowISO(),registradoPor:prev?(prev.registradoPor||""):myName(),actualizado:nowISO(),actualizadoPor:myName(),historial:addHist(prev||{},accion)};
+  delete it.id;
+  try{await setDoc(doc(db,"hallazgos",id),it);dlg.close();if(!prev&&it.tipo!==tab){tab=it.tipo;render()}toast(prev?"Cambios guardados":`${it.tipo} registrado`)}
+  catch(err){fbErr(err,"guardar")}
+});
+$("#btn-del").onclick=async()=>{if(editId&&confirm("¿Eliminar este registro? Esta acción no se puede deshacer.")){
+  const it=items.find(x=>x.id===editId);
+  try{await deleteDoc(doc(db,"hallazgos",editId));if(it&&it.cierre&&it.cierre.archivo&&it.cierre.archivo.evidId)await deleteDoc(doc(db,"evidencias",it.cierre.archivo.evidId)).catch(()=>{});dlg.close();toast("Registro eliminado")}catch(err){fbErr(err,"eliminar")}}};
+document.querySelectorAll(".x").forEach(b=>b.onclick=()=>dlg.close());
+$("#btn-new").onclick=()=>openForm(null);
+
+/* ---------- Cierre con evidencia ---------- */
+function openClose(it){
+  if(!it)return;const b=closeBlock(it);if(b){toast(b);return}
+  closeId=it.id;closeFile=null;cfrm.reset();$("#prev").innerHTML="";$("#drop-txt").textContent="Toque para adjuntar una foto o un PDF";
+  $("#close-what").innerHTML=`<b>${esc(it.tipo||"Compromiso")} N° ${String(it.num).padStart(3,"0")}:</b> ${esc(it.descripcion)}<br>Responsable: ${esc(it.responsable)}`;
+  if(dlg.open)dlg.close();dlgc.showModal();setTimeout(()=>cfrm.comentario.focus(),30);
+}
+function pickFile(f){
+  if(!f)return;
+  if(!OK_TYPES.includes(f.type)){toast("Adjunte una foto (JPG, PNG, WEBP, GIF) o un PDF");return}
+  if(f.type==="application/pdf"&&f.size>700*1024){toast("El PDF supera 700 KB. Comprímalo o adjunte una foto");return}
+  closeFile=f;$("#drop-txt").textContent=`${f.name} (${Math.round(f.size/1024)} KB) · toque para cambiar`;
+  const pv=$("#prev");pv.innerHTML="";
+  if(f.type.startsWith("image/")){const im=new Image();im.src=URL.createObjectURL(f);im.alt="Vista previa de la evidencia";pv.appendChild(im)}
+}
+$("#file").addEventListener("change",e=>pickFile(e.target.files[0]));
+const drop=$("#drop");
+drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over")});
+drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");pickFile(e.dataTransfer.files[0])});
+document.querySelectorAll(".cx").forEach(b=>b.onclick=()=>dlgc.close());
+function readDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)})}
+async function compressImage(f){
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(f)});
+  let scale=Math.min(1,1920/Math.max(img.naturalWidth,img.naturalHeight)),q=.85,out="";
+  for(let k=0;k<10;k++){
+    const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);
+    if(out.length<=MAX_DATAURL)return out;if(q>.55)q-=.1;else scale*=.8;
+  }
+  return null;
+}
+cfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const it=items.find(x=>x.id===closeId);if(!it)return;
+  const b=closeBlock(it);if(b){toast(b);return}
+  const comentario=cfrm.comentario.value.trim();
+  if(!comentario){toast("Escriba el comentario de cierre");return}
+  if(!closeFile){toast("Adjunte la evidencia objetiva");return}
+  const btn=$("#c-save");btn.disabled=true;btn.textContent="Subiendo evidencia…";
+  try{
+    const isImg=closeFile.type.startsWith("image/");
+    const data=isImg?await compressImage(closeFile):await readDataURL(closeFile);
+    if(!data||data.length>MAX_DATAURL)throw{code:"too_large"};
+    const nombre=isImg&&!/\.jpe?g$/i.test(closeFile.name)?closeFile.name.replace(/\.[^.]+$/,"")+".jpg":closeFile.name;
+    const archivo={nombre,tipo:isImg?"image/jpeg":closeFile.type,kb:Math.round(data.length*.75/1024)};
+    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,hallazgoId:it.id,creadoPor:myEmail(),creado:nowISO()});
+    archivo.evidId=ref.id;
+    const nv={...it,estado:"Cerrado",fechaCierre:hoyISO(),cierre:{comentario,archivo,por:myName(),porCorreo:myEmail(),fecha:nowISO()},
+      actualizado:nowISO(),actualizadoPor:myName(),historial:addHist(it,`Cerró con evidencia (${nombre}): ${comentario}`)};
+    delete nv.id;delete nv.alerta;
+    await setDoc(doc(db,"hallazgos",it.id),nv);
+    dlgc.close();toast(`${it.tipo||"Compromiso"} cerrado con evidencia`);
+  }catch(err){console.error(err);
+    toast(err&&err.code==="too_large"?"El archivo es demasiado pesado. Pruebe con otra foto o un PDF más liviano":err&&err.code==="permission-denied"?"No tiene permiso para cerrar este registro":"No se pudo cerrar. Revise la conexión e intente de nuevo");
+  }finally{btn.disabled=false;btn.textContent="Cerrar con evidencia"}
+});
+$("#btn-close-f").onclick=()=>openClose(items.find(x=>x.id===editId));
+async function renderEvid(c,box){
+  const a=c.archivo||{};
+  box.innerHTML=`<div class="com">${esc(c.comentario)}</div><div class="meta">Cerrado por <b>${esc(c.por)}</b> el ${fmtDT(c.fecha)}</div>
+    <div class="meta" style="margin-top:8px">Archivo: ${esc(a.nombre||"—")}${a.kb?` (${a.kb} KB)`:""}</div><div id="evid-media"><p class="sub">Cargando evidencia…</p></div>`;
+  try{
+    const s=a.evidId?await getDoc(doc(db,"evidencias",a.evidId)):null;const m=box.querySelector("#evid-media");
+    if(!s||!s.exists()){m.innerHTML='<p class="sub">No se encontró el archivo.</p>';return}
+    const src=s.data().data;m.innerHTML="";
+    if((a.tipo||"").startsWith("image/")){const im=new Image();im.src=src;im.alt="Evidencia de cierre";m.appendChild(im)}
+    const blob=await (await fetch(src)).blob();const url=URL.createObjectURL(blob);
+    m.insertAdjacentHTML("beforeend",`<a class="btn btn-ghost btn-sm" href="${url}" download="${esc(a.nombre||"evidencia")}" style="display:inline-block;margin-top:6px;text-decoration:none">Descargar evidencia</a>${a.tipo==="application/pdf"?` <a class="btn btn-ghost btn-sm" href="${url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;text-decoration:none">Abrir PDF</a>`:""}`);
+  }catch(e){console.error(e)}
+}
+$("#btn-reopen").onclick=async()=>{
+  const it=items.find(x=>x.id===editId);if(!it||!isAdmin)return;
+  const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
+  const nv={...it,estado:"En proceso",fechaCierre:"",cierre:null,cierresAnteriores:[...(it.cierresAnteriores||[]),it.cierre].filter(Boolean).slice(-5),
+    actualizado:nowISO(),actualizadoPor:myName(),historial:addHist(it,`Reabrió: ${motivo.trim()}`)};
+  delete nv.id;
+  try{await setDoc(doc(db,"hallazgos",it.id),nv);dlg.close();toast("Registro reabierto")}catch(err){fbErr(err,"reabrir")}
+};
+
+/* ---------- Interacción tabla ---------- */
+$("#tbody").addEventListener("click",e=>{if(e.target.closest("select"))return;const cb=e.target.closest("[data-close]");
+  if(cb){openClose(items.find(x=>x.id===cb.dataset.close));return}
+  const tr=e.target.closest("tr.row");if(tr)openForm(items.find(x=>x.id===tr.dataset.id))});
+$("#tbody").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr.row"))openForm(items.find(x=>x.id===e.target.dataset.id))});
+$("#tbody").addEventListener("change",async e=>{
+  if(!e.target.matches("select.estado"))return;
+  const it=items.find(x=>x.id===e.target.dataset.id);if(!it||it.estado==="Cerrado")return;
+  const estado=e.target.value;if(!ABIERTOS.includes(estado))return;
+  try{await updateDoc(doc(db,"hallazgos",it.id),{estado,actualizado:nowISO(),actualizadoPor:myName(),historial:addHist(it,`Cambió estado a ${estado}`)});toast(`Estado: ${estado}`)}
+  catch(err){render();fbErr(err,"cambiar el estado")}
+});
+document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;sortDir=sortKey===k?-sortDir:1;sortKey=k;render()});
+$("#strip").addEventListener("click",e=>{const b=e.target.closest("button");if(b){fAlerta=fAlerta===b.dataset.f?"":b.dataset.f;render()}});
+["#q","#f-estado","#f-resp","#f-cat"].forEach(s=>$(s).addEventListener("input",render));
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b)return;tab=b.dataset.tab;fAlerta="";$("#f-resp").value="";render()});
+
+/* ---------- CSV ---------- */
+$("#btn-csv").onclick=()=>{
+  const cols=[["num","N°"],["tipo","Tipo"],["fechaDeteccion","Fecha detección"],["detectadoPor","Detectado por"],["origen","Origen"],["zona","Zona"],["descripcion","Descripción"],["accion","Acción requerida"],["categoria","Categoría"],["responsable","Responsable"],["fechaCompromiso","Fecha compromiso"],["fechaCierre","Fecha cierre"],["prioridad","Prioridad"],["estado","Estado"],["alerta","Alerta"],["observaciones","Observaciones"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrado por"],["cierreArchivo","Archivo de evidencia"],["registradoPor","Registrado por"],["actualizadoPor","Última modificación por"]];
+  const rows=items.filter(i=>(i.tipo||"Compromiso")===tab).sort((a,b)=>(a.num||0)-(b.num||0)).map(i=>({...i,alerta:alerta(i),fechaDeteccion:fmt(i.fechaDeteccion),fechaCompromiso:fmt(i.fechaCompromiso),fechaCierre:fmt(i.fechaCierre),
+    cierreComentario:i.cierre?i.cierre.comentario:"",cierrePor:i.cierre?i.cierre.por:"",cierreArchivo:i.cierre&&i.cierre.archivo?i.cierre.archivo.nombre:""}));
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="\ufeff"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`${tab==="Hallazgo"?"hallazgos":"compromisos"}_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
+};
+
+</script>
+</body>
+</html>

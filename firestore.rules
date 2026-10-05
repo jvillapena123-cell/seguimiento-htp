@@ -1,0 +1,63 @@
+rules_version = '2';
+// Reglas de seguridad · Seguimiento de compromisos y hallazgos HTP
+// Administrador principal: jvilla@csh.cl (debe coincidir con ADMIN_EMAILS de firebase-config.js).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signed()   { return request.auth != null && request.auth.token.email_verified == true; }
+    function email()    { return request.auth.token.email.lower(); }
+    function bootstrapAdmin() { return signed() && email() in ['jvilla@csh.cl']; }
+    function pRef()     { return /databases/$(database)/documents/personas/$(email()); }
+    function listed()   { return signed() && exists(pRef()) && get(pRef()).data.activo == true; }
+    function acceso()   { return listed() ? get(pRef()).data.acceso : 'Sin acceso'; }
+    function isAdmin()  { return bootstrapAdmin() || acceso() == 'Administrador'; }
+    function canRead()  { return isAdmin() || acceso() in ['Lector', 'Usuario']; }
+    function canWrite() { return isAdmin() || acceso() == 'Usuario'; }
+
+    // Lista de personas: la mantiene solo el administrador
+    match /personas/{correo} {
+      allow get:   if signed() && (correo == email() || canRead());
+      allow list:  if canRead();
+      allow write: if isAdmin();
+    }
+
+    // Compromisos y hallazgos
+    match /hallazgos/{id} {
+      allow read:   if canRead();
+      allow create: if canWrite() && request.resource.data.estado != 'Cerrado';
+      allow update: if
+          // Edición normal de un registro abierto (sin cerrarlo).
+          // El responsable solo lo cambia el administrador, salvo que aún no tenga uno.
+          (canWrite()
+            && resource.data.estado != 'Cerrado'
+            && request.resource.data.estado != 'Cerrado'
+            && (isAdmin()
+                || request.resource.data.responsableCorreo == resource.data.responsableCorreo
+                || resource.data.responsableCorreo == ''))
+          // Cierre: solo el responsable asignado, con comentario y evidencia existente.
+          || (canWrite()
+            && resource.data.estado != 'Cerrado'
+            && request.resource.data.estado == 'Cerrado'
+            && resource.data.responsableCorreo == email()
+            && request.resource.data.responsableCorreo == email()
+            && request.resource.data.cierre.porCorreo == email()
+            && request.resource.data.cierre.comentario is string
+            && request.resource.data.cierre.comentario.size() > 0
+            && request.resource.data.cierre.archivo.evidId is string
+            && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)))
+          // Registros cerrados: solo el administrador (por ejemplo, para reabrir).
+          || (isAdmin() && resource.data.estado == 'Cerrado');
+      allow delete: if isAdmin();
+    }
+
+    // Archivos de evidencia (guardados dentro de Firestore)
+    match /evidencias/{id} {
+      allow read:   if canRead();
+      allow create: if canWrite()
+                    && request.resource.data.creadoPor == email()
+                    && request.resource.data.data is string;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}
