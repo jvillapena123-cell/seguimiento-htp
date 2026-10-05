@@ -259,6 +259,12 @@ label textarea{min-height:64px;resize:vertical}
       <div class="stack"><button class="btn btn-primary" id="b-retry" type="button">Reintentar</button></div>
       <div class="gate-links"><button class="linkbtn b-out" type="button">Salir</button></div>
     </div>
+    <div id="g-who" hidden>
+      <h1>¿Quién está ingresando?</h1>
+      <p id="w-txt">Este correo lo comparten varias personas. Elija quién es usted.</p>
+      <div class="stack" id="w-list"></div>
+      <div class="gate-links"><button class="linkbtn b-out" type="button">Salir</button></div>
+    </div>
     <div id="g-setup" hidden>
       <h1>Falta configurar Firebase</h1>
       <p>Complete el archivo <b>firebase-config.js</b> con los datos de su proyecto Firebase. Las instrucciones están en el README del repositorio.</p>
@@ -278,6 +284,7 @@ label textarea{min-height:64px;resize:vertical}
       </div>
       <div class="who">
         <span id="who-name" style="font-weight:600"></span>
+        <button class="who-btn" id="b-who" hidden title="Correo compartido: cambiar de persona">Cambiar</button>
         <button class="who-btn" id="b-logout">Salir</button>
         <div class="sync" id="sync"><span class="dot"></span><span>Conectando…</span></div>
       </div>
@@ -304,6 +311,7 @@ label textarea{min-height:64px;resize:vertical}
       <select id="f-estado" aria-label="Estado"><option value="">Todos los estados</option></select>
       <select id="f-resp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
       <select id="f-cat" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+      <select id="f-emp" aria-label="Empresa responsable"><option value="">Todas las empresas</option></select>
       <button class="btn btn-ghost" id="btn-csv">Exportar CSV</button>
       <button class="btn btn-primary" id="btn-new">Registrar compromiso</button>
     </div>
@@ -315,6 +323,7 @@ label textarea{min-height:64px;resize:vertical}
           <th data-sort="zona">Zona</th>
           <th data-sort="detectadoPor">Detectado por</th>
           <th data-sort="responsable">Responsable</th>
+          <th data-sort="empresa">Empresa responsable</th>
           <th data-sort="fechaCompromiso">Fecha compromiso</th>
           <th data-sort="prioridad">Prioridad</th>
           <th>Estado</th>
@@ -332,11 +341,13 @@ label textarea{min-height:64px;resize:vertical}
     <div class="admin">
       <div class="card">
         <h2 id="p-form-title">Agregar persona</h2>
-        <p class="help">El correo es con el que la persona ingresa. Para que un responsable pueda cerrar con evidencia, su acceso debe ser Usuario o Administrador.</p>
+        <p class="help">El correo es con el que la persona ingresa. Hasta 3 personas pueden compartir un correo: en ese caso tienen el mismo acceso y, al ingresar, eligen quién son. Para que un responsable pueda cerrar con evidencia, su acceso debe ser Usuario o Administrador.</p>
         <form id="pfrm" class="stack">
           <label>Nombre <span class="req">obligatorio</span><input name="nombre" required autocomplete="off"></label>
           <label>Correo <span class="req">obligatorio</span><input type="email" name="correo" required autocomplete="off"></label>
-          <label>Cargo / empresa<input name="cargo" placeholder="Ej.: Jefe de turno HTP" autocomplete="off"></label>
+          <p class="help" id="p-mail-hint" hidden style="margin-top:-6px"></p>
+          <label>Cargo<input name="cargo" placeholder="Ej.: Jefe de turno" autocomplete="off"></label>
+          <label>Empresa<input name="empresa" list="dl-empresas" placeholder="Ej.: HTP, Reloncaví, Mabe" autocomplete="off"></label>
           <label>Acceso a la app<select name="acceso">
             <option value="Usuario">Usuario: ve, registra y cierra lo asignado</option>
             <option value="Lector">Lector: solo ve</option>
@@ -403,6 +414,7 @@ label textarea{min-height:64px;resize:vertical}
         <legend>Seguimiento</legend>
         <div class="grid">
           <label>Responsable<select name="responsableCorreo"></select></label>
+          <label>Empresa responsable<input name="empresa" list="dl-empresas" placeholder="Se completa con la del responsable" autocomplete="off"></label>
           <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
           <label>Fecha compromiso<input type="date" name="fechaCompromiso"></label>
           <label>Estado<select name="estado"></select></label>
@@ -449,13 +461,14 @@ label textarea{min-height:64px;resize:vertical}
 <button class="fab" id="fab" hidden><span>📷</span>Registrar hallazgo</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
+<datalist id="dl-empresas"></datalist>
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, addDoc, writeBatch }
+import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, addDoc, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
 
@@ -482,19 +495,30 @@ function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"><
 function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
 
 /* ---------- Estado ---------- */
-let auth, db, authUser=null, persona=null, isAdmin=false, items=[], personas=[], unsubs=[];
+let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false;
+const MAX_POR_CORREO=3;
 let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=null, closeId=null, closeFile=null;
 const myEmail=()=>authUser?authUser.email.toLowerCase():"";
 const myName=()=>persona&&persona.nombre?persona.nombre:myEmail();
-const canWrite=()=>isAdmin||(persona&&persona.acceso==="Usuario");
+const canWrite=()=>isAdmin||myAcceso==="Usuario";
 const activos=()=>personas.filter(p=>p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
 const responsables=()=>activos().filter(p=>p.responsable);
-const nameOf=correo=>{const p=personas.find(x=>x.id===correo);return p?p.nombre:""};
+const pById=id=>personas.find(x=>x.id===id);
+const pCorreo=p=>String(p.correo||p.id).toLowerCase();           // personas antiguas: el id era el correo
+const nameOf=id=>{const p=pById(id);return p?p.nombre:""};
+const correoOf=id=>{const p=pById(id);return p?pCorreo(p):(String(id).includes("@")?String(id).toLowerCase():"")};
+const respId=it=>it.responsableId||it.responsableCorreo||"";      // registros antiguos guardaban solo el correo
+const detId=it=>it.detectadoPorId||it.detectadoPorCorreo||"";
+const conCorreo=(c,exceptId)=>personas.filter(p=>pCorreo(p)===c&&p.id!==exceptId);
+const mios=()=>personas.filter(p=>pCorreo(p)===myEmail()&&p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+const whoKey=()=>"htp-quien:"+myEmail();
+function accesoDoc(grupo){return grupo.length?{acceso:grupo[0].acceso||"Sin acceso",activo:grupo.some(x=>x.activo!==false)}:null}
+function batchAcceso(batch,correo,grupo){const a=accesoDoc(grupo);if(a)batch.set(doc(db,"accesos",correo),a);else batch.delete(doc(db,"accesos",correo))}
 
 /* ---------- Pantallas de acceso ---------- */
 function showGate(view,msg="",err=false){
   $("#gate").hidden=false;$("#app").hidden=true;
-  ["g-login","g-signup","g-verify","g-denied","g-setup"].forEach(id=>$("#"+id).hidden=id!==view);
+  ["g-login","g-signup","g-verify","g-denied","g-who","g-setup"].forEach(id=>$("#"+id).hidden=id!==view);
   const m=$("#g-msg");m.textContent=msg;m.className="gate-msg"+(err?" err":"");
 }
 const authMsg=c=>({"auth/invalid-credential":"Correo o contraseña incorrectos","auth/wrong-password":"Correo o contraseña incorrectos","auth/user-not-found":"Correo o contraseña incorrectos",
@@ -521,21 +545,60 @@ $("#b-logout").onclick=()=>signOut(auth);
 $("#b-retry").onclick=()=>boot();
 
 async function boot(){
-  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;
   if(!authUser){showGate("g-login");return}
   const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
-  try{const s=await getDoc(doc(db,"personas",myEmail()));persona=s.exists()?{id:s.id,...s.data()}:null}catch(e){persona=null}
-  const ok=bootstrap||(persona&&persona.activo!==false&&["Lector","Usuario","Administrador"].includes(persona.acceso));
+  let acc=null;
+  try{const a=await getDoc(doc(db,"accesos",myEmail()));
+    if(a.exists())acc=a.data();
+    else{const p=await getDoc(doc(db,"personas",myEmail()));acc=p.exists()?p.data():null}  // formato antiguo
+  }catch(e){acc=null}
+  const ok=bootstrap||(acc&&acc.activo!==false&&["Lector","Usuario","Administrador"].includes(acc.acceso));
   if(!ok){$("#d-txt").textContent=`El correo ${authUser.email} no está autorizado para usar la aplicación. Pida al administrador que lo agregue con acceso Lector, Usuario o Administrador.`;showGate("g-denied");return}
-  isAdmin=bootstrap||persona.acceso==="Administrador";
-  $("#gate").hidden=true;$("#app").hidden=false;
-  $("#who-name").textContent=myName();
+  myAcceso=acc?acc.acceso:"";
+  isAdmin=bootstrap||myAcceso==="Administrador";
   setSync(false,"Conectando…");
   unsubs.push(onSnapshot(collection(db,"hallazgos"),snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));setSync(true,"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
   unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
-    const p=personas.find(x=>x.id===myEmail());if(p){persona=p;$("#who-name").textContent=myName()}render()},e=>console.error(e)));
+    resolveMe();if(isAdmin&&!synced){synced=true;syncAccesos()}render()},
+    e=>{console.error(e);persona=null;enterApp()}));
+}
+
+/* ---------- Correo compartido: quién está usando la app ---------- */
+function resolveMe(){
+  const m=mios();
+  if(m.length<=1){persona=m[0]||null;enterApp();return}
+  let saved=null;try{saved=sessionStorage.getItem(whoKey())}catch(e){}
+  const p=m.find(x=>persona&&x.id===persona.id)||m.find(x=>x.id===saved);
+  if(p){persona=p;enterApp()}else{persona=null;showWho(m)}
+}
+function showWho(m){
+  $("#w-txt").textContent=`El correo ${myEmail()} lo comparten ${m.length} personas. Elija quién es usted para que lo que registre o cierre quede a su nombre.`;
+  $("#w-list").innerHTML=m.map(p=>`<button class="btn btn-ghost" type="button" data-who="${esc(p.id)}">${esc(p.nombre)}${p.cargo?` · ${esc(p.cargo)}`:""}</button>`).join("");
+  showGate("g-who");
+}
+function enterApp(){
+  $("#gate").hidden=true;$("#app").hidden=false;
+  $("#who-name").textContent=myName();
+  $("#b-who").hidden=mios().length<2;
   render();
+}
+$("#w-list").addEventListener("click",e=>{const b=e.target.closest("[data-who]");if(!b)return;
+  persona=pById(b.dataset.who);try{sessionStorage.setItem(whoKey(),persona.id)}catch(err){}enterApp()});
+$("#b-who").onclick=()=>{try{sessionStorage.removeItem(whoKey())}catch(e){}persona=null;showWho(mios())};
+
+/* Mantiene la colección "accesos" (un documento por correo) al día. La usa Firebase para dar permisos. */
+async function syncAccesos(){
+  try{
+    const snap=await getDocs(collection(db,"accesos"));const cur={};snap.forEach(d=>cur[d.id]=d.data());
+    const grupos={};for(const p of personas)(grupos[pCorreo(p)]=grupos[pCorreo(p)]||[]).push(p);
+    const b=writeBatch(db);let n=0;
+    for(const[c,g]of Object.entries(grupos)){const w=accesoDoc(g),x=cur[c];if(!x||x.acceso!==w.acceso||x.activo!==w.activo){b.set(doc(db,"accesos",c),w);n++}}
+    for(const c of Object.keys(cur))if(!grupos[c]){b.delete(doc(db,"accesos",c));n++}
+    for(const p of personas)if(!p.correo){b.update(doc(db,"personas",p.id),{correo:pCorreo(p)});n++}
+    if(n)await b.commit();
+  }catch(e){console.error("No se pudo sincronizar accesos",e)}
 }
 
 /* ---------- Selects fijos ---------- */
@@ -549,6 +612,7 @@ function closeBlock(it){
   if(!it.responsableCorreo)return it.responsable?`Asigne a ${it.responsable} desde la lista de personas`:"Asigne un responsable para poder cerrar";
   if(!canWrite())return"Solo lectura";
   if(it.responsableCorreo!==myEmail())return`Solo ${it.responsable||it.responsableCorreo} puede cerrar`;
+  if(persona&&mios().length>1&&respId(it)!==persona.id)return`Solo ${it.responsable||"el responsable"} puede cerrar`;
   return"";
 }
 
@@ -563,7 +627,7 @@ function render(){
   $("#btn-new").hidden=!canWrite();
   $("#fab").hidden=!canWrite()||tab==="admin";
   if(tab==="admin"){renderAdmin();return}
-  const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value;
+  const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value, fem=$("#f-emp").value;
   const all=items.filter(i=>(i.tipo||"Compromiso")===tab).map(it=>({...it,alerta:alerta(it)}));
   const n=all.length,c=k=>all.filter(i=>i.alerta===k).length,cerr=c("Cerrado"),pct=n?Math.round(cerr/n*100):0;
   $("#k-total").textContent=n;$("#k-total-l").textContent=tab==="Hallazgo"?"Hallazgos registrados":"Compromisos registrados";
@@ -575,8 +639,11 @@ function render(){
   const rs=[...new Set(all.map(i=>i.responsable).filter(Boolean))].sort(), cur=fr;
   $("#f-resp").innerHTML='<option value="">Todos los responsables</option><option value="__me">Asignados a mí</option>'+rs.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("");
   $("#f-resp").value=cur;
-  let list=all.filter(i=>(!fAlerta||i.alerta===fAlerta)&&(!fe||i.estado===fe)&&(!fr||(fr==="__me"?i.responsableCorreo===myEmail():i.responsable===fr))&&(!fc||i.categoria===fc)&&
-    (!q||[i.descripcion,i.zona,i.responsable,i.detectadoPor,i.accion,i.observaciones].join(" ").toLowerCase().includes(q)));
+  const ems=[...new Set(all.map(i=>i.empresa).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  $("#f-emp").innerHTML='<option value="">Todas las empresas</option>'+ems.map(x=>`<option ${x===fem?"selected":""}>${esc(x)}</option>`).join("");
+  $("#f-emp").value=ems.includes(fem)?fem:"";
+  let list=all.filter(i=>(!fAlerta||i.alerta===fAlerta)&&(!fe||i.estado===fe)&&(!fr||(fr==="__me"?(persona?respId(i)===persona.id:i.responsableCorreo===myEmail()):i.responsable===fr))&&(!fc||i.categoria===fc)&&(!fem||i.empresa===fem)&&
+    (!q||[i.descripcion,i.zona,i.responsable,i.empresa,i.detectadoPor,i.accion,i.observaciones].join(" ").toLowerCase().includes(q)));
   list.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];
     if(sortKey==="alerta"){x=alertOrder[x];y=alertOrder[y]}if(sortKey==="prioridad"){x=prioOrder[x]??9;y=prioOrder[y]??9}
     if(x==null||x==="")return 1;if(y==null||y==="")return -1;return(x>y?1:x<y?-1:0)*sortDir});
@@ -592,6 +659,7 @@ function render(){
       <td data-l="Zona">${esc(i.zona)}</td>
       <td data-l="Detectado por">${i.detectadoPor?esc(i.detectadoPor):'<span class="sub">Sin registrar</span>'}${i.fechaDeteccion?`<div class="sub">${fmt(i.fechaDeteccion)}</div>`:""}</td>
       <td data-l="Responsable">${i.responsable?esc(i.responsable):'<span class="sub">Por asignar</span>'}</td>
+      <td data-l="Empresa responsable">${i.empresa?esc(i.empresa):'<span class="sub">—</span>'}</td>
       <td data-l="Fecha compromiso">${fmt(i.fechaCompromiso)||'<span class="sub">—</span>'}${dtxt?`<div class="sub">${dtxt}</div>`:""}</td>
       <td data-l="Prioridad" class="prio-${esc(i.prioridad)}">${esc(i.prioridad)}</td>
       <td data-l="Estado">${estadoCell}</td>
@@ -600,6 +668,7 @@ function render(){
   const em=$("#empty");
   if(!list.length){em.hidden=false;em.textContent=n?"Ningún registro coincide con los filtros. Limpie la búsqueda o elija otro filtro.":`Aún no hay ${label(tab)}s.${canWrite()?` Use Registrar ${label(tab)} para crear el primero.`:""}`}else em.hidden=true;
   $("#count").textContent=`Mostrando ${list.length} de ${n} ${label(tab)}s`;
+  $("#dl-empresas").innerHTML=[...new Set([...items.map(i=>i.empresa),...personas.map(p=>p.empresa)].filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
   $("#dl-zonas").innerHTML=[...new Set(items.map(i=>i.zona).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
 }
 
@@ -607,7 +676,7 @@ function render(){
 function renderAdmin(){
   const ps=[...personas].sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   $("#ptbody").innerHTML=ps.map(p=>`<tr class="${p.activo===false?"inactive":""}">
-    <td><b>${esc(p.nombre)}</b>${p.cargo?`<div class="sub">${esc(p.cargo)}</div>`:""}</td><td>${esc(p.id)}</td>
+    <td><b>${esc(p.nombre)}</b>${p.cargo||p.empresa?`<div class="sub">${esc([p.cargo,p.empresa].filter(Boolean).join(" · "))}</div>`:""}</td><td>${esc(pCorreo(p))}${conCorreo(pCorreo(p)).length>1?`<div class="sub">Compartido por ${conCorreo(pCorreo(p)).length}</div>`:""}</td>
     <td>${p.acceso==="Administrador"?'<span class="tag u">Administrador</span>':`<span class="tag">${esc(p.acceso||"Sin acceso")}</span>`}</td>
     <td>${p.responsable?"Sí":"No"}</td>
     <td><input type="checkbox" data-act="${esc(p.id)}" ${p.activo!==false?"checked":""} aria-label="Activo"></td>
@@ -621,39 +690,57 @@ function renderAdmin(){
   if(noAcc.length)msgs.push(`<b>Responsables que no pueden cerrar</b> (acceso Lector o Sin acceso): ${noAcc.map(esc).join(", ")}.`);
   const o=$("#orphans");o.hidden=!msgs.length;o.innerHTML=msgs.join("<br><br>");
 }
-function resetPform(){pEdit=null;pfrm.reset();pfrm.correo.disabled=false;$("#p-form-title").textContent="Agregar persona";$("#p-save").textContent="Agregar persona";$("#p-cancel").hidden=true}
+function mailHint(){const c=pfrm.correo.value.trim().toLowerCase(),g=c?conCorreo(c,pEdit):[],h=$("#p-mail-hint");
+  if(!g.length){h.hidden=true;return}
+  h.hidden=false;h.innerHTML=g.length>=MAX_POR_CORREO&&!pEdit?`<b>Este correo ya lo usan ${g.length} personas</b> (máximo ${MAX_POR_CORREO}): ${g.map(x=>esc(x.nombre)).join(", ")}.`
+    :`Este correo también lo usa${g.length>1?"n":""}: <b>${g.map(x=>esc(x.nombre)).join(", ")}</b>. Compartirán el mismo acceso.`}
+pfrm.correo.addEventListener("input",mailHint);
+function resetPform(){pEdit=null;pfrm.reset();pfrm.correo.disabled=false;$("#p-mail-hint").hidden=true;$("#p-form-title").textContent="Agregar persona";$("#p-save").textContent="Agregar persona";$("#p-cancel").hidden=true}
 pfrm.addEventListener("submit",async e=>{
   e.preventDefault();
-  const nombre=pfrm.nombre.value.trim(), correo=(pEdit||pfrm.correo.value.trim()).toLowerCase();
+  const prev=pEdit?pById(pEdit):null;
+  const nombre=pfrm.nombre.value.trim(), correo=(prev?pCorreo(prev):pfrm.correo.value.trim()).toLowerCase(), acceso=pfrm.acceso.value;
   if(!nombre||!correo)return;
-  if(!pEdit&&personas.some(p=>p.id===correo)){toast("Ese correo ya está en la lista");return}
-  const prev=personas.find(p=>p.id===pEdit);
-  const data={...(prev||{activo:true,creado:nowISO()}),nombre,cargo:pfrm.cargo.value.trim(),acceso:pfrm.acceso.value,responsable:pfrm.responsable.checked};
+  const otros=conCorreo(correo,pEdit);
+  if(!prev&&otros.length>=MAX_POR_CORREO){toast(`Ese correo ya lo usan ${MAX_POR_CORREO} personas (máximo)`);return}
+  if(otros.some(x=>x.nombre.toLowerCase()===nombre.toLowerCase())){toast("Ya existe una persona con ese nombre y correo");return}
+  const cambia=otros.filter(x=>(x.acceso||"Sin acceso")!==acceso);
+  if(cambia.length&&!confirm(`${cambia.map(x=>x.nombre).join(", ")} comparte${cambia.length>1?"n":""} este correo, así que también quedará${cambia.length>1?"n":""} con acceso "${acceso}". ¿Continuar?`))return;
+  const id=pEdit||("p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const data={...(prev||{activo:true,creado:nowISO()}),nombre,correo,cargo:pfrm.cargo.value.trim(),empresa:pfrm.empresa.value.trim(),acceso,responsable:pfrm.responsable.checked};
   delete data.id;
   try{
-    await setDoc(doc(db,"personas",correo),data);
+    const batch=writeBatch(db);
+    batch.set(doc(db,"personas",id),data);
+    for(const x of cambia)batch.update(doc(db,"personas",x.id),{acceso});
+    batchAcceso(batch,correo,[{...data,id},...otros.map(x=>({...x,acceso}))]);
+    if(prev&&data.empresa&&(prev.empresa||"")!==data.empresa){
+      for(const it of items)if(respId(it)===id&&it.estado!=="Cerrado"&&(!it.empresa||it.empresa===prev.empresa))batch.update(doc(db,"hallazgos",it.id),{empresa:data.empresa})}
     if(prev&&prev.nombre!==nombre){
-      const batch=writeBatch(db);let n=0;
-      for(const it of items){const u={};if(it.responsableCorreo===correo)u.responsable=nombre;if(it.detectadoPorCorreo===correo)u.detectadoPor=nombre;
-        if(Object.keys(u).length&&it.estado!=="Cerrado"){batch.update(doc(db,"hallazgos",it.id),u);n++}}
-      if(n)await batch.commit();
+      for(const it of items){const u={};if(respId(it)===id)u.responsable=nombre;if(detId(it)===id)u.detectadoPor=nombre;
+        if(Object.keys(u).length&&it.estado!=="Cerrado")batch.update(doc(db,"hallazgos",it.id),u)}
     }
+    await batch.commit();
     toast(prev?"Persona actualizada":"Persona agregada");resetPform();
   }catch(err){fbErr(err,"guardar la persona")}
 });
 $("#p-cancel").onclick=resetPform;
 $("#ptbody").addEventListener("click",async e=>{
   const ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-delp]");
-  if(ed){const p=personas.find(x=>x.id===ed.dataset.edit);pEdit=p.id;pfrm.nombre.value=p.nombre;pfrm.correo.value=p.id;pfrm.correo.disabled=true;
-    pfrm.cargo.value=p.cargo||"";pfrm.acceso.value=p.acceso||"Sin acceso";pfrm.responsable.checked=!!p.responsable;
-    $("#p-form-title").textContent="Editar persona";$("#p-save").textContent="Guardar cambios";$("#p-cancel").hidden=false;pfrm.nombre.focus()}
+  if(ed){const p=personas.find(x=>x.id===ed.dataset.edit);pEdit=p.id;pfrm.nombre.value=p.nombre;pfrm.correo.value=pCorreo(p);pfrm.correo.disabled=true;
+    pfrm.cargo.value=p.cargo||"";pfrm.empresa.value=p.empresa||"";pfrm.acceso.value=p.acceso||"Sin acceso";pfrm.responsable.checked=!!p.responsable;
+    $("#p-form-title").textContent="Editar persona";$("#p-save").textContent="Guardar cambios";$("#p-cancel").hidden=false;mailHint();pfrm.nombre.focus()}
   if(dl){const p=personas.find(x=>x.id===dl.dataset.delp);
-    if(p.id===myEmail()){toast("No puede quitarse a sí mismo");return}
-    if(confirm(`¿Quitar a ${p.nombre}? Perderá el acceso. Los registros conservan su nombre. Si solo quiere suspenderlo, desmarque Activo.`)){try{await deleteDoc(doc(db,"personas",p.id));toast("Persona quitada")}catch(err){fbErr(err,"quitar la persona")}}}
+    if(persona&&p.id===persona.id){toast("No puede quitarse a sí mismo");return}
+    const resto=conCorreo(pCorreo(p),p.id);
+    if(confirm(`¿Quitar a ${p.nombre}? ${resto.length?"El correo sigue activo para "+resto.map(x=>x.nombre).join(", ")+".":"Perderá el acceso."} Los registros conservan su nombre. Si solo quiere suspenderlo, desmarque Activo.`)){
+      try{const b=writeBatch(db);b.delete(doc(db,"personas",p.id));batchAcceso(b,pCorreo(p),resto);await b.commit();toast("Persona quitada")}catch(err){fbErr(err,"quitar la persona")}}}
 });
 $("#ptbody").addEventListener("change",async e=>{const id=e.target.dataset.act;if(!id)return;
-  if(id===myEmail()&&!e.target.checked){e.target.checked=true;toast("No puede desactivarse a sí mismo");return}
-  try{await updateDoc(doc(db,"personas",id),{activo:e.target.checked})}catch(err){render();fbErr(err,"cambiar el estado")}});
+  if(persona&&id===persona.id&&!e.target.checked){e.target.checked=true;toast("No puede desactivarse a sí mismo");return}
+  const p=pById(id),activo=e.target.checked;
+  try{const b=writeBatch(db);b.update(doc(db,"personas",id),{activo});
+    batchAcceso(b,pCorreo(p),[{...p,activo},...conCorreo(pCorreo(p),id)]);await b.commit()}catch(err){render();fbErr(err,"cambiar el estado")}});
 
 /* ---------- Carga inicial de compromisos ---------- */
 const SEED=[["Paradero","Paradero con basura","Retirar basura y mantener paradero limpio","Orden y aseo","","","Alta",""],["Baños","Limpieza de baños","Ejecutar limpieza y definir frecuencia de aseo","Orden y aseo","","","Alta",""],["Contenedor azul","Puerta del contenedor azul permanece abierta","Mantener puerta siempre cerrada","Seguridad / Orden","","","Media",""],["Muelle","Limpieza del muelle","Supervisor revisa limpieza del muelle","Orden y aseo","Supervisor","","Media",""],["Vías internas","Pintura de línea de tránsito","Repintar demarcación de tránsito","Infraestructura / Señalética","HTP","","Media",""],["Patio Gavitas","Ubicación de las tinas","Confirmar ubicación de tinas en patio Gavitas","Residuos","","","Media",""],["Patio Gavitas","Tinas para segregar","Disponer tinas para segregación de residuos","Residuos","","","Media",""],["Muelle","Limpieza losa muelle","Ejecutar limpieza de losa del muelle","Orden y aseo","","2026-10-08","Alta",""],["Muelle","Limpieza bajo losa","Ejecutar limpieza bajo losa del muelle","Orden y aseo","","2026-10-09","Alta",""],["Zona de soda","5S zona de soda","Aplicar 5S en zona de soda","Orden y aseo","","","Media",""],["Muelle","Limpieza de muelle","Limpieza general de muelle","Orden y aseo","","","Media","Verificar si corresponde al mismo compromiso del N° 004"],["Zona de soda","Recertificación de manómetro soda","Enviar manómetro a calibrar y obtener certificado","Equipos / Calibración","","","Alta",""],["Casilleros","Reparación de techo lado casillero","Reparar techo","Infraestructura","","","Media",""],["Pañol","Reparación de ventanas pañol","Reparar y cerrar ventanas","Infraestructura","","","Media",""],["Muelle","Reparación de tapas metálicas","Evelin enviará resumen de los eventos; definir reparación","Infraestructura","Evelin","","Alta","Pendiente resumen de eventos"],["Pañol","Portón pañol HTP","Reparar portón pañol","Infraestructura","Huaguito","","Media","Confirmar responsable"],["Capacitación","Capacitación Horquilla","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Capacitación","Capacitación Cargador Frontal","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Capacitación","Capacitación Grúa Nave","Programar y ejecutar capacitación","Capacitación","","","Media",""],["Zona de soda","Carretilla de la soda","Revisar / gestionar carretilla de la soda","Equipos","","","Media",""]];
@@ -684,12 +771,12 @@ function openForm(it,forceTipo){
   const t=it?(it.tipo||"Compromiso"):(forceTipo||(tab==="admin"?"Compromiso":tab)), closed=!!it&&it.estado==="Cerrado";
   $("#dlg-title").textContent=it?`${t} N° ${String(it.num||"").padStart(3,"0")}`:`Registrar ${label(t)}`;
   $("#lbl-desc").innerHTML=`${t==="Hallazgo"?"Hallazgo detectado":"Compromiso"} <span class="req">obligatorio</span>`;
-  const v=it||{tipo:t,estado:"Pendiente",prioridad:"Media",categoria:"Orden y aseo",fechaDeteccion:hoyISO(),origen:t==="Hallazgo"?"Inspección":"Reunión",detectadoPorCorreo:myEmail()};
-  fillPersonSelect(frm.detectadoPorCorreo,activos(),v.detectadoPorCorreo,v.detectadoPor,"Seleccione…");
-  if(!v.detectadoPorCorreo&&v.detectadoPor)frm.detectadoPorCorreo.insertAdjacentHTML("beforeend",`<option value="__txt" selected>${esc(v.detectadoPor)}</option>`);
-  fillPersonSelect(frm.responsableCorreo,responsables(),v.responsableCorreo,v.responsable,v.responsable&&!v.responsableCorreo?`${v.responsable} (sin persona asociada)`:"Por asignar");
+  const v=it||{tipo:t,estado:"Pendiente",prioridad:"Media",categoria:"Orden y aseo",fechaDeteccion:hoyISO(),origen:t==="Hallazgo"?"Inspección":"Reunión",detectadoPorId:persona?persona.id:""};
+  fillPersonSelect(frm.detectadoPorCorreo,activos(),detId(v),v.detectadoPor,"Seleccione…");
+  if(!detId(v)&&v.detectadoPor)frm.detectadoPorCorreo.insertAdjacentHTML("beforeend",`<option value="__txt" selected>${esc(v.detectadoPor)}</option>`);
+  fillPersonSelect(frm.responsableCorreo,responsables(),respId(v),v.responsable,v.responsable&&!v.responsableCorreo?`${v.responsable} (sin persona asociada)`:"Por asignar");
   frm.estado.innerHTML=closed?"<option>Cerrado</option>":ABIERTOS.map(e=>`<option ${e===v.estado?"selected":""}>${e}</option>`).join("");
-  for(const k of ["fechaDeteccion","origen","tipo","zona","categoria","descripcion","accion","prioridad","fechaCompromiso","observaciones"])if(v[k]!=null)frm[k].value=v[k];
+  for(const k of ["fechaDeteccion","origen","tipo","zona","categoria","descripcion","accion","prioridad","fechaCompromiso","observaciones","empresa"])if(v[k]!=null)frm[k].value=v[k];
   const lock=closed||!canWrite();
   for(const el of frm.elements)if(el.name)el.disabled=lock;
   // reasignar responsable: solo administrador, o si aún no tiene uno
@@ -712,14 +799,18 @@ frm.addEventListener("submit",async ev=>{
   if(prev&&prev.estado==="Cerrado")return;
   const g=k=>frm[k].value.trim();
   const data={tipo:g("tipo"),fechaDeteccion:g("fechaDeteccion"),origen:g("origen"),zona:g("zona"),categoria:g("categoria"),descripcion:g("descripcion"),
-    accion:g("accion"),prioridad:g("prioridad"),fechaCompromiso:g("fechaCompromiso"),estado:ABIERTOS.includes(g("estado"))?g("estado"):"Pendiente",observaciones:g("observaciones")};
+    accion:g("accion"),prioridad:g("prioridad"),fechaCompromiso:g("fechaCompromiso"),empresa:g("empresa"),estado:ABIERTOS.includes(g("estado"))?g("estado"):"Pendiente",observaciones:g("observaciones")};
   const det=frm.detectadoPorCorreo.value;
-  if(det==="__txt"){data.detectadoPorCorreo="";data.detectadoPor=prev?prev.detectadoPor:""}else{data.detectadoPorCorreo=det;data.detectadoPor=nameOf(det)}
-  const rc=frm.responsableCorreo.disabled?(prev?prev.responsableCorreo:""):frm.responsableCorreo.value;
-  data.responsableCorreo=rc;data.responsable=rc?(nameOf(rc)||(prev&&prev.responsable)||rc):(prev&&!prev.responsableCorreo&&frm.responsableCorreo.value===""?prev.responsable||"":"");
+  if(det==="__txt"){data.detectadoPorId="";data.detectadoPorCorreo="";data.detectadoPor=prev?prev.detectadoPor:""}
+  else{data.detectadoPorId=det;data.detectadoPorCorreo=det?correoOf(det):"";data.detectadoPor=nameOf(det)||(prev&&detId(prev)===det?prev.detectadoPor:"")}
+  // el campo responsable trae el id de la persona; Firebase controla el cierre por correo
+  const locked=frm.responsableCorreo.disabled, rid=locked?(prev?respId(prev):""):frm.responsableCorreo.value;
+  if(!locked){data.responsableId=rid;data.responsableCorreo=rid?(correoOf(rid)||(prev&&respId(prev)===rid?prev.responsableCorreo:"")):""}
+  if(!data.empresa&&rid){const rp=pById(rid);if(rp&&rp.empresa)data.empresa=rp.empresa}
+  data.responsable=rid?(nameOf(rid)||(prev&&prev.responsable)||rid):(prev&&!prev.responsableCorreo&&frm.responsableCorreo.value===""?prev.responsable||"":"");
   let accion;
   if(!prev)accion=`Registró el ${label(data.tipo)}`;
-  else{const ch=[];if(prev.estado!==data.estado)ch.push(`estado a ${data.estado}`);if((prev.responsableCorreo||"")!==data.responsableCorreo)ch.push(`responsable a ${data.responsable||"por asignar"}`);
+  else{const ch=[];if(prev.estado!==data.estado)ch.push(`estado a ${data.estado}`);if(respId(prev)!==rid)ch.push(`responsable a ${data.responsable||"por asignar"}`);
     if((prev.fechaCompromiso||"")!==data.fechaCompromiso)ch.push(`fecha compromiso a ${fmt(data.fechaCompromiso)||"sin fecha"}`);accion=ch.length?"Cambió "+ch.join(", "):"Editó el registro"}
   const id=editId||("h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const it={...(prev||{fechaCierre:"",cierre:null}),...data,num:prev?prev.num:(items.reduce((m,x)=>Math.max(m,x.num||0),0)+1),
@@ -816,7 +907,7 @@ cfrm.addEventListener("submit",async e=>{
     const archivo={nombre,tipo:isImg?"image/jpeg":closeFile.type,kb:Math.round(data.length*.75/1024)};
     const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,hallazgoId:it.id,creadoPor:myEmail(),creado:nowISO()});
     archivo.evidId=ref.id;
-    const nv={...it,estado:"Cerrado",fechaCierre:hoyISO(),cierre:{comentario,archivo,por:myName(),porCorreo:myEmail(),fecha:nowISO()},
+    const nv={...it,estado:"Cerrado",fechaCierre:hoyISO(),cierre:{comentario,archivo,por:myName(),porId:persona?persona.id:"",porCorreo:myEmail(),fecha:nowISO()},
       actualizado:nowISO(),actualizadoPor:myName(),historial:addHist(it,`Cerró con evidencia (${nombre}): ${comentario}`)};
     delete nv.id;delete nv.alerta;
     await setDoc(doc(db,"hallazgos",it.id),nv);
@@ -862,12 +953,14 @@ $("#tbody").addEventListener("change",async e=>{
 });
 document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;sortDir=sortKey===k?-sortDir:1;sortKey=k;render()});
 $("#strip").addEventListener("click",e=>{const b=e.target.closest("button");if(b){fAlerta=fAlerta===b.dataset.f?"":b.dataset.f;render()}});
-["#q","#f-estado","#f-resp","#f-cat"].forEach(s=>$(s).addEventListener("input",render));
-document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b)return;tab=b.dataset.tab;fAlerta="";$("#f-resp").value="";render()});
+["#q","#f-estado","#f-resp","#f-cat","#f-emp"].forEach(s=>$(s).addEventListener("input",render));
+document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b)return;tab=b.dataset.tab;fAlerta="";$("#f-resp").value="";$("#f-emp").value="";render()});
+
+frm.responsableCorreo.addEventListener("change",()=>{const p=pById(frm.responsableCorreo.value);if(p&&p.empresa)frm.empresa.value=p.empresa});
 
 /* ---------- CSV ---------- */
 $("#btn-csv").onclick=()=>{
-  const cols=[["num","N°"],["tipo","Tipo"],["fechaDeteccion","Fecha detección"],["detectadoPor","Detectado por"],["origen","Origen"],["zona","Zona"],["descripcion","Descripción"],["accion","Acción requerida"],["categoria","Categoría"],["responsable","Responsable"],["fechaCompromiso","Fecha compromiso"],["fechaCierre","Fecha cierre"],["prioridad","Prioridad"],["estado","Estado"],["alerta","Alerta"],["observaciones","Observaciones"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrado por"],["cierreArchivo","Archivo de evidencia"],["registradoPor","Registrado por"],["actualizadoPor","Última modificación por"]];
+  const cols=[["num","N°"],["tipo","Tipo"],["fechaDeteccion","Fecha detección"],["detectadoPor","Detectado por"],["origen","Origen"],["zona","Zona"],["descripcion","Descripción"],["accion","Acción requerida"],["categoria","Categoría"],["responsable","Responsable"],["empresa","Empresa responsable"],["fechaCompromiso","Fecha compromiso"],["fechaCierre","Fecha cierre"],["prioridad","Prioridad"],["estado","Estado"],["alerta","Alerta"],["observaciones","Observaciones"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrado por"],["cierreArchivo","Archivo de evidencia"],["registradoPor","Registrado por"],["actualizadoPor","Última modificación por"]];
   const rows=items.filter(i=>(i.tipo||"Compromiso")===tab).sort((a,b)=>(a.num||0)-(b.num||0)).map(i=>({...i,alerta:alerta(i),fechaDeteccion:fmt(i.fechaDeteccion),fechaCompromiso:fmt(i.fechaCompromiso),fechaCierre:fmt(i.fechaCierre),
     cierreComentario:i.cierre?i.cierre.comentario:"",cierrePor:i.cierre?i.cierre.por:"",cierreArchivo:i.cierre&&i.cierre.archivo?i.cierre.archivo.nombre:""}));
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
