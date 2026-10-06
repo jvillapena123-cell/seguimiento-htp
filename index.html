@@ -106,6 +106,9 @@ td select.estado{padding:5px 6px;border:1px solid var(--line);border-radius:6px;
 
 /* Dashboard */
 .dash{padding-top:20px;display:grid;gap:20px}
+.dash>*,.ecards>*{min-width:0}
+#b-filt{display:none}
+.tabs .sm{display:none}
 .dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .seg button{border:0;background:none;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
@@ -121,7 +124,7 @@ td select.estado{padding:5px 6px;border:1px solid var(--line);border-radius:6px;
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dash-kpi .r b{color:var(--rojo)}}
 .dash-kpi .o b{color:var(--naranja)!important}
 .tscroll{overflow-x:auto}
-.dtab{width:100%;border-collapse:collapse;font-size:13.5px}
+.dtab{width:100%;border-collapse:collapse;font-size:13.5px;min-width:0}
 .dtab th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
 .dtab td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
 .dtab td.n,.dtab th.n{text-align:right;font-variant-numeric:tabular-nums}
@@ -267,6 +270,140 @@ label textarea{min-height:64px;resize:vertical}
 .gate-msg.err{color:var(--rojo)}
 .gate-links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px}
 .seed{margin-top:16px}
+
+/* Hallazgo en terreno */
+#dlgq{width:min(520px,96vw)}
+#dlgq form{display:flex;flex-direction:column;max-height:92vh}
+.q-body{overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+.qs h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.qs h3 span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--azul);color:#fff;font-size:12px}
+.qs h3 small{font-weight:500;color:var(--muted);font-size:12px}
+.qs input,.qs textarea,.qs select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:16px}
+.qs textarea{resize:vertical;min-height:84px}
+.q-row{display:flex;gap:10px}
+.q-big{flex:1;border:0;border-radius:12px;padding:16px 12px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.q-cam{background:var(--naranja);color:#fff}
+.q-gal{background:var(--gris);color:var(--text)}
+.q-photos{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.q-photos:empty{display:none}
+.q-photos .ph{width:92px;height:92px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chips:empty{display:none}
+.chips button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chips.big button{padding:11px 14px;font-size:14.5px;border-radius:10px}
+.chips button[aria-pressed="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+.q-gps{margin-top:10px;background:none;border:1px dashed var(--azul-claro);color:var(--azul-claro);border-radius:10px;padding:10px 12px;font:inherit;font-weight:600;cursor:pointer;width:100%}
+.q-gps.ok{border-style:solid;border-color:var(--ok);color:var(--ok)}
+.q-prio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.q-prio button{border:2px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:13px 6px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.q-prio button.pa[aria-pressed="true"]{border-color:var(--rojo);background:var(--rojo-bg);color:var(--rojo)}
+.q-prio button.pm[aria-pressed="true"]{border-color:var(--naranja);background:var(--nar-bg);color:var(--nar)}
+.q-prio button.pb[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+.q-foot .btn-primary{flex:1;padding:14px;font-size:16px}
+.q-done{align-items:stretch;text-align:center;padding:30px 20px;gap:12px}
+.q-done h3{margin:0;font-size:20px}
+.q-done .q-big{flex:none}
+.q-ok{width:72px;height:72px;border-radius:50%;background:var(--ok-bg);color:var(--ok);font-size:40px;font-weight:800;display:grid;place-items:center;margin:0 auto}
+.q-ok.pend{background:var(--nar-bg);color:var(--nar)}
+.q-who{margin:0;text-align:center}
+
+/* ===== Celular ===== */
+@media (max-width:760px){
+  header.top{padding:10px 12px 0}
+  .brand{flex-wrap:nowrap;align-items:center;gap:10px}
+  .brand>div:first-child{min-width:0}
+  .brand h1{font-size:15.5px;line-height:1.25}
+  .brand p{display:none}
+  .who{flex-direction:row;align-items:center;gap:6px;flex-shrink:0;font-size:11.5px}
+  #who-name{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who-btn{padding:5px 10px;font-size:12px}
+  .sync span:last-child{display:none}
+  .tabs{margin:10px -12px 0;padding:0 8px;gap:2px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:1 0 auto;padding:10px 8px;font-size:12.5px}
+  .tabs .cnt{margin-left:4px;padding:1px 6px}
+  .tabs .lg{display:none}.tabs .sm{display:inline}
+  main{padding:0 10px 100px}
+
+  /* Indicadores */
+  .strip{grid-template-columns:repeat(3,1fr);margin-bottom:12px}
+  .strip button{padding:10px 10px 12px}
+  .strip button:nth-child(n+4){border-top:1px solid var(--line)}
+  .strip button:nth-child(3){border-right:0}
+  .strip button:nth-child(5){grid-column:span 2}
+  .strip b{font-size:22px}
+  .strip span{font-size:11px;line-height:1.25;display:block}
+
+  /* Búsqueda y filtros */
+  .toolbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .toolbar input[type=search]{grid-column:span 4;font-size:16px;padding:10px}
+  #b-filt{display:block;grid-column:span 2;padding:10px 8px}
+  #b-filt.on{border-color:var(--naranja);color:var(--naranja)}
+  .toolbar select{display:none;grid-column:span 3;width:100%;font-size:14px;min-width:0}
+  .toolbar.open select{display:block}
+  #btn-csv{grid-column:span 2;padding:10px 6px;font-size:13px}
+  #btn-new{grid-column:span 4;padding:10px 8px}
+  #btn-new[hidden]+*{grid-column:span 6}
+
+  /* Lista como tarjetas */
+  #list tr.row{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px 12px 12px 14px;border-left-width:5px}
+  #list tr.row td{padding:0;min-width:0;font-size:13.5px}
+  #list tr.row td:nth-child(1){grid-row:1;grid-column:1;align-self:center}
+  #list tr.row td:nth-child(10){grid-row:1;grid-column:2;justify-self:end;align-self:center}
+  #list tr.row td:nth-child(2){grid-column:1/-1;font-size:14.5px}
+  #list tr.row td:nth-child(9),#list tr.row td:nth-child(11){align-self:end}
+  #list tr.row td:nth-child(11){justify-self:end;text-align:right}
+  #list td[data-l]::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:1px}
+  #list tr.row td select.estado{width:100%;font-size:14px;padding:6px}
+  #list .btn-close{padding:8px 16px}
+  .foot span:last-child{display:none}
+  .fab{padding:12px 18px;font-size:14px;right:12px}
+
+  /* Dashboard */
+  .dash{padding-top:12px;gap:14px}
+  .dash-head{display:grid;grid-template-columns:1fr;gap:8px}
+  .seg{display:flex}.seg button{flex:1;padding:9px 6px}
+  .dsel{width:100%;font-size:16px;min-width:0}
+  #d-fecha{font-size:11.5px}
+  .dash-kpi{gap:8px}
+  .dash-kpi div{padding:10px 12px}
+  .dash-kpi b{font-size:22px}
+  #d-tabla{display:none!important}
+  .ecards{gap:12px}
+  .ecard{padding:12px;gap:10px}
+  .ek{gap:4px}.ek div{padding:6px 2px}.ek b{font-size:18px}.ek span{font-size:10.5px}
+  .av{min-width:0}
+  .ecard .go{align-self:stretch;text-align:center;padding:9px}
+  .card{padding:14px}
+  .dash .dtab thead{display:none}
+  .dash .dtab,.dash .dtab tbody{display:block;width:100%;min-width:0}
+  .dash .dtab tr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .dash .dtab td{border:0;padding:0;font-size:13px;min-width:0;overflow-wrap:anywhere}
+  #d-prox td:nth-child(1){grid-row:1;grid-column:1}
+  #d-prox td:nth-child(2){grid-row:1;grid-column:2}
+  #d-prox td:nth-child(6){grid-row:1/3;grid-column:3;align-self:center}
+  #d-prox td:nth-child(3),#d-prox td:nth-child(4),#d-prox td:nth-child(5){grid-column:2;color:var(--muted);font-size:12px}
+  #d-prox tr td:nth-child(3){grid-row:2}
+  #d-prox tr td:nth-child(4){grid-row:3}
+  #d-prox tr td:nth-child(5){grid-row:4}
+  #d-prox td.empty{grid-column:1/-1}
+
+  /* Administración */
+  .admin{padding-top:12px;gap:14px}
+  .admin>*{min-width:0}
+  dialog input,dialog select,dialog textarea,.admin input,.admin select{font-size:16px}
+  #dlgq{width:100vw;max-width:100vw}
+  #dlgq form{max-height:100%;height:100%}
+  .q-body{flex:1;padding:14px}
+  table.slim thead{display:none}
+  table.slim,table.slim tbody{display:block;width:100%;min-width:0}
+  table.slim tr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 10px;padding:12px;border-bottom:1px solid var(--line)}
+  table.slim td{border:0;padding:0;min-width:0;overflow-wrap:anywhere}
+  table.slim td:nth-child(1),table.slim td:nth-child(2){grid-column:1/-1}
+  table.slim td[data-l]::before{content:attr(data-l);display:block;color:var(--muted);font-size:11px;font-weight:600}
+  table.slim td.acts{grid-column:1/-1;display:flex;gap:8px}
+  table.slim td.acts .btn{flex:1;padding:9px}
+}
 </style>
 </head>
 <body>
@@ -345,7 +482,7 @@ label textarea{min-height:64px;resize:vertical}
       <button role="tab" data-tab="dash" aria-selected="false">Dashboard</button>
       <button role="tab" data-tab="Compromiso" aria-selected="true">Compromisos<span class="cnt" id="c-comp">0</span></button>
       <button role="tab" data-tab="Hallazgo" aria-selected="false">Hallazgos<span class="cnt" id="c-hall">0</span></button>
-      <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden>Administración</button>
+      <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden><span class="lg">Administración</span><span class="sm">Admin</span></button>
     </nav>
   </div>
 </header>
@@ -361,6 +498,7 @@ label textarea{min-height:64px;resize:vertical}
     </nav>
     <div class="toolbar">
       <input type="search" id="q" placeholder="Buscar por descripción, zona, responsable o quien detectó…" aria-label="Buscar">
+      <button class="btn btn-ghost" id="b-filt" type="button" aria-expanded="false">Filtros</button>
       <select id="f-estado" aria-label="Estado"><option value="">Todos los estados</option></select>
       <select id="f-resp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
       <select id="f-cat" aria-label="Categoría"><option value="">Todas las categorías</option></select>
@@ -489,6 +627,7 @@ label textarea{min-height:64px;resize:vertical}
             <div style="font-size:12.5px;font-weight:600;color:var(--muted)">Fotos (hasta 3)</div>
             <div class="photos" id="photos"></div>
             <input type="file" id="ph-in" accept="image/*" hidden>
+            <div id="ubic-f" class="sub" style="margin-top:8px" hidden></div>
           </div>
         </div>
       </fieldset>
@@ -529,6 +668,63 @@ label textarea{min-height:64px;resize:vertical}
 </dialog>
 
 <!-- ============ CIERRE CON EVIDENCIA ============ -->
+<dialog id="dlgq" aria-labelledby="q-title">
+  <form id="qfrm" novalidate>
+    <div class="dlg-head"><h2 id="q-title">📷 Hallazgo en terreno</h2><button type="button" class="qx" aria-label="Cerrar">×</button></div>
+    <div class="body q-body" id="q-main">
+      <section class="qs">
+        <h3><span>1</span>Foto <small>opcional, hasta 3</small></h3>
+        <div class="q-photos" id="q-photos"></div>
+        <div class="q-row">
+          <button type="button" class="q-big q-cam" id="q-cam">📷 Tomar foto</button>
+          <button type="button" class="q-big q-gal" id="q-gal">🖼️ Galería</button>
+        </div>
+        <input type="file" id="q-in-cam" accept="image/*" capture="environment" hidden>
+        <input type="file" id="q-in-gal" accept="image/*" multiple hidden>
+      </section>
+      <section class="qs">
+        <h3><span>2</span>¿Dónde?</h3>
+        <input name="zona" id="q-zona" list="dl-zonas" autocomplete="off" placeholder="Zona o sector, ej.: Sitio 2, cancha de acopio">
+        <div class="chips" id="q-zonas"></div>
+        <button type="button" class="q-gps" id="q-gps">📍 Agregar mi ubicación GPS</button>
+        <div class="sub" id="q-gps-txt"></div>
+      </section>
+      <section class="qs">
+        <h3><span>3</span>¿Qué tipo?</h3>
+        <div class="chips big" id="q-cats"></div>
+      </section>
+      <section class="qs">
+        <h3><span>4</span>¿Qué encontró?</h3>
+        <textarea name="desc" id="q-desc" rows="3" placeholder="Describa lo que vio. Puede dictar con el micrófono del teclado 🎤"></textarea>
+      </section>
+      <section class="qs">
+        <h3><span>5</span>Prioridad</h3>
+        <div class="q-prio" id="q-prio">
+          <button type="button" data-p="Alta" class="pa">Alta</button><button type="button" data-p="Media" class="pm">Media</button><button type="button" data-p="Baja" class="pb">Baja</button>
+        </div>
+      </section>
+      <section class="qs">
+        <h3><span>6</span>Responsable <small>opcional</small></h3>
+        <select name="resp" id="q-resp"></select>
+        <div class="sub" id="q-emp"></div>
+      </section>
+      <p class="sub q-who" id="q-who"></p>
+    </div>
+    <div class="body q-body q-done" id="q-done" hidden>
+      <div class="q-ok" id="q-ok-ico">✓</div>
+      <h3 id="q-ok-t">Hallazgo registrado</h3>
+      <p id="q-ok-p" class="sub"></p>
+      <button type="button" class="q-big q-cam" id="q-again">📷 Registrar otro en la misma zona</button>
+      <button type="button" class="q-big q-gal" id="q-new">Registrar otro en otra zona</button>
+      <button type="button" class="btn btn-ghost" id="q-end" style="width:100%">Terminar</button>
+    </div>
+    <div class="dlg-foot q-foot" id="q-foot">
+      <button type="button" class="btn btn-ghost qx">Cancelar</button>
+      <button type="submit" class="btn btn-primary" id="q-save">Guardar hallazgo</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="dlg-close" aria-labelledby="close-title">
   <form id="cfrm">
     <div class="dlg-head"><h2 id="close-title">Cerrar con evidencia</h2><button type="button" class="cx" aria-label="Cerrar">×</button></div>
@@ -549,7 +745,7 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost cx">Cancelar</button><button type="submit" class="btn btn-close" id="c-save">Cerrar con evidencia</button></div></div>
   </form>
 </dialog>
-<button class="fab" id="fab" hidden><span>📷</span>Registrar hallazgo</button>
+<button class="fab" id="fab" hidden><span>📷</span>Hallazgo en terreno</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
 <datalist id="dl-empresas"></datalist>
@@ -559,7 +755,7 @@ label textarea{min-height:64px;resize:vertical}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, addDoc, writeBatch }
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs, addDoc, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAILS } from "./firebase-config.js";
 
@@ -618,7 +814,9 @@ const authMsg=c=>({"auth/invalid-credential":"Correo o contraseña incorrectos",
 
 if(!firebaseConfig||!firebaseConfig.apiKey||firebaseConfig.apiKey.startsWith("PEGAR")){showGate("g-setup")}
 else{
-  const app=initializeApp(firebaseConfig); auth=getAuth(app); auth.languageCode="es"; db=getFirestore(app);
+  const app=initializeApp(firebaseConfig); auth=getAuth(app); auth.languageCode="es";
+  // Caché local: permite registrar sin señal y enviar al recuperarla
+  try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}catch(e){console.warn("Sin caché local",e);db=getFirestore(app)}
   onAuthStateChanged(auth,u=>{authUser=u;boot()});
 }
 $("#f-login").addEventListener("submit",async e=>{e.preventDefault();const f=e.target;
@@ -649,7 +847,8 @@ async function boot(){
   myAcceso=acc?acc.acceso:"";
   isAdmin=bootstrap||myAcceso==="Administrador";
   setSync(false,"Conectando…");
-  unsubs.push(onSnapshot(collection(db,"hallazgos"),snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));setSync(true,"Sincronizado");render()},
+  unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
   unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
     resolveMe();if(isAdmin&&!synced){synced=true;syncAccesos()}render()},
@@ -785,6 +984,7 @@ function render(){
   const ems=[...new Set(all.map(i=>i.empresa).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
   $("#f-emp").innerHTML='<option value="">Todas las empresas</option>'+ems.map(x=>`<option ${x===fem?"selected":""}>${esc(x)}</option>`).join("");
   $("#f-emp").value=ems.includes(fem)?fem:"";
+  {const nf=[fe,fr,fc,fem].filter(Boolean).length;$("#b-filt").textContent=nf?`Filtros (${nf})`:"Filtros";$("#b-filt").classList.toggle("on",nf>0)}
   let list=all.filter(i=>(!fAlerta||i.alerta===fAlerta)&&(!fe||i.estado===fe)&&(!fr||(fr==="__me"?(persona?respId(i)===persona.id:i.responsableCorreo===myEmail()):i.responsable===fr))&&(!fc||i.categoria===fc)&&(!fem||i.empresa===fem)&&
     (!q||[i.descripcion,i.zona,i.responsable,i.empresa,i.detectadoPor,i.accion,i.observaciones].join(" ").toLowerCase().includes(q)));
   list.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];
@@ -820,10 +1020,10 @@ function renderAdmin(){
   const ps=[...personas].sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   $("#ptbody").innerHTML=ps.map(p=>`<tr class="${p.activo===false?"inactive":""}">
     <td><b>${esc(p.nombre)}</b>${p.cargo||p.empresa?`<div class="sub">${esc([p.cargo,p.empresa].filter(Boolean).join(" · "))}</div>`:""}</td><td>${esc(pCorreo(p))}${conCorreo(pCorreo(p)).length>1?`<div class="sub">Compartido por ${conCorreo(pCorreo(p)).length}</div>`:""}</td>
-    <td>${p.acceso==="Administrador"?'<span class="tag u">Administrador</span>':`<span class="tag">${esc(p.acceso||"Sin acceso")}</span>`}</td>
-    <td>${p.responsable?"Sí":"No"}</td>
-    <td><input type="checkbox" data-act="${esc(p.id)}" ${p.activo!==false?"checked":""} aria-label="Activo"></td>
-    <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-edit="${esc(p.id)}">Editar</button> <button class="btn btn-danger btn-sm" data-delp="${esc(p.id)}">Quitar</button></td></tr>`).join("");
+    <td data-l="Acceso">${p.acceso==="Administrador"?'<span class="tag u">Administrador</span>':`<span class="tag">${esc(p.acceso||"Sin acceso")}</span>`}</td>
+    <td data-l="Responsable">${p.responsable?"Sí":"No"}</td>
+    <td data-l="Activo"><input type="checkbox" data-act="${esc(p.id)}" ${p.activo!==false?"checked":""} aria-label="Activo"></td>
+    <td class="acts" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-edit="${esc(p.id)}">Editar</button> <button class="btn btn-danger btn-sm" data-delp="${esc(p.id)}">Quitar</button></td></tr>`).join("");
   $("#pempty").hidden=ps.length>0;
   $("#seed-box").hidden=items.length>0;
   const msgs=[];
@@ -932,6 +1132,7 @@ function openForm(it,forceTipo){
   const cb=it?closeBlock(it):"";const bc=$("#btn-close-f");bc.hidden=!it||closed||!canWrite();bc.disabled=!!cb;bc.title=cb;
   $("#cierre-box").hidden=!(closed&&it.cierre);if(closed&&it.cierre)renderEvid(it.cierre,$("#cierre-evid"));
   formPhotos=[];renderPhotos(it,lock);
+  const u=it&&it.ubicacion;$("#ubic-f").hidden=!u;if(u)$("#ubic-f").innerHTML=`📍 Ubicación registrada en terreno · <a href="https://www.google.com/maps?q=${u.lat},${u.lng}" target="_blank" rel="noopener">Ver en mapa</a> (precisión ±${u.prec} m)`;
   const h=(it&&it.historial)||[];$("#hist-box").hidden=!h.length;
   $("#hist").innerHTML=[...h].reverse().map(x=>`<li><b>${esc(x.por)}</b> · ${esc(x.accion)}<br>${fmtDT(x.fecha)}</li>`).join("");
   dlg.showModal();
@@ -978,7 +1179,103 @@ $("#btn-del").onclick=async()=>{if(editId&&confirm("¿Eliminar este registro? Es
   try{await deleteDoc(doc(db,"hallazgos",editId));if(it&&it.cierre&&it.cierre.archivo&&it.cierre.archivo.evidId)await deleteDoc(doc(db,"evidencias",it.cierre.archivo.evidId)).catch(()=>{});dlg.close();toast("Registro eliminado")}catch(err){fbErr(err,"eliminar")}}};
 document.querySelectorAll(".x").forEach(b=>b.onclick=()=>dlg.close());
 $("#btn-new").onclick=()=>openForm(null);
-$("#fab").onclick=()=>openForm(null,"Hallazgo");
+$("#fab").onclick=()=>openQuick();
+
+/* ---------- Hallazgo en terreno ---------- */
+const dlgq=$("#dlgq"), qfrm=$("#qfrm");
+const QCATS=["Orden y aseo","Seguridad","Infraestructura","Equipos","Residuos","Medio ambiente","Otro"];
+let qPhotos=[], qCat="Orden y aseo", qPrio="Media", qUbic=null, qBusy=false;
+function qZonas(){const c={};for(const i of items){const z=(i.zona||"").trim();if(z)c[z]=(c[z]||0)+(i.tipo==="Hallazgo"?2:1)}
+  let last="";try{last=localStorage.getItem("htp-q-zona")||""}catch(e){}
+  const top=Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,6);if(last&&!top.includes(last))top.unshift(last);return top.slice(0,6)}
+function qRender(){
+  $("#q-photos").innerHTML="";
+  qPhotos.forEach((p,k)=>{const d=document.createElement("div");d.className="ph";const im=new Image();im.src=p.url;im.alt="Foto del hallazgo";im.onclick=()=>openViewer(p.url);
+    const x=document.createElement("button");x.type="button";x.textContent="×";x.setAttribute("aria-label","Quitar foto");x.onclick=()=>{qPhotos.splice(k,1);qRender()};d.append(im,x);$("#q-photos").appendChild(d)});
+  const full=qPhotos.length>=3;$("#q-cam").disabled=full;$("#q-gal").disabled=full;$("#q-cam").style.opacity=$("#q-gal").style.opacity=full?.5:1;
+  $("#q-cam").textContent=qPhotos.length?"📷 Otra foto":"📷 Tomar foto";
+  const z=$("#q-zona").value.trim();
+  $("#q-zonas").innerHTML=qZonas().map(x=>`<button type="button" data-z="${esc(x)}" aria-pressed="${x===z}">${esc(x)}</button>`).join("");
+  $("#q-cats").innerHTML=QCATS.map(c=>`<button type="button" data-c="${esc(c)}" aria-pressed="${c===qCat}">${esc(c)}</button>`).join("");
+  document.querySelectorAll("#q-prio button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.p===qPrio)));
+  const rp=pById($("#q-resp").value);$("#q-emp").textContent=rp&&rp.empresa?`Empresa responsable: ${rp.empresa}`:"";
+}
+function openQuick(keepZona){
+  if(!canWrite()){toast("Su acceso es solo de lectura");return}
+  if(dlg.open)dlg.close();
+  const zona=keepZona?$("#q-zona").value:"";
+  qfrm.reset();qPhotos=[];qCat="Orden y aseo";qPrio="Media";if(!keepZona)qUbic=null;
+  $("#q-zona").value=zona;
+  $("#q-gps").classList.toggle("ok",!!qUbic);$("#q-gps").textContent=qUbic?"📍 Ubicación agregada · tocar para actualizar":"📍 Agregar mi ubicación GPS";$("#q-gps-txt").textContent=qUbic?`Precisión ±${qUbic.prec} m`:"";
+  fillPersonSelect($("#q-resp"),responsables(),"","","Por asignar (lo define el administrador)");
+  $("#q-who").textContent=`Detectado por ${myName()} · ${fmt(hoyISO())} · Origen: Recorrido en terreno`;
+  $("#q-main").hidden=false;$("#q-foot").hidden=false;$("#q-done").hidden=true;
+  qRender();if(!dlgq.open)dlgq.showModal();$("#q-main").scrollTop=0;
+}
+function qAdd(files){for(const f of files){if(qPhotos.length>=3){toast("Máximo 3 fotos");break}if(!f.type.startsWith("image/")){toast("Solo se aceptan fotos");continue}qPhotos.push({file:f,url:URL.createObjectURL(f)})}qRender()}
+$("#q-cam").onclick=()=>$("#q-in-cam").click();
+$("#q-gal").onclick=()=>$("#q-in-gal").click();
+$("#q-in-cam").addEventListener("change",e=>{qAdd([...e.target.files]);e.target.value=""});
+$("#q-in-gal").addEventListener("change",e=>{qAdd([...e.target.files]);e.target.value=""});
+$("#q-zonas").addEventListener("click",e=>{const b=e.target.closest("[data-z]");if(!b)return;$("#q-zona").value=b.dataset.z;qRender()});
+$("#q-zona").addEventListener("input",qRender);
+$("#q-cats").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(!b)return;qCat=b.dataset.c;qRender()});
+$("#q-prio").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;qPrio=b.dataset.p;qRender()});
+$("#q-resp").addEventListener("change",qRender);
+$("#q-gps").onclick=()=>{
+  if(!navigator.geolocation){toast("Este equipo no entrega ubicación");return}
+  $("#q-gps").textContent="📍 Buscando ubicación…";
+  navigator.geolocation.getCurrentPosition(p=>{qUbic={lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6),prec:Math.round(p.coords.accuracy)};
+    $("#q-gps").classList.add("ok");$("#q-gps").textContent="📍 Ubicación agregada · tocar para actualizar";$("#q-gps-txt").textContent=`Precisión ±${qUbic.prec} m`},
+    err=>{$("#q-gps").textContent="📍 Agregar mi ubicación GPS";toast(err.code===1?"Permita el acceso a la ubicación en el navegador":"No se pudo obtener la ubicación. Intente al aire libre")},
+    {enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+};
+document.querySelectorAll(".qx").forEach(b=>b.onclick=()=>{if(qBusy)return;if((qPhotos.length||$("#q-desc").value.trim())&&!$("#q-main").hidden&&!confirm("¿Descartar este hallazgo sin guardar?"))return;dlgq.close()});
+dlgq.addEventListener("cancel",e=>{if(qBusy)e.preventDefault()});
+$("#q-again").onclick=()=>openQuick(true);
+$("#q-new").onclick=()=>openQuick(false);
+$("#q-end").onclick=()=>{dlgq.close();if(tab!=="Hallazgo"&&tab!=="dash"){tab="Hallazgo";render()}};
+qfrm.addEventListener("submit",async e=>{
+  e.preventDefault();if(qBusy)return;
+  const zona=$("#q-zona").value.trim(), desc=$("#q-desc").value.trim();
+  if(!zona){toast("Indique dónde está el hallazgo");$("#q-zona").focus();return}
+  if(!desc){toast("Describa qué encontró");$("#q-desc").focus();return}
+  qBusy=true;const sb=$("#q-save");sb.disabled=true;sb.textContent=qPhotos.length?"Preparando fotos…":"Guardando…";
+  try{
+    const id="h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const rid=$("#q-resp").value, rp=rid?pById(rid):null;
+    const it={tipo:"Hallazgo",fechaDeteccion:hoyISO(),origen:"Recorrido en terreno",zona,categoria:qCat,descripcion:desc,accion:"",prioridad:qPrio,fechaCompromiso:"",
+      empresa:rp&&rp.empresa?rp.empresa:"",estado:"Pendiente",observaciones:"",
+      detectadoPorId:persona?persona.id:"",detectadoPorCorreo:myEmail(),detectadoPor:myName(),
+      responsableId:rid||"",responsableCorreo:rid?correoOf(rid):"",responsable:rid?nameOf(rid):"",
+      fechaCierre:"",cierre:null,num:items.reduce((m,x)=>Math.max(m,x.num||0),0)+1,
+      creado:nowISO(),registradoPor:myName(),actualizado:nowISO(),actualizadoPor:myName(),historial:addHist({},"Registró el hallazgo en terreno")};
+    if(qUbic)it.ubicacion=qUbic;
+    const writes=[],fotos=[];
+    for(const ph of qPhotos){
+      const data=await compressImage(ph.file);if(!data)throw{code:"too_large"};
+      const meta={nombre:(ph.file.name||"foto").replace(/\.[^.]+$/,"")+".jpg",tipo:"image/jpeg",kb:Math.round(data.length*.75/1024)};
+      const r=doc(collection(db,"evidencias"));
+      writes.push(setDoc(r,{...meta,data,uso:"deteccion",hallazgoId:id,creadoPor:myEmail(),creado:nowISO()}));
+      fotos.push({...meta,evidId:r.id});
+    }
+    if(fotos.length){it.fotos=fotos;it.historial=addHist({historial:it.historial},`Agregó ${fotos.length} foto${fotos.length>1?"s":""}`)}
+    sb.textContent="Guardando…";
+    writes.push(setDoc(doc(db,"hallazgos",id),it));
+    const all=Promise.all(writes);
+    all.catch(err=>{console.error(err);toast(err&&err.code==="permission-denied"?"No tiene permiso para guardar hallazgos":"Un hallazgo no se pudo enviar. Revíselo en la lista")});
+    const res=await Promise.race([all.then(()=>"ok"),new Promise(r=>setTimeout(()=>r("pend"),navigator.onLine?10000:800))]);
+    try{localStorage.setItem("htp-q-zona",zona)}catch(e){}
+    const ok=res==="ok";
+    $("#q-ok-ico").className="q-ok"+(ok?"":" pend");$("#q-ok-ico").textContent=ok?"✓":"⏳";
+    $("#q-ok-t").textContent=ok?`Hallazgo N° ${String(it.num).padStart(3,"0")} registrado`:"Guardado en el celular";
+    $("#q-ok-p").textContent=ok?`${zona} · ${qCat} · prioridad ${qPrio}${fotos.length?` · ${fotos.length} foto${fotos.length>1?"s":""}`:""}`:"No hay señal ahora. El hallazgo se enviará solo cuando el celular recupere conexión. No cierre la sesión hasta que arriba diga Sincronizado.";
+    $("#q-main").hidden=true;$("#q-foot").hidden=true;$("#q-done").hidden=false;
+  }catch(err){console.error(err);toast(err&&err.code==="too_large"?"Una foto es demasiado pesada. Pruebe con otra":"No se pudo guardar. Intente de nuevo")}
+  finally{qBusy=false;sb.disabled=false;sb.textContent="Guardar hallazgo"}
+});
+window.addEventListener("offline",()=>toast("Sin señal: puede seguir registrando, se enviará después"));
+window.addEventListener("online",()=>toast("Conexión recuperada"));
 
 /* ---------- Fotos del hallazgo ---------- */
 const evidCache={};
@@ -1084,6 +1381,7 @@ $("#btn-reopen").onclick=async()=>{
 
 /* ---------- Interacción tabla ---------- */
 $("#d-tipo").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(!b)return;dTipo=b.dataset.t;renderDash()});
+$("#b-filt").addEventListener("click",()=>{const t=document.querySelector(".toolbar"),o=!t.classList.contains("open");t.classList.toggle("open",o);$("#b-filt").setAttribute("aria-expanded",String(o))});
 $("#d-emp-sel").addEventListener("change",e=>{dEmp=e.target.value;renderDash()});
 $("#dash").addEventListener("click",e=>{const tr=e.target.closest("tr.clk,.elist li,button.go");if(tr)dashGo(tr)});
 $("#dash").addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr.clk,.elist li");if(tr)dashGo(tr)}});
