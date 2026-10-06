@@ -104,6 +104,58 @@ td select.estado{padding:5px 6px;border:1px solid var(--line);border-radius:6px;
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:12px}
 
+/* Dashboard */
+.dash{padding-top:20px;display:grid;gap:20px}
+.dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--azul);color:#fff}
+.dash-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dash-kpi div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.dash-kpi b{display:block;font-size:28px;font-weight:800;color:var(--azul);line-height:1.1}
+.dash-kpi span{font-size:12px;color:var(--muted)}
+.dash-kpi .r b{color:var(--rojo)}.dash-kpi .o b{color:var(--naranja)}
+:root[data-theme="dark"] .dash-kpi b{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dash-kpi b{color:#BFD0EE}}
+:root[data-theme="dark"] .dash-kpi .r b{color:var(--rojo)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dash-kpi .r b{color:var(--rojo)}}
+.dash-kpi .o b{color:var(--naranja)!important}
+.tscroll{overflow-x:auto}
+.dtab{width:100%;border-collapse:collapse;font-size:13.5px}
+.dtab th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dtab td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dtab td.n,.dtab th.n{text-align:right;font-variant-numeric:tabular-nums}
+.dtab tr.clk{cursor:pointer}.dtab tr.clk:hover td{background:color-mix(in srgb,var(--azul-claro) 7%,transparent)}
+.dtab tr.tot td{font-weight:800;border-bottom:0}
+.dtab .z{color:var(--muted)}
+.dtab .rj{color:var(--rojo);font-weight:700}.dtab .nj{color:var(--naranja);font-weight:700}
+.av{display:flex;align-items:center;gap:8px;min-width:150px}
+.av .bar{flex:1;height:10px;border-radius:5px;background:var(--gris);overflow:hidden;display:flex}
+.av .bar i{display:block;height:100%}
+.av .bar .c{background:var(--ok)}.av .bar .v{background:var(--rojo)}.av .bar .p{background:var(--naranja)}
+.av b{font-size:12.5px;min-width:36px;text-align:right}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.dsel{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;min-width:200px}
+.ecards{display:grid;grid-template-columns:repeat(var(--nc,3),minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.ecards{grid-template-columns:repeat(var(--nc2,2),minmax(0,1fr))}}
+.ecard{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--ec);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ecard h3{margin:0;font-size:16px;color:var(--ec);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ecard h3 small{font-size:12px;color:var(--muted);font-weight:600}
+.ek{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.ek div{background:color-mix(in srgb,var(--ec) 8%,transparent);border-radius:8px;padding:8px 4px}
+.ek b{display:block;font-size:20px;font-weight:800;line-height:1.1}
+.ek span{font-size:11px;color:var(--muted)}
+.ek .r b{color:var(--rojo)}.ek .o b{color:var(--naranja)}
+.elist{list-style:none;margin:0;padding:0;font-size:13px}
+.elist li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+.elist li:hover{color:var(--azul-claro)}
+.elist .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.elist .pill{flex-shrink:0}
+.ecard .go{align-self:flex-start;background:none;border:1px solid var(--ec);color:var(--ec);border-radius:6px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.ecard .ok{font-size:13px;color:var(--ok);margin:0}
+@media (max-width:760px){.dash-kpi{grid-template-columns:repeat(2,1fr)}.ecards{grid-template-columns:1fr}}
+
 /* Administración */
 .admin{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:20px;padding-top:20px;align-items:start}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
@@ -290,6 +342,7 @@ label textarea{min-height:64px;resize:vertical}
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-tab="dash" aria-selected="false">Dashboard</button>
       <button role="tab" data-tab="Compromiso" aria-selected="true">Compromisos<span class="cnt" id="c-comp">0</span></button>
       <button role="tab" data-tab="Hallazgo" aria-selected="false">Hallazgos<span class="cnt" id="c-hall">0</span></button>
       <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden>Administración</button>
@@ -335,6 +388,44 @@ label textarea{min-height:64px;resize:vertical}
       <div class="empty" id="empty" hidden></div>
     </div>
     <div class="foot"><span id="count"></span><span>Toque una fila para ver el detalle, el historial o editar.</span></div>
+  </section>
+
+  <section id="dash" hidden>
+    <div class="dash">
+      <div class="dash-head">
+        <div class="seg" id="d-tipo" role="group" aria-label="Tipo de registro">
+          <button data-t="Compromiso" aria-pressed="true">Compromisos</button>
+          <button data-t="Hallazgo" aria-pressed="false">Hallazgos</button>
+          <button data-t="" aria-pressed="false">Ambos</button>
+        </div>
+        <select class="dsel" id="d-emp-sel" aria-label="Empresa"><option value="">Todas las empresas</option></select>
+        <span class="sub" id="d-fecha"></span>
+      </div>
+      <div class="dash-kpi">
+        <div><b id="d-asig">0</b><span>Asignados</span></div>
+        <div><b id="d-cerr">0</b><span id="d-cerr-l">Cerrados</span></div>
+        <div class="r"><b id="d-venc">0</b><span>Vencidos</span></div>
+        <div class="o"><b id="d-porv">0</b><span>Vencen en 7 días o menos</span></div>
+      </div>
+      <div class="card" id="d-tabla">
+        <h2>Avance por empresa</h2>
+        <p class="sub" style="margin:0 0 12px">Toque una empresa para ver su lista de registros.</p>
+        <div class="tscroll"><table class="dtab">
+          <thead><tr><th>Empresa</th><th class="n">Asignados</th><th class="n">Cerrados</th><th class="n">Abiertos</th><th class="n">Vencidos</th><th class="n">Vencen ≤ 7 días</th><th>Avance</th></tr></thead>
+          <tbody id="d-emp"></tbody>
+        </table></div>
+        <div class="legend"><span><i style="background:var(--ok)"></i>Cerrados</span><span><i style="background:var(--rojo)"></i>Vencidos</span><span><i style="background:var(--naranja)"></i>Vencen en 7 días o menos</span><span><i style="background:var(--gris)"></i>Otros abiertos</span></div>
+      </div>
+      <div class="ecards" id="d-cards"></div>
+      <div class="card">
+        <h2>Próximos a vencer y vencidos</h2>
+        <p class="sub" style="margin:0 0 12px">Registros abiertos vencidos o que vencen en los próximos 7 días, del más urgente al menos urgente. Toque uno para abrirlo.</p>
+        <div class="tscroll"><table class="dtab">
+          <thead><tr><th>N°</th><th>Registro</th><th>Empresa</th><th>Responsable</th><th>Fecha compromiso</th><th>Plazo</th></tr></thead>
+          <tbody id="d-prox"></tbody>
+        </table></div>
+      </div>
+    </div>
   </section>
 
   <section id="admin" hidden>
@@ -616,6 +707,54 @@ function closeBlock(it){
   return"";
 }
 
+/* ---------- Dashboard ---------- */
+let dTipo="Compromiso", dEmp="";
+const ECOLS=["#1F3A6E","#E8804A","#2E8B57","#7A4FA0","#C0392B","#2A8FA8","#B8860B","#5D6D7E"];
+const DIAS_PROX=7;
+function renderDash(){
+  document.querySelectorAll("#d-tipo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===dTipo)));
+  $("#d-fecha").textContent="Actualizado al "+fmt(hoyISO());
+  const allT=items.filter(i=>!dTipo||(i.tipo||"Compromiso")===dTipo).map(it=>{const d=it.estado==="Cerrado"?null:dias(it.fechaCompromiso);return{...it,_d:d,empresa:(it.empresa||"").trim()}});
+  const empList=[...new Set([...items.map(i=>(i.empresa||"").trim()),...personas.map(p=>(p.empresa||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  const colorOf=e=>e?ECOLS[empList.indexOf(e)%ECOLS.length]:"#8A93A6";
+  if(dEmp&&dEmp!=="__sin"&&!empList.includes(dEmp))dEmp="";
+  $("#d-emp-sel").innerHTML='<option value="">Todas las empresas</option>'+empList.map(e=>`<option ${e===dEmp?"selected":""}>${esc(e)}</option>`).join("")+(allT.some(i=>!i.empresa)?`<option value="__sin" ${dEmp==="__sin"?"selected":""}>Sin empresa asignada</option>`:"");
+  $("#d-emp-sel").value=dEmp;
+  const all=dEmp?allT.filter(i=>dEmp==="__sin"?!i.empresa:i.empresa===dEmp):allT;
+  const isC=i=>i.estado==="Cerrado", isV=i=>!isC(i)&&i._d!=null&&i._d<0, isP=i=>!isC(i)&&i._d!=null&&i._d>=0&&i._d<=DIAS_PROX;
+  const stat=arr=>{const n=arr.length,c=arr.filter(isC).length,v=arr.filter(isV).length,p=arr.filter(isP).length;return{n,c,a:n-c,v,p,pct:n?Math.round(c/n*100):0}};
+  const T=stat(all);
+  $("#d-asig").textContent=T.n;$("#d-cerr").textContent=T.c;$("#d-cerr-l").textContent=`Cerrados (${T.pct}%)`;$("#d-venc").textContent=T.v;$("#d-porv").textContent=T.p;
+  const g={};
+  for(const e of (dEmp?(dEmp==="__sin"?[]:[dEmp]):empList))g[e]=[];
+  for(const i of all){const k=(i.empresa||"").trim();(g[k]=g[k]||[]).push(i)}
+  const keys=Object.keys(g).sort((a,b)=>!a?1:!b?-1:a.localeCompare(b,"es"));
+  const bar=s=>{const w=x=>s.n?(x/s.n*100).toFixed(1):0;return`<div class="av"><div class="bar"><i class="c" style="width:${w(s.c)}%"></i><i class="v" style="width:${w(s.v)}%"></i><i class="p" style="width:${w(s.p)}%"></i></div><b>${s.pct}%</b></div>`};
+  const row=(name,s,cls,emp)=>`<tr class="${cls}" ${emp!=null?`data-emp="${esc(emp)}" tabindex="0"`:""}><td>${name}</td><td class="n">${s.n}</td><td class="n">${s.c}</td><td class="n">${s.a}</td><td class="n ${s.v?"rj":"z"}">${s.v}</td><td class="n ${s.p?"nj":"z"}">${s.p}</td><td>${bar(s)}</td></tr>`;
+  $("#d-emp").innerHTML=keys.length?keys.map(k=>row(k?esc(k):'<span class="z">Sin empresa asignada</span>',stat(g[k]),"clk",k)).join("")+(keys.length>1?row("Total",T,"tot",null):""):'<tr><td colspan="7" class="empty">No hay registros.</td></tr>';
+  $("#d-tabla").hidden=!!dEmp;
+  const txtD=d=>d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`;
+  const nc=keys.length;$("#d-cards").style.setProperty("--nc",Math.min(Math.max(nc,1),4));$("#d-cards").style.setProperty("--nc2",Math.min(Math.max(nc,1),2));
+  $("#d-cards").innerHTML=keys.map(k=>{const arr=g[k],st=stat(arr),urg=arr.filter(i=>isV(i)||isP(i)).sort((a,b)=>a._d-b._d);
+    return`<div class="ecard" style="--ec:${colorOf(k)}">
+      <h3>${k?esc(k):"Sin empresa asignada"}<small>${st.pct}% cerrado</small></h3>
+      <div class="ek"><div><b>${st.n}</b><span>Asignados</span></div><div><b style="color:var(--ok)">${st.c}</b><span>Cerrados</span></div><div class="r"><b>${st.v}</b><span>Vencidos</span></div><div class="o"><b>${st.p}</b><span>Vencen ≤ 7 d</span></div></div>
+      ${bar(st)}
+      ${urg.length?`<ul class="elist">${urg.slice(0,5).map(i=>`<li data-id="${esc(i.id)}" tabindex="0"><span class="t">${i.num?String(i.num).padStart(3,"0")+" · ":""}${esc(i.descripcion)}</span><span class="pill ${i._d<0?"p-venc":"p-porv"}">${txtD(i._d)}</span></li>`).join("")}</ul>${urg.length>5?`<span class="sub">y ${urg.length-5} más en la lista de abajo</span>`:""}`:'<p class="ok">Sin vencidos ni vencimientos en los próximos 7 días.</p>'}
+      <button class="go" data-emp="${esc(k)}">Ver registros de ${k?esc(k):"esta lista"} →</button>
+    </div>`}).join("");
+  const prox=all.filter(i=>isV(i)||isP(i)).sort((a,b)=>a._d-b._d);
+  $("#d-prox").innerHTML=prox.length?prox.map(i=>{const d=i._d,txt=d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`;
+    return`<tr class="clk" data-id="${esc(i.id)}" tabindex="0"><td class="num">${i.num?String(i.num).padStart(3,"0"):""}</td><td>${esc(i.descripcion)}${!dTipo?`<div class="sub">${esc(i.tipo||"Compromiso")}</div>`:""}</td><td>${i.empresa?esc(i.empresa):'<span class="z">Sin empresa</span>'}</td><td>${esc(i.responsable||"")}</td><td style="white-space:nowrap">${fmt(i.fechaCompromiso)}</td><td><span class="pill ${d<0?"p-venc":"p-porv"}">${txt}</span></td></tr>`}).join(""):'<tr><td colspan="6" class="empty">No hay registros vencidos ni por vencer en los próximos 7 días.</td></tr>';
+}
+function dashGo(tr){
+  if(tr.dataset.id){const it=items.find(x=>x.id===tr.dataset.id);if(it)openForm(it);return}
+  if(tr.dataset.emp==null)return;
+  tab=dTipo||"Compromiso";fAlerta="";$("#f-resp").value="";
+  const s=$("#f-emp"),e=tr.dataset.emp;s.innerHTML=`<option value="">Todas las empresas</option>`+(e?`<option>${esc(e)}</option>`:"");s.value=e;
+  render();window.scrollTo({top:0,behavior:"smooth"});
+}
+
 /* ---------- Render ---------- */
 function render(){
   $("#c-comp").textContent=items.filter(i=>(i.tipo||"Compromiso")==="Compromiso").length;
@@ -623,14 +762,18 @@ function render(){
   $("#tab-admin").hidden=!isAdmin;
   if(tab==="admin"&&!isAdmin)tab="Compromiso";
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
-  $("#list").hidden=tab==="admin";$("#admin").hidden=tab!=="admin";
+  $("#list").hidden=tab==="admin"||tab==="dash";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";
   $("#btn-new").hidden=!canWrite();
   $("#fab").hidden=!canWrite()||tab==="admin";
+  if(tab==="dash"){renderDash();return}
   if(tab==="admin"){renderAdmin();return}
   const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value, fem=$("#f-emp").value;
   const all=items.filter(i=>(i.tipo||"Compromiso")===tab).map(it=>({...it,alerta:alerta(it)}));
-  const n=all.length,c=k=>all.filter(i=>i.alerta===k).length,cerr=c("Cerrado"),pct=n?Math.round(cerr/n*100):0;
-  $("#k-total").textContent=n;$("#k-total-l").textContent=tab==="Hallazgo"?"Hallazgos registrados":"Compromisos registrados";
+  const emsAll=[...new Set(all.map(i=>i.empresa).filter(Boolean))];
+  const empSel=emsAll.includes(fem)?fem:"";
+  const base=empSel?all.filter(i=>i.empresa===empSel):all;
+  const n=base.length,c=k=>base.filter(i=>i.alerta===k).length,cerr=c("Cerrado"),pct=n?Math.round(cerr/n*100):0;
+  $("#k-total").textContent=n;$("#k-total-l").textContent=(tab==="Hallazgo"?"Hallazgos":"Compromisos")+(empSel?" de "+empSel:" registrados");
   $("#k-venc").textContent=c("Vencido");$("#k-porv").textContent=c("Por vencer");$("#k-sin").textContent=c("Sin fecha");
   $("#k-cerr").textContent=pct+"%";$("#k-cerr-l").textContent=`Cerrados (${cerr} de ${n})`;$("#bar").style.width=pct+"%";
   document.querySelectorAll("#strip button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===fAlerta)));
@@ -940,6 +1083,10 @@ $("#btn-reopen").onclick=async()=>{
 };
 
 /* ---------- Interacción tabla ---------- */
+$("#d-tipo").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(!b)return;dTipo=b.dataset.t;renderDash()});
+$("#d-emp-sel").addEventListener("change",e=>{dEmp=e.target.value;renderDash()});
+$("#dash").addEventListener("click",e=>{const tr=e.target.closest("tr.clk,.elist li,button.go");if(tr)dashGo(tr)});
+$("#dash").addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr.clk,.elist li");if(tr)dashGo(tr)}});
 $("#tbody").addEventListener("click",e=>{if(e.target.closest("select"))return;const cb=e.target.closest("[data-close]");
   if(cb){openClose(items.find(x=>x.id===cb.dataset.close));return}
   const tr=e.target.closest("tr.row");if(tr)openForm(items.find(x=>x.id===tr.dataset.id))});
