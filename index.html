@@ -570,7 +570,7 @@ label textarea{min-height:64px;resize:vertical}
     <div class="admin">
       <div class="card">
         <h2 id="p-form-title">Agregar persona</h2>
-        <p class="help">El correo es con el que la persona ingresa. Hasta 3 personas pueden compartir un correo: en ese caso tienen el mismo acceso y, al ingresar, eligen quién son. Para que un responsable pueda cerrar con evidencia, su acceso debe ser Usuario o Administrador.</p>
+        <p class="help">El correo es con el que la persona ingresa. Hasta 3 personas pueden compartir un correo (5 en el correo de supervisores de Reloncaví): en ese caso tienen el mismo acceso y, al ingresar, eligen quién son. Para que un responsable pueda cerrar con evidencia, su acceso debe ser Usuario o Administrador.</p>
         <form id="pfrm" class="stack">
           <label>Nombre <span class="req">obligatorio</span><input name="nombre" required autocomplete="off"></label>
           <label>Correo <span class="req">obligatorio</span><input type="email" name="correo" required autocomplete="off"></label>
@@ -785,6 +785,9 @@ function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`N
 /* ---------- Estado ---------- */
 let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false;
 const MAX_POR_CORREO=3;
+// Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
+const MAX_ESPECIAL={"supervisorhuachipato@reloncavi.cl":5};
+const maxPara=c=>MAX_ESPECIAL[String(c||"").toLowerCase()]||MAX_POR_CORREO;
 let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=null, closeId=null, closeFile=null;
 const myEmail=()=>authUser?authUser.email.toLowerCase():"";
 const myName=()=>persona&&persona.nombre?persona.nombre:myEmail();
@@ -1058,7 +1061,7 @@ function renderAdmin(){
 }
 function mailHint(){const c=pfrm.correo.value.trim().toLowerCase(),g=c?conCorreo(c,pEdit):[],h=$("#p-mail-hint");
   if(!g.length){h.hidden=true;return}
-  h.hidden=false;h.innerHTML=g.length>=MAX_POR_CORREO&&!pEdit?`<b>Este correo ya lo usan ${g.length} personas</b> (máximo ${MAX_POR_CORREO}): ${g.map(x=>esc(x.nombre)).join(", ")}.`
+  h.hidden=false;h.innerHTML=g.length>=maxPara(pCorreo(g[0]))&&!pEdit?`<b>Este correo ya lo usan ${g.length} personas</b> (máximo ${maxPara(pCorreo(g[0]))}): ${g.map(x=>esc(x.nombre)).join(", ")}.`
     :`Este correo también lo usa${g.length>1?"n":""}: <b>${g.map(x=>esc(x.nombre)).join(", ")}</b>. Compartirán el mismo acceso.`}
 pfrm.correo.addEventListener("input",mailHint);
 function resetPform(){pEdit=null;pfrm.reset();pfrm.correo.disabled=false;$("#p-mail-hint").hidden=true;$("#p-form-title").textContent="Agregar persona";$("#p-save").textContent="Agregar persona";$("#p-cancel").hidden=true}
@@ -1068,7 +1071,7 @@ pfrm.addEventListener("submit",async e=>{
   const nombre=pfrm.nombre.value.trim(), correo=(prev?pCorreo(prev):pfrm.correo.value.trim()).toLowerCase(), acceso=pfrm.acceso.value;
   if(!nombre||!correo)return;
   const otros=conCorreo(correo,pEdit);
-  if(!prev&&otros.length>=MAX_POR_CORREO){toast(`Ese correo ya lo usan ${MAX_POR_CORREO} personas (máximo)`);return}
+  if(!prev&&otros.length>=maxPara(correo)){toast(`Ese correo ya lo usan ${maxPara(correo)} personas (máximo)`);return}
   if(otros.some(x=>x.nombre.toLowerCase()===nombre.toLowerCase())){toast("Ya existe una persona con ese nombre y correo");return}
   const cambia=otros.filter(x=>(x.acceso||"Sin acceso")!==acceso);
   if(cambia.length&&!confirm(`${cambia.map(x=>x.nombre).join(", ")} comparte${cambia.length>1?"n":""} este correo, así que también quedará${cambia.length>1?"n":""} con acceso "${acceso}". ¿Continuar?`))return;
