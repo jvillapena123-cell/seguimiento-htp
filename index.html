@@ -659,6 +659,7 @@ label textarea{min-height:64px;resize:vertical}
         <button type="button" class="btn btn-ghost" id="btn-reopen" hidden>Reabrir</button>
       </div>
       <div class="r">
+        <span class="lock" id="close-why" hidden style="align-self:center;max-width:260px"></span>
         <button type="button" class="btn btn-close" id="btn-close-f" hidden>Cerrar con evidencia</button>
         <button type="button" class="btn btn-ghost x">Cancelar</button>
         <button type="submit" class="btn btn-primary" id="btn-save">Guardar</button>
@@ -848,10 +849,10 @@ async function boot(){
   isAdmin=bootstrap||myAcceso==="Administrador";
   setSync(false,"Conectando…");
   unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
-    const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
+    repairResp();const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
   unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
-    resolveMe();if(isAdmin&&!synced){synced=true;syncAccesos()}render()},
+    resolveMe();if(isAdmin&&!synced){synced=true;syncAccesos()}repairResp();render()},
     e=>{console.error(e);persona=null;enterApp()}));
 }
 
@@ -891,6 +892,28 @@ async function syncAccesos(){
   }catch(e){console.error("No se pudo sincronizar accesos",e)}
 }
 
+/* Corrige registros abiertos cuyo responsable quedó con un correo antiguo o sin persona asociada (solo administrador). */
+let repairing=false;
+async function repairResp(){
+  if(!isAdmin||repairing||!personas.length||!items.length)return;
+  const fixes=[];
+  for(const it of items){
+    if(it.estado==="Cerrado")continue;
+    let p=it.responsableId?pById(it.responsableId):null;
+    if(!p&&it.responsableCorreo){const c=String(it.responsableCorreo).toLowerCase();const m=personas.filter(x=>pCorreo(x)===c);p=m.length===1?m[0]:m.find(x=>x.nombre===it.responsable)||null}
+    if(!p&&it.responsable){const m=personas.filter(x=>x.nombre===it.responsable&&x.activo!==false);p=m.length===1?m[0]:null}
+    if(!p)continue;
+    const want={responsableId:p.id,responsableCorreo:pCorreo(p),responsable:p.nombre};
+    if(it.responsableId!==want.responsableId||it.responsableCorreo!==want.responsableCorreo||it.responsable!==want.responsable)fixes.push([it.id,want]);
+  }
+  if(!fixes.length)return;
+  repairing=true;
+  try{for(let i=0;i<fixes.length;i+=400){const b=writeBatch(db);for(const[id,w]of fixes.slice(i,i+400))b.update(doc(db,"hallazgos",id),w);await b.commit()}
+    toast(`Se actualizó el responsable de ${fixes.length} registro(s) para que puedan cerrarse`)}
+  catch(e){console.error("No se pudo reparar responsables",e)}
+  finally{repairing=false}
+}
+
 /* ---------- Selects fijos ---------- */
 const frm=$("#frm"), dlg=$("#dlg"), pfrm=$("#pfrm"), cfrm=$("#cfrm"), dlgc=$("#dlg-close");
 for(const e of ESTADOS)$("#f-estado").add(new Option(e));
@@ -901,8 +924,8 @@ function closeBlock(it){
   if(it.estado==="Cerrado")return"Ya está cerrado";
   if(!it.responsableCorreo)return it.responsable?`Asigne a ${it.responsable} desde la lista de personas`:"Asigne un responsable para poder cerrar";
   if(!canWrite())return"Solo lectura";
-  if(it.responsableCorreo!==myEmail())return`Solo ${it.responsable||it.responsableCorreo} puede cerrar`;
-  if(persona&&mios().length>1&&respId(it)!==persona.id)return`Solo ${it.responsable||"el responsable"} puede cerrar`;
+  if(String(it.responsableCorreo).toLowerCase()!==myEmail())return`Solo ${it.responsable||it.responsableCorreo} puede cerrar (está asignado al correo ${it.responsableCorreo})`;
+  if(persona&&mios().length>1&&respId(it)!==persona.id&&!(!it.responsableId&&it.responsable===persona.nombre))return`Solo ${it.responsable||"el responsable"} puede cerrar`;
   return"";
 }
 
@@ -1129,7 +1152,7 @@ function openForm(it,forceTipo){
   if(closed)$("#closed-banner").textContent=`Cerrado el ${fmt(it.fechaCierre)} por ${it.cierre?it.cierre.por:"—"}.${isAdmin?" Puede reabrirlo si la evidencia no es suficiente.":""}`;
   $("#btn-reopen").hidden=!(closed&&isAdmin);
   $("#btn-del").hidden=!(it&&isAdmin);
-  const cb=it?closeBlock(it):"";const bc=$("#btn-close-f");bc.hidden=!it||closed||!canWrite();bc.disabled=!!cb;bc.title=cb;
+  const cb=it?closeBlock(it):"";const bc=$("#btn-close-f");bc.hidden=!it||closed||!canWrite();bc.disabled=!!cb;bc.title=cb;{const w=$("#close-why");w.textContent=cb;w.hidden=bc.hidden||!cb}
   $("#cierre-box").hidden=!(closed&&it.cierre);if(closed&&it.cierre)renderEvid(it.cierre,$("#cierre-evid"));
   formPhotos=[];renderPhotos(it,lock);
   const u=it&&it.ubicacion;$("#ubic-f").hidden=!u;if(u)$("#ubic-f").innerHTML=`📍 Ubicación registrada en terreno · <a href="https://www.google.com/maps?q=${u.lat},${u.lng}" target="_blank" rel="noopener">Ver en mapa</a> (precisión ±${u.prec} m)`;
