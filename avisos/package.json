@@ -1,0 +1,10 @@
+{
+  "name": "avisos-tareas-htp",
+  "private": true,
+  "type": "module",
+  "description": "Envía correos de asignación y recordatorio de las tareas de turno de HTP",
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "nodemailer": "^6.9.16"
+  }
+}
