@@ -307,6 +307,58 @@ label textarea{min-height:64px;resize:vertical}
 .q-ok.pend{background:var(--nar-bg);color:var(--nar)}
 .q-who{margin:0;text-align:center}
 
+/* ===== Tareas de turno ===== */
+.tt{padding-top:20px;display:grid;gap:20px}
+.tt>*{min-width:0}
+.tt-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.tt-kpi button{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;font:inherit;color:inherit;position:relative}
+.tt-kpi button[aria-pressed="true"]{border-color:var(--naranja);box-shadow:inset 0 -4px 0 var(--naranja)}
+.tt-kpi b{display:block;font-size:28px;font-weight:800;color:var(--azul);line-height:1.1}
+.tt-kpi span{font-size:12px;color:var(--muted)}
+.tt-kpi .r b{color:var(--rojo)!important}.tt-kpi .o b{color:var(--naranja)!important}.tt-kpi .g b{color:var(--ok)!important}
+:root[data-theme="dark"] .tt-kpi b{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tt-kpi b{color:#BFD0EE}}
+.jcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.jcard{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--ec);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.jcard[aria-pressed="true"]{outline:2px solid var(--naranja);outline-offset:1px}
+.jcard h3{margin:0;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.jcard h3 small{font-size:11px;font-weight:700;color:var(--nar);background:var(--nar-bg);padding:1px 7px;border-radius:999px}
+.jring{display:flex;align-items:center;gap:14px}
+.jring svg{flex:none}
+.jring ul{list-style:none;margin:0;padding:0;font-size:12.5px;display:grid;gap:3px;flex:1}
+.jring li{display:flex;justify-content:space-between;gap:8px}
+.jring li i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.jring li b{font-weight:700}
+.tt-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tt-bar input[type=search]{flex:1 1 220px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}
+.tt-bar select{padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;max-width:100%}
+.ttab{width:100%;border-collapse:collapse}
+.ttab th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ttab td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.5px}
+.ttab tr.row{cursor:pointer}.ttab tr.row:hover td{background:var(--gris)}
+.ttab tr.a-venc td:first-child{box-shadow:inset 4px 0 0 var(--rojo)}
+.ttab tr.a-porv td:first-child{box-shadow:inset 4px 0 0 var(--naranja)}
+.ttab tr.a-cerr td{opacity:.75}
+.t-ro{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px;font-size:13.5px}
+.t-ro div span{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.t-ro .full{grid-column:1/-1}
+.t-ro p{margin:2px 0 0;white-space:pre-wrap}
+@media (max-width:900px){.tt-kpi{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:760px){
+  .tt{padding-top:12px;gap:14px}
+  .tt-kpi{grid-template-columns:repeat(2,1fr);gap:8px}
+  .tt-kpi button{padding:10px 12px}.tt-kpi b{font-size:22px}
+  .tt-kpi button:first-child{grid-column:1/-1}
+  .jcards{grid-template-columns:1fr}
+  .tt-bar input[type=search]{flex:1 1 100%;font-size:16px}.tt-bar select{flex:1 1 100%;font-size:16px}.tt-bar .btn{flex:1}
+  .ttab thead{display:none}
+  .ttab,.ttab tbody,.ttab tr,.ttab td{display:block;width:100%}
+  .ttab tr.row{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--surface);padding:8px 4px}
+  .ttab td{border:0;padding:4px 10px}
+  .ttab td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:12px;font-weight:600}
+  .t-ro{grid-template-columns:1fr}
+}
+
 /* ===== Celular ===== */
 @media (max-width:760px){
   header.top{padding:10px 12px 0}
@@ -479,9 +531,10 @@ label textarea{min-height:64px;resize:vertical}
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
-      <button role="tab" data-tab="dash" aria-selected="false">Dashboard</button>
-      <button role="tab" data-tab="Compromiso" aria-selected="true">Compromisos<span class="cnt" id="c-comp">0</span></button>
-      <button role="tab" data-tab="Hallazgo" aria-selected="false">Hallazgos<span class="cnt" id="c-hall">0</span></button>
+      <button role="tab" data-tab="dash" aria-selected="false" id="tab-dash">Dashboard</button>
+      <button role="tab" data-tab="Compromiso" aria-selected="true" id="tab-comp">Compromisos<span class="cnt" id="c-comp">0</span></button>
+      <button role="tab" data-tab="Hallazgo" aria-selected="false" id="tab-hall">Hallazgos<span class="cnt" id="c-hall">0</span></button>
+      <button role="tab" data-tab="tareas" aria-selected="false" id="tab-tareas" hidden><span class="lg">Tareas de turno</span><span class="sm">Tareas</span><span class="cnt" id="c-tar">0</span></button>
       <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden><span class="lg">Administración</span><span class="sm">Admin</span></button>
     </nav>
   </div>
@@ -566,6 +619,40 @@ label textarea{min-height:64px;resize:vertical}
     </div>
   </section>
 
+  <section id="tareas" hidden>
+    <div class="tt">
+      <div class="dash-head">
+        <div><h2 style="margin:0;font-size:18px;color:var(--azul)">Tareas de turno</h2><span class="sub" id="t-sub">Tareas asignadas a los jefes de turno</span></div>
+        <span class="sub" id="t-fecha"></span>
+      </div>
+      <nav class="tt-kpi" id="t-kpi" aria-label="Filtrar tareas">
+        <button data-k="" aria-pressed="true"><b id="tk-total">0</b><span>Tareas en total</span></button>
+        <button data-k="abiertas"><b id="tk-ab">0</b><span id="tk-ab-l">Abiertas</span></button>
+        <button data-k="cerradas" class="g"><b id="tk-ce">0</b><span id="tk-ce-l">Cerradas</span></button>
+        <button data-k="vencidas" class="r"><b id="tk-ve">0</b><span>Vencidas</span></button>
+        <button data-k="porvencer" class="o"><b id="tk-pv">0</b><span>Vencen en 3 días o menos</span></button>
+      </nav>
+      <div>
+        <h2 style="margin:0 0 4px;font-size:15px">Avance por jefe de turno</h2>
+        <p class="sub" style="margin:0 0 10px">Toque un jefe de turno para ver solo sus tareas. Vuelva a tocarlo para ver todas.</p>
+        <div class="jcards" id="t-jefes"></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="tt-bar">
+          <input type="search" id="t-q" placeholder="Buscar tarea…" aria-label="Buscar tarea">
+          <select id="t-jefe" aria-label="Jefe de turno"><option value="">Todos los jefes de turno</option></select>
+          <button class="btn btn-ghost" id="t-csv" type="button">Exportar CSV</button>
+          <button class="btn btn-primary" id="t-new" type="button" hidden>Asignar tarea</button>
+        </div>
+        <div class="tscroll" style="margin-top:10px"><table class="ttab">
+          <thead><tr><th>N°</th><th>Tarea</th><th>Jefe de turno</th><th>Inicio</th><th>Término</th><th>Plazo</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="t-body"></tbody>
+        </table></div>
+        <div class="empty" id="t-empty" hidden></div>
+      </div>
+    </div>
+  </section>
+
   <section id="admin" hidden>
     <div class="admin">
       <div class="card">
@@ -583,7 +670,7 @@ label textarea{min-height:64px;resize:vertical}
             <option value="Administrador">Administrador: además gestiona personas</option>
             <option value="Sin acceso">Sin acceso: solo figura como responsable</option>
           </select></label>
-          <div class="checks"><label><input type="checkbox" name="responsable" checked> Puede ser responsable</label></div>
+          <div class="checks"><label><input type="checkbox" name="responsable" checked> Puede ser responsable</label><label><input type="checkbox" name="jefeTurno"> Jefe de turno (ve la pestaña Tareas de turno)</label></div>
           <div style="display:flex;gap:10px">
             <button class="btn btn-primary" type="submit" id="p-save">Agregar persona</button>
             <button class="btn btn-ghost" type="button" id="p-cancel" hidden>Cancelar</button>
@@ -746,6 +833,62 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost cx">Cancelar</button><button type="submit" class="btn btn-close" id="c-save">Cerrar con evidencia</button></div></div>
   </form>
 </dialog>
+<dialog id="dlg-t" aria-labelledby="t-title">
+  <form id="tfrm">
+    <div class="dlg-head"><h2 id="t-title">Asignar tarea</h2><button type="button" class="tx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <div class="closed-banner" id="t-banner" hidden></div>
+      <fieldset id="t-cierre" hidden><legend>Evidencia de cierre</legend><div class="evid" id="t-evid"></div></fieldset>
+      <div id="t-ro" class="t-ro" hidden></div>
+      <div id="t-edit" class="grid">
+        <label class="full">Tarea <span class="req">obligatorio</span><input name="titulo" required autocomplete="off" placeholder="Ej.: Revisar demarcación del Sitio 2"></label>
+        <label class="full">Detalle / qué se espera<textarea name="descripcion" placeholder="Describa el trabajo y qué evidencia se espera para cerrarla"></textarea></label>
+        <label>Jefe de turno responsable <span class="req">obligatorio</span><select name="responsableId" required></select></label>
+        <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
+        <label>Fecha de inicio <span class="req">obligatorio</span><input type="date" name="fechaInicio" required></label>
+        <label>Fecha de término <span class="req">obligatorio</span><input type="date" name="fechaTermino" required></label>
+        <p class="help full" id="t-mail-help" style="margin:0">Al guardar, el jefe de turno recibe un correo con la tarea y recordatorios 3 días antes, 1 día antes y el día del vencimiento.</p>
+      </div>
+      <div id="t-estado-box" class="grid" style="margin-top:12px" hidden>
+        <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option></select></label>
+      </div>
+      <fieldset id="t-hist-box" hidden style="margin-top:14px"><legend>Historial</legend><ul class="hist" id="t-hist"></ul></fieldset>
+    </div>
+    <div class="dlg-foot">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-danger" id="t-del" hidden>Eliminar</button>
+        <button type="button" class="btn btn-ghost" id="t-reopen" hidden>Reabrir</button>
+      </div>
+      <div class="r">
+        <span class="lock" id="t-why" hidden style="align-self:center;max-width:260px"></span>
+        <button type="button" class="btn btn-close" id="t-close-b" hidden>Cerrar con evidencia</button>
+        <button type="button" class="btn btn-ghost tx">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="t-save">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-tc" aria-labelledby="tc-title">
+  <form id="tcfrm">
+    <div class="dlg-head"><h2 id="tc-title">Cerrar tarea con evidencia</h2><button type="button" class="tcx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" id="tc-what" style="margin:0 0 14px"></p>
+      <div class="stack">
+        <label>Comentario de cierre <span class="req">obligatorio</span><textarea name="comentario" required placeholder="Describa qué se hizo para cumplir la tarea"></textarea></label>
+        <div>
+          <label style="margin-bottom:6px">Evidencia objetiva <span class="req">obligatorio</span></label>
+          <label class="drop" id="tc-drop">
+            <input type="file" id="tc-file" accept="image/*,application/pdf">
+            <span id="tc-drop-txt">Toque para adjuntar una foto o un PDF</span>
+          </label>
+          <div class="prev" id="tc-prev"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost tcx">Cancelar</button><button type="submit" class="btn btn-close" id="tc-save">Cerrar con evidencia</button></div></div>
+  </form>
+</dialog>
 <button class="fab" id="fab" hidden><span>📷</span>Hallazgo en terreno</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
@@ -783,7 +926,7 @@ function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"><
 function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
 
 /* ---------- Estado ---------- */
-let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false;
+let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[];
 const MAX_POR_CORREO=3;
 // Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
 const MAX_ESPECIAL={"supervisorhuachipato@reloncavi.cl":5};
@@ -792,6 +935,8 @@ let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=n
 const myEmail=()=>authUser?authUser.email.toLowerCase():"";
 const myName=()=>persona&&persona.nombre?persona.nombre:myEmail();
 const canWrite=()=>isAdmin||myAcceso==="Usuario";
+const canReadH=()=>isAdmin||["Usuario","Lector"].includes(myAcceso);
+const verTareas=()=>isAdmin||esJefe;
 const activos=()=>personas.filter(p=>p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
 const responsables=()=>activos().filter(p=>p.responsable);
 const pById=id=>personas.find(x=>x.id===id);
@@ -803,7 +948,7 @@ const detId=it=>it.detectadoPorId||it.detectadoPorCorreo||"";
 const conCorreo=(c,exceptId)=>personas.filter(p=>pCorreo(p)===c&&p.id!==exceptId);
 const mios=()=>personas.filter(p=>pCorreo(p)===myEmail()&&p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
 const whoKey=()=>"htp-quien:"+myEmail();
-function accesoDoc(grupo){return grupo.length?{acceso:grupo[0].acceso||"Sin acceso",activo:grupo.some(x=>x.activo!==false)}:null}
+function accesoDoc(grupo){return grupo.length?{acceso:grupo[0].acceso||"Sin acceso",activo:grupo.some(x=>x.activo!==false),jefeTurno:grupo.some(x=>x.jefeTurno&&x.activo!==false)}:null}
 function batchAcceso(batch,correo,grupo){const a=accesoDoc(grupo);if(a)batch.set(doc(db,"accesos",correo),a);else batch.delete(doc(db,"accesos",correo))}
 
 /* ---------- Pantallas de acceso ---------- */
@@ -838,7 +983,7 @@ $("#b-logout").onclick=()=>signOut(auth);
 $("#b-retry").onclick=()=>boot();
 
 async function boot(){
-  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];
   if(!authUser){showGate("g-login");return}
   const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
   let acc=null;
@@ -846,12 +991,18 @@ async function boot(){
     if(a.exists())acc=a.data();
     else{const p=await getDoc(doc(db,"personas",myEmail()));acc=p.exists()?p.data():null}  // formato antiguo
   }catch(e){acc=null}
-  const ok=bootstrap||(acc&&acc.activo!==false&&["Lector","Usuario","Administrador"].includes(acc.acceso));
+  const jefe=!!(acc&&acc.activo!==false&&acc.jefeTurno);
+  const ok=bootstrap||jefe||(acc&&acc.activo!==false&&["Lector","Usuario","Administrador"].includes(acc.acceso));
   if(!ok){$("#d-txt").textContent=`El correo ${authUser.email} no está autorizado para usar la aplicación. Pida al administrador que lo agregue con acceso Lector, Usuario o Administrador.`;showGate("g-denied");return}
   myAcceso=acc?acc.acceso:"";
   isAdmin=bootstrap||myAcceso==="Administrador";
+  esJefe=jefe;
+  if(!canReadH())tab="tareas";
+  else if(location.hash==="#tareas"&&verTareas())tab="tareas";
   setSync(false,"Conectando…");
-  unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(verTareas())unsubs.push(onSnapshot(collection(db,"tareas"),snap=>{tareas=snap.docs.map(d=>({id:d.id,...d.data()}));if(!canReadH())setSync(!snap.metadata.fromCache,snap.metadata.fromCache?"Sin señal":"Sincronizado");render()},
+    e=>{console.error(e);toast("No se pudieron cargar las tareas de turno. Revise que las reglas de Firebase estén actualizadas")}));
+  if(canReadH())unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
     repairResp();const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
   unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -888,7 +1039,7 @@ async function syncAccesos(){
     const snap=await getDocs(collection(db,"accesos"));const cur={};snap.forEach(d=>cur[d.id]=d.data());
     const grupos={};for(const p of personas)(grupos[pCorreo(p)]=grupos[pCorreo(p)]||[]).push(p);
     const b=writeBatch(db);let n=0;
-    for(const[c,g]of Object.entries(grupos)){const w=accesoDoc(g),x=cur[c];if(!x||x.acceso!==w.acceso||x.activo!==w.activo){b.set(doc(db,"accesos",c),w);n++}}
+    for(const[c,g]of Object.entries(grupos)){const w=accesoDoc(g),x=cur[c];if(!x||x.acceso!==w.acceso||x.activo!==w.activo||!!x.jefeTurno!==w.jefeTurno){b.set(doc(db,"accesos",c),w);n++}}
     for(const c of Object.keys(cur))if(!grupos[c]){b.delete(doc(db,"accesos",c));n++}
     for(const p of personas)if(!p.correo){b.update(doc(db,"personas",p.id),{correo:pCorreo(p)});n++}
     if(n)await b.commit();
@@ -985,11 +1136,17 @@ function render(){
   $("#c-comp").textContent=items.filter(i=>(i.tipo||"Compromiso")==="Compromiso").length;
   $("#c-hall").textContent=items.filter(i=>i.tipo==="Hallazgo").length;
   $("#tab-admin").hidden=!isAdmin;
+  $("#tab-tareas").hidden=!verTareas();
+  ["#tab-dash","#tab-comp","#tab-hall"].forEach(s=>$(s).hidden=!canReadH());
+  $("#c-tar").textContent=tareas.filter(t=>t.estado!=="Cerrada").length;
   if(tab==="admin"&&!isAdmin)tab="Compromiso";
+  if(tab==="tareas"&&!verTareas())tab="Compromiso";
+  if(tab!=="tareas"&&tab!=="admin"&&!canReadH())tab="tareas";
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
-  $("#list").hidden=tab==="admin"||tab==="dash";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";
+  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
   $("#btn-new").hidden=!canWrite();
-  $("#fab").hidden=!canWrite()||tab==="admin";
+  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas";
+  if(tab==="tareas"){renderTareas();return}
   if(tab==="dash"){renderDash();return}
   if(tab==="admin"){renderAdmin();return}
   const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value, fem=$("#f-emp").value;
@@ -1045,7 +1202,7 @@ function render(){
 function renderAdmin(){
   const ps=[...personas].sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   $("#ptbody").innerHTML=ps.map(p=>`<tr class="${p.activo===false?"inactive":""}">
-    <td><b>${esc(p.nombre)}</b>${p.cargo||p.empresa?`<div class="sub">${esc([p.cargo,p.empresa].filter(Boolean).join(" · "))}</div>`:""}</td><td>${esc(pCorreo(p))}${conCorreo(pCorreo(p)).length>1?`<div class="sub">Compartido por ${conCorreo(pCorreo(p)).length}</div>`:""}</td>
+    <td><b>${esc(p.nombre)}</b>${p.jefeTurno?' <span class="tag u">Jefe de turno</span>':""}${p.cargo||p.empresa?`<div class="sub">${esc([p.cargo,p.empresa].filter(Boolean).join(" · "))}</div>`:""}</td><td>${esc(pCorreo(p))}${conCorreo(pCorreo(p)).length>1?`<div class="sub">Compartido por ${conCorreo(pCorreo(p)).length}</div>`:""}</td>
     <td data-l="Acceso">${p.acceso==="Administrador"?'<span class="tag u">Administrador</span>':`<span class="tag">${esc(p.acceso||"Sin acceso")}</span>`}</td>
     <td data-l="Responsable">${p.responsable?"Sí":"No"}</td>
     <td data-l="Activo"><input type="checkbox" data-act="${esc(p.id)}" ${p.activo!==false?"checked":""} aria-label="Activo"></td>
@@ -1055,7 +1212,7 @@ function renderAdmin(){
   const msgs=[];
   const orph=[...new Set(items.filter(i=>i.responsable&&!i.responsableCorreo&&i.estado!=="Cerrado").map(i=>i.responsable))];
   if(orph.length)msgs.push(`<b>Responsables escritos sin persona asociada:</b> ${orph.map(esc).join(", ")}. Agregue a esas personas y reasígnelas en cada registro para que puedan cerrar.`);
-  const noAcc=personas.filter(p=>p.activo!==false&&p.responsable&&!["Usuario","Administrador"].includes(p.acceso)).map(p=>p.nombre);
+  const noAcc=personas.filter(p=>p.activo!==false&&p.responsable&&!p.jefeTurno&&!["Usuario","Administrador"].includes(p.acceso)).map(p=>p.nombre);
   if(noAcc.length)msgs.push(`<b>Responsables que no pueden cerrar</b> (acceso Lector o Sin acceso): ${noAcc.map(esc).join(", ")}.`);
   const o=$("#orphans");o.hidden=!msgs.length;o.innerHTML=msgs.join("<br><br>");
 }
@@ -1076,7 +1233,7 @@ pfrm.addEventListener("submit",async e=>{
   const cambia=otros.filter(x=>(x.acceso||"Sin acceso")!==acceso);
   if(cambia.length&&!confirm(`${cambia.map(x=>x.nombre).join(", ")} comparte${cambia.length>1?"n":""} este correo, así que también quedará${cambia.length>1?"n":""} con acceso "${acceso}". ¿Continuar?`))return;
   const id=pEdit||("p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
-  const data={...(prev||{activo:true,creado:nowISO()}),nombre,correo,cargo:pfrm.cargo.value.trim(),empresa:pfrm.empresa.value.trim(),acceso,responsable:pfrm.responsable.checked};
+  const data={...(prev||{activo:true,creado:nowISO()}),nombre,correo,cargo:pfrm.cargo.value.trim(),empresa:pfrm.empresa.value.trim(),acceso,responsable:pfrm.responsable.checked,jefeTurno:pfrm.jefeTurno.checked};
   delete data.id;
   try{
     const batch=writeBatch(db);
@@ -1097,7 +1254,7 @@ $("#p-cancel").onclick=resetPform;
 $("#ptbody").addEventListener("click",async e=>{
   const ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-delp]");
   if(ed){const p=personas.find(x=>x.id===ed.dataset.edit);pEdit=p.id;pfrm.nombre.value=p.nombre;pfrm.correo.value=pCorreo(p);pfrm.correo.disabled=true;
-    pfrm.cargo.value=p.cargo||"";pfrm.empresa.value=p.empresa||"";pfrm.acceso.value=p.acceso||"Sin acceso";pfrm.responsable.checked=!!p.responsable;
+    pfrm.cargo.value=p.cargo||"";pfrm.empresa.value=p.empresa||"";pfrm.acceso.value=p.acceso||"Sin acceso";pfrm.responsable.checked=!!p.responsable;pfrm.jefeTurno.checked=!!p.jefeTurno;
     $("#p-form-title").textContent="Editar persona";$("#p-save").textContent="Guardar cambios";$("#p-cancel").hidden=false;mailHint();pfrm.nombre.focus()}
   if(dl){const p=personas.find(x=>x.id===dl.dataset.delp);
     if(persona&&p.id===persona.id){toast("No puede quitarse a sí mismo");return}
@@ -1428,6 +1585,229 @@ $("#strip").addEventListener("click",e=>{const b=e.target.closest("button");if(b
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b)return;tab=b.dataset.tab;fAlerta="";$("#f-resp").value="";$("#f-emp").value="";render()});
 
 frm.responsableCorreo.addEventListener("change",()=>{const p=pById(frm.responsableCorreo.value);if(p&&p.empresa)frm.empresa.value=p.empresa});
+
+/* ---------- Tareas de turno ---------- */
+const tDlg=$("#dlg-t"), tfrm=$("#tfrm"), tcDlg=$("#dlg-tc"), tcfrm=$("#tcfrm");
+let tKpi="", tJefe="", tEditId=null, tCloseId=null, tCloseFile=null;
+const JCOLS=["#1F3A6E","#7A4FA0","#2A8FA8","#B8860B","#4A6FA5","#8E5B3A","#5D6D7E","#A0457A"];
+const jefesTurno=()=>activos().filter(p=>p.jefeTurno);
+const tNum=t=>t.num?String(t.num).padStart(3,"0"):"";
+const tAbierta=t=>t.estado!=="Cerrada";
+function tAlerta(t){if(!tAbierta(t))return"Cerrado";const d=dias(t.fechaTermino);if(d==null)return"Sin fecha";return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
+const tPlazoTxt=t=>{if(!tAbierta(t))return t.fechaCierre?`Cerrada el ${fmt(t.fechaCierre)}`:"Cerrada";const d=dias(t.fechaTermino);if(d==null)return"Sin fecha";
+  if(dias(t.fechaInicio)>0)return`Inicia en ${dias(t.fechaInicio)} día${dias(t.fechaInicio)===1?"":"s"}`;return d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`};
+const esMiTarea=t=>String(t.responsableCorreo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||t.responsableId===persona.id);
+function tCloseBlock(t){
+  if(!tAbierta(t))return"Ya está cerrada";
+  if(!t.responsableCorreo)return"La tarea no tiene responsable";
+  if(!esMiTarea(t))return`Solo ${t.responsable||"el jefe de turno asignado"} puede cerrarla`;
+  return"";
+}
+function tStat(arr){const n=arr.length,c=arr.filter(t=>!tAbierta(t)).length,v=arr.filter(t=>tAlerta(t)==="Vencido").length,p=arr.filter(t=>tAlerta(t)==="Por vencer").length;
+  return{n,c,a:n-c,v,p,pc:n?Math.round(c/n*100):0,pa:n?100-Math.round(c/n*100):0}}
+function ring(st,col){const R=30,C=2*Math.PI*R,f=x=>st.n?x/st.n*C:0;let off=0;
+  const seg=(len,c)=>{const s=`<circle r="${R}" cx="38" cy="38" fill="none" stroke="${c}" stroke-width="10" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 38 38)"/>`;off+=len;return len>0?s:""};
+  const okC=getComputedStyle(document.documentElement).getPropertyValue("--ok").trim()||"#1E6B3A";
+  return`<svg width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="${st.pc}% cerradas"><circle r="${R}" cx="38" cy="38" fill="none" stroke="var(--gris)" stroke-width="10"/>${seg(f(st.c),okC)}${seg(f(st.v),"#C0392B")}${seg(f(st.a-st.v),col)}<text x="38" y="42" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor">${st.pc}%</text></svg>`}
+function renderTareas(){
+  $("#t-fecha").textContent="Actualizado al "+fmt(hoyISO());
+  $("#t-new").hidden=!isAdmin;
+  $("#t-sub").textContent=isAdmin?"Asigne tareas a los jefes de turno y siga su avance":"Sus tareas y el avance de los jefes de turno";
+  const js=jefesTurno();
+  const ids=new Set(js.map(p=>p.id));
+  // Jefes que ya no están marcados pero tienen tareas
+  const extra=[...new Map(tareas.filter(t=>t.responsableId&&!ids.has(t.responsableId)).map(t=>[t.responsableId,{id:t.responsableId,nombre:t.responsable||"(sin nombre)",_ex:true}])).values()];
+  const lista=[...js,...extra];
+  if(tJefe&&!lista.some(p=>p.id===tJefe))tJefe="";
+  // Indicadores generales (según jefe seleccionado)
+  const baseJ=tJefe?tareas.filter(t=>t.responsableId===tJefe):tareas;
+  const T=tStat(baseJ);
+  $("#tk-total").textContent=T.n;$("#tk-ab").textContent=T.a;$("#tk-ab-l").textContent=`Abiertas (${T.pa}%)`;
+  $("#tk-ce").textContent=T.c;$("#tk-ce-l").textContent=`Cerradas (${T.pc}%)`;$("#tk-ve").textContent=T.v;$("#tk-pv").textContent=T.p;
+  document.querySelectorAll("#t-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===tKpi)));
+  // Tarjetas por jefe
+  $("#t-jefes").innerHTML=lista.length?lista.map((p,k)=>{const arr=tareas.filter(t=>t.responsableId===p.id),st=tStat(arr),col=JCOLS[k%JCOLS.length];
+    const yo=persona&&persona.id===p.id;
+    return`<button type="button" class="jcard" data-j="${esc(p.id)}" aria-pressed="${tJefe===p.id}" style="--ec:${col}">
+      <h3><span>${esc(p.nombre)}</span>${yo?"<small>Usted</small>":p._ex?'<small>Ya no es jefe</small>':""}</h3>
+      <div class="jring">${ring(st,col)}<ul>
+        <li><span><i style="background:var(--muted)"></i>Total</span><b>${st.n}</b></li>
+        <li><span><i style="background:${col}"></i>Abiertas</span><b>${st.a} · ${st.pa}%</b></li>
+        <li><span><i style="background:var(--ok)"></i>Cerradas</span><b>${st.c} · ${st.pc}%</b></li>
+        <li><span><i style="background:#C0392B"></i>Vencidas</span><b style="color:${st.v?"var(--rojo)":"inherit"}">${st.v}</b></li>
+        <li><span><i style="background:var(--naranja)"></i>Vencen ≤ 3 días</span><b>${st.p}</b></li>
+      </ul></div></button>`}).join(""):`<div class="notice" style="margin:0">${isAdmin?"Aún no hay jefes de turno. En <b>Administración</b>, edite a cada jefe de turno y marque <b>Jefe de turno</b>.":"Aún no hay jefes de turno registrados."}</div>`;
+  // Filtro jefe
+  $("#t-jefe").innerHTML='<option value="">Todos los jefes de turno</option>'+lista.map(p=>`<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join("");
+  $("#t-jefe").value=tJefe;
+  // Lista
+  const q=$("#t-q").value.trim().toLowerCase();
+  const list=baseJ.filter(t=>{const a=tAlerta(t);
+    if(tKpi==="abiertas"&&!tAbierta(t))return false;if(tKpi==="cerradas"&&tAbierta(t))return false;
+    if(tKpi==="vencidas"&&a!=="Vencido")return false;if(tKpi==="porvencer"&&a!=="Por vencer")return false;
+    return!q||[t.titulo,t.descripcion,t.responsable,tNum(t)].join(" ").toLowerCase().includes(q)})
+    .sort((a,b)=>(tAbierta(b)-tAbierta(a))||(alertOrder[tAlerta(a)]-alertOrder[tAlerta(b)])||String(a.fechaTermino).localeCompare(String(b.fechaTermino))||(a.num||0)-(b.num||0));
+  $("#t-body").innerHTML=list.map(t=>{const a=tAlerta(t),b=tCloseBlock(t);
+    const acc=!tAbierta(t)?`<span class="sub">${esc(t.cierre&&t.cierre.por||"")}</span>`:b?(esMiTarea(t)?`<span class="lock">${esc(b)}</span>`:""):`<button class="btn btn-close btn-sm" data-tclose="${esc(t.id)}">Cerrar</button>`;
+    return`<tr class="row ${rowCls[a]||""}" data-tid="${esc(t.id)}" tabindex="0">
+      <td class="num">${tNum(t)}</td>
+      <td><b>${esc(t.titulo)}</b>${t.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${t.descripcion?`<div class="sub">${esc(t.descripcion.length>110?t.descripcion.slice(0,110)+"…":t.descripcion)}</div>`:""}</td>
+      <td data-l="Jefe de turno">${esc(t.responsable||"")}</td>
+      <td data-l="Inicio" style="white-space:nowrap">${fmt(t.fechaInicio)}</td>
+      <td data-l="Término" style="white-space:nowrap">${fmt(t.fechaTermino)}</td>
+      <td><span class="pill ${pillCls[a]}">${esc(tPlazoTxt(t))}</span></td>
+      <td data-l="Estado">${tAbierta(t)?esc(t.estado||"Pendiente"):'<span class="pill p-cerr">Cerrada</span>'}</td>
+      <td>${acc}</td></tr>`}).join("");
+  const em=$("#t-empty");em.hidden=list.length>0;
+  em.textContent=tareas.length?"Ninguna tarea coincide con el filtro.":isAdmin?"Aún no hay tareas. Use Asignar tarea para crear la primera.":"Aún no tiene tareas asignadas.";
+}
+$("#t-kpi").addEventListener("click",e=>{const b=e.target.closest("button[data-k]");if(!b)return;tKpi=tKpi===b.dataset.k?"":b.dataset.k;renderTareas()});
+$("#t-jefes").addEventListener("click",e=>{const b=e.target.closest("[data-j]");if(!b)return;tJefe=tJefe===b.dataset.j?"":b.dataset.j;renderTareas()});
+$("#t-jefe").addEventListener("change",e=>{tJefe=e.target.value;renderTareas()});
+$("#t-q").addEventListener("input",renderTareas);
+$("#t-new").onclick=()=>openTarea(null);
+$("#t-body").addEventListener("click",e=>{const c=e.target.closest("[data-tclose]");if(c){openTClose(tareas.find(t=>t.id===c.dataset.tclose));return}
+  const tr=e.target.closest("tr[data-tid]");if(tr)openTarea(tareas.find(t=>t.id===tr.dataset.tid))});
+$("#t-body").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-tid]"))openTarea(tareas.find(t=>t.id===e.target.dataset.tid))});
+document.querySelectorAll(".tx").forEach(b=>b.onclick=()=>tDlg.close());
+document.querySelectorAll(".tcx").forEach(b=>b.onclick=()=>tcDlg.close());
+
+function openTarea(t){
+  if(!t&&!isAdmin)return;
+  tEditId=t?t.id:null;tfrm.reset();
+  const closed=!!t&&!tAbierta(t), edit=isAdmin&&!closed;
+  $("#t-title").textContent=t?`Tarea N° ${tNum(t)}`:"Asignar tarea";
+  fillPersonSelect(tfrm.responsableId,jefesTurno(),t?t.responsableId:"",t?t.responsable:"","Elija un jefe de turno");
+  if(t){for(const k of["titulo","descripcion","prioridad","fechaInicio","fechaTermino"])tfrm[k].value=t[k]||"";}
+  else{tfrm.fechaInicio.value=hoyISO()}
+  $("#t-edit").hidden=!edit;
+  [...$("#t-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
+  // Estado (responsable o admin, tarea abierta)
+  const puedeEstado=!!t&&!closed&&(isAdmin||esMiTarea(t));
+  const ro=$("#t-ro");ro.hidden=edit;
+  if(!edit&&t)ro.innerHTML=`<div class="full"><span>Tarea</span><p><b>${esc(t.titulo)}</b></p></div>
+    ${t.descripcion?`<div class="full"><span>Detalle</span><p>${esc(t.descripcion)}</p></div>`:""}
+    <div><span>Jefe de turno</span>${esc(t.responsable||"")}</div><div><span>Prioridad</span>${esc(t.prioridad||"")}</div>
+    <div><span>Fecha de inicio</span>${fmt(t.fechaInicio)}</div><div><span>Fecha de término</span>${fmt(t.fechaTermino)} · <span class="pill ${pillCls[tAlerta(t)]}" style="display:inline-block;font-size:11px">${esc(tPlazoTxt(t))}</span></div>
+    <div><span>Asignada por</span>${esc(t.creadoPor||"")}${t.creado?` el ${fmtDT(t.creado)}`:""}</div>${puedeEstado?"":`<div><span>Estado</span>${esc(closed?"Cerrada":t.estado||"Pendiente")}</div>`}`;
+  $("#t-estado-box").hidden=!puedeEstado;if(puedeEstado)tfrm.estado.value=t.estado==="En proceso"?"En proceso":"Pendiente";
+  tfrm.estado.disabled=!puedeEstado;
+  // Cierre
+  $("#t-banner").hidden=!closed;$("#t-cierre").hidden=!closed;
+  if(closed){$("#t-banner").textContent=`Cerrada el ${fmt(t.fechaCierre)} por ${t.cierre?t.cierre.por:""}`;if(t.cierre)renderEvid(t.cierre,$("#t-evid"))}
+  const hb=$("#t-hist-box"),h=t&&Array.isArray(t.historial)?t.historial:[];hb.hidden=!h.length;
+  $("#t-hist").innerHTML=h.slice().reverse().map(x=>`<li><b>${fmtDT(x.fecha)}</b> · ${esc(x.por)}: ${esc(x.accion)}</li>`).join("");
+  const b=t?tCloseBlock(t):"x";
+  $("#t-close-b").hidden=!t||!!b;
+  $("#t-why").hidden=!t||closed||!b||!esMiTarea(t);$("#t-why").textContent=b;
+  $("#t-del").hidden=!t||!isAdmin;$("#t-reopen").hidden=!closed||!isAdmin;
+  $("#t-save").hidden=!(edit||puedeEstado);
+  $("#t-save").textContent=t?"Guardar":"Asignar tarea";
+  tDlg.showModal();
+}
+function addHistT(t,accion){const h=Array.isArray(t&&t.historial)?t.historial.slice(-29):[];h.push({fecha:nowISO(),por:myName(),accion});return h}
+tfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const t=tEditId?tareas.find(x=>x.id===tEditId):null;
+  const btn=$("#t-save");btn.disabled=true;
+  try{
+    if(isAdmin&&(!t||tAbierta(t))){
+      const titulo=tfrm.titulo.value.trim(),rid=tfrm.responsableId.value,fi=tfrm.fechaInicio.value,ft=tfrm.fechaTermino.value;
+      if(!titulo||!rid||!fi||!ft){toast("Complete tarea, jefe de turno y fechas");return}
+      if(ft<fi){toast("La fecha de término no puede ser anterior a la de inicio");return}
+      const rp=pById(rid);
+      const data={titulo,descripcion:tfrm.descripcion.value.trim(),prioridad:tfrm.prioridad.value,fechaInicio:fi,fechaTermino:ft,
+        responsableId:rid,responsable:rp?rp.nombre:(t?t.responsable:""),responsableCorreo:rp?pCorreo(rp):(t?t.responsableCorreo:""),
+        actualizado:nowISO(),actualizadoPor:myName()};
+      if(!t){
+        const num=tareas.reduce((m,x)=>Math.max(m,x.num||0),0)+1;
+        Object.assign(data,{num,estado:"Pendiente",creado:nowISO(),creadoPor:myName(),creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+          historial:[{fecha:nowISO(),por:myName(),accion:`Asignó la tarea a ${data.responsable} con término el ${fmt(ft)}`}]});
+        await addDoc(collection(db,"tareas"),data);
+        toast(`Tarea asignada a ${data.responsable}. Recibirá un correo en los próximos minutos`);
+      }else{
+        const cambios=[];
+        if(t.responsableId!==rid)cambios.push(`reasignó a ${data.responsable}`);
+        if(t.fechaTermino!==ft)cambios.push(`cambió término al ${fmt(ft)}`);
+        if(t.fechaInicio!==fi)cambios.push(`cambió inicio al ${fmt(fi)}`);
+        if(t.titulo!==titulo||(t.descripcion||"")!==data.descripcion||t.prioridad!==data.prioridad)cambios.push("editó la tarea");
+        const est=tfrm.estado.value;if(est!==(t.estado||"Pendiente"))cambios.push(`cambió estado a ${est}`);
+        data.estado=est;
+        if(cambios.length)data.historial=addHistT(t,cambios.join(", ").replace(/^./,c=>c.toUpperCase()));
+        await updateDoc(doc(db,"tareas",t.id),data);
+        toast(t.responsableId!==rid?`Tarea reasignada. ${data.responsable} recibirá un correo`:"Tarea actualizada");
+      }
+    }else if(t&&tAbierta(t)&&esMiTarea(t)){
+      const est=tfrm.estado.value;
+      if(est!==(t.estado||"Pendiente")){
+        await updateDoc(doc(db,"tareas",t.id),{estado:est,actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(t,`Cambió estado a ${est}`)});
+        toast(`Estado: ${est}`);
+      }
+    }
+    tDlg.close();
+  }catch(err){fbErr(err,"guardar la tarea")}
+  finally{btn.disabled=false}
+});
+$("#t-del").onclick=async()=>{const t=tareas.find(x=>x.id===tEditId);if(!t||!isAdmin)return;
+  if(!confirm(`¿Eliminar la tarea N° ${tNum(t)} "${t.titulo}"? No se puede deshacer.`))return;
+  try{await deleteDoc(doc(db,"tareas",t.id));tDlg.close();toast("Tarea eliminada")}catch(err){fbErr(err,"eliminar la tarea")}};
+$("#t-reopen").onclick=async()=>{const t=tareas.find(x=>x.id===tEditId);if(!t||!isAdmin)return;
+  const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
+  const nf=prompt("Nueva fecha de término (dd-mm-aaaa). Deje vacío para mantener la actual:",fmt(t.fechaTermino));
+  let ft=t.fechaTermino;if(nf&&nf.trim()){const m=nf.trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);if(!m){toast("Fecha no válida. Use dd-mm-aaaa");return}ft=`${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`}
+  try{await updateDoc(doc(db,"tareas",t.id),{estado:"En proceso",fechaCierre:"",cierre:null,fechaTermino:ft,"notif.cierre":null,cierresAnteriores:[...(t.cierresAnteriores||[]),t.cierre].filter(Boolean).slice(-5),
+    actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(t,`Reabrió: ${motivo.trim()}`)});tDlg.close();toast("Tarea reabierta")}catch(err){fbErr(err,"reabrir la tarea")}};
+$("#t-close-b").onclick=()=>openTClose(tareas.find(x=>x.id===tEditId));
+function openTClose(t){
+  if(!t)return;const b=tCloseBlock(t);if(b){toast(b);return}
+  tCloseId=t.id;tCloseFile=null;tcfrm.reset();$("#tc-prev").innerHTML="";$("#tc-drop-txt").textContent="Toque para adjuntar una foto o un PDF";
+  $("#tc-what").innerHTML=`<b>Tarea N° ${tNum(t)}:</b> ${esc(t.titulo)}<br>Término: ${fmt(t.fechaTermino)}`;
+  if(tDlg.open)tDlg.close();tcDlg.showModal();setTimeout(()=>tcfrm.comentario.focus(),30);
+}
+function tPick(f){
+  if(!f)return;
+  if(!(f.type.startsWith("image/")||f.type==="application/pdf")){toast("Adjunte una foto o un PDF");return}
+  if(f.type==="application/pdf"&&f.size>700*1024){toast("El PDF supera 700 KB. Comprímalo o adjunte una foto");return}
+  tCloseFile=f;$("#tc-drop-txt").textContent=`${f.name} (${Math.round(f.size/1024)} KB) · toque para cambiar`;
+  const pv=$("#tc-prev");pv.innerHTML="";
+  if(f.type.startsWith("image/")){const im=new Image();im.src=URL.createObjectURL(f);im.alt="Vista previa de la evidencia";pv.appendChild(im)}
+}
+$("#tc-file").addEventListener("change",e=>tPick(e.target.files[0]));
+{const d=$("#tc-drop");d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over")});d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");tPick(e.dataTransfer.files[0])})}
+tcfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const t=tareas.find(x=>x.id===tCloseId);if(!t)return;
+  const b=tCloseBlock(t);if(b){toast(b);return}
+  const comentario=tcfrm.comentario.value.trim();
+  if(!comentario){toast("Escriba el comentario de cierre");return}
+  if(!tCloseFile){toast("Adjunte la evidencia objetiva");return}
+  const btn=$("#tc-save");btn.disabled=true;btn.textContent="Subiendo evidencia…";
+  try{
+    const isImg=tCloseFile.type.startsWith("image/");
+    const data=isImg?await compressImage(tCloseFile):await readDataURL(tCloseFile);
+    if(!data||data.length>MAX_DATAURL)throw{code:"too_large"};
+    const nombre=isImg&&!/\.jpe?g$/i.test(tCloseFile.name)?tCloseFile.name.replace(/\.[^.]+$/,"")+".jpg":tCloseFile.name;
+    const archivo={nombre,tipo:isImg?"image/jpeg":tCloseFile.type,kb:Math.round(data.length*.75/1024)};
+    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,tareaId:t.id,uso:"tarea",creadoPor:myEmail(),creado:nowISO()});
+    archivo.evidId=ref.id;
+    await updateDoc(doc(db,"tareas",t.id),{estado:"Cerrada",fechaCierre:hoyISO(),
+      cierre:{comentario,archivo,por:myName(),porId:persona?persona.id:"",porCorreo:myEmail(),fecha:nowISO()},
+      actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(t,`Cerró con evidencia (${nombre}): ${comentario}`)});
+    tcDlg.close();toast("Tarea cerrada con evidencia");
+  }catch(err){console.error(err);
+    toast(err&&err.code==="too_large"?"El archivo es demasiado pesado. Pruebe con otra foto o un PDF más liviano":err&&err.code==="permission-denied"?"No tiene permiso para cerrar esta tarea":"No se pudo cerrar. Revise la conexión e intente de nuevo");
+  }finally{btn.disabled=false;btn.textContent="Cerrar con evidencia"}
+});
+$("#t-csv").onclick=()=>{
+  const cols=[["num","N°"],["titulo","Tarea"],["descripcion","Detalle"],["responsable","Jefe de turno"],["prioridad","Prioridad"],["fechaInicio","Fecha inicio"],["fechaTermino","Fecha término"],["estado","Estado"],["plazo","Plazo"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierreArchivo","Archivo de evidencia"],["creadoPor","Asignada por"]];
+  const rows=tareas.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(t=>({...t,plazo:tPlazoTxt(t),fechaInicio:fmt(t.fechaInicio),fechaTermino:fmt(t.fechaTermino),fechaCierre:fmt(t.fechaCierre),
+    cierreComentario:t.cierre?t.cierre.comentario:"",cierreArchivo:t.cierre&&t.cierre.archivo?t.cierre.archivo.nombre:""}));
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`tareas_turno_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
+};
 
 /* ---------- CSV ---------- */
 $("#btn-csv").onclick=()=>{
