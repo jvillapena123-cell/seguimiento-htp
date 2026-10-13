@@ -1,0 +1,37 @@
+name: Avisos de tareas de turno
+
+# Revisa las tareas cada 15 minutos y envía:
+#  - un correo al jefe de turno cuando se le asigna (o reasigna) una tarea
+#  - recordatorios 3 días antes, 1 día antes y el día del vencimiento
+#  - un aviso de tarea vencida (cada 3 días mientras siga abierta), con copia al administrador
+#  - un aviso al administrador cuando una tarea se cierra con evidencia
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: avisos-tareas
+  cancel-in-progress: false
+
+jobs:
+  avisos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias
+        working-directory: avisos
+        run: npm install --no-audit --no-fund --omit=dev
+      - name: Enviar avisos
+        working-directory: avisos
+        run: node enviar.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+          APP_URL: ${{ vars.APP_URL }}
