@@ -359,6 +359,58 @@ label textarea{min-height:64px;resize:vertical}
   .t-ro{grid-template-columns:1fr}
 }
 
+
+/* ===== Seguimiento de mejoras ===== */
+.tt-kpi>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.mj{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;padding-top:20px;align-items:start}
+.mj-side{padding:14px;position:sticky;top:12px}
+.mj-side-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.mj-side-h h2{margin:0!important;font-size:15px}
+.mj-plist{display:flex;flex-direction:column;gap:3px}
+.mj-plist button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;cursor:pointer;font:inherit;color:inherit}
+.mj-plist button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:13.5px}
+.mj-plist button b{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mj-plist button:hover{background:var(--gris)}
+.mj-plist button[aria-current="true"]{background:var(--info-bg);box-shadow:inset 3px 0 0 var(--naranja)}
+.mj-plist .mj-all{border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;margin-bottom:4px}
+.mj-dot{font-style:normal;font-size:11px;font-weight:700;background:var(--rojo-bg);color:var(--rojo);border-radius:999px;padding:0 6px}
+.mj-main,.mj-view{display:grid;gap:20px;min-width:0}
+.mj-main>*,.mj-view>*{min-width:0}
+.mj-bars{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.mj-bars button{display:grid;grid-template-columns:minmax(120px,250px) minmax(0,1fr) 150px;align-items:center;gap:14px;width:100%;background:none;border:0;padding:9px 8px;border-radius:8px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.mj-bars button:hover{background:var(--gris)}
+.mj-bn{font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mj-track{height:14px;background:var(--gris);border-radius:4px;overflow:hidden}
+.mj-track i{display:block;height:100%;background:var(--ok);border-radius:4px 0 0 4px}
+.mj-bv{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.mj-bv b{font-size:15px;color:var(--text);margin-right:4px}
+.mj-bv .rj{color:var(--rojo);font-weight:700}
+.mj-ph{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start}
+.mj-ph h2{margin:0 0 4px!important;font-size:20px}
+.mj-ph p{margin:4px 0 0;color:var(--muted);white-space:pre-wrap}
+.mj-meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin-top:10px}
+.mj-meta b{color:var(--text);font-weight:600}
+.mj-big{text-align:right;min-width:170px}
+.mj-big b{display:block;font-size:40px;font-weight:800;line-height:1;color:var(--ok)}
+.mj-big span{font-size:12.5px;color:var(--muted)}
+.mj-big .progress i{background:var(--ok)}
+.mj-acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.tag.mj-c{background:var(--nar-bg);color:var(--nar)}
+@media (max-width:900px){
+  .mj{grid-template-columns:minmax(0,1fr)}
+  .mj-side{position:static;min-width:0}
+  .mj-plist{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .mj-plist button{width:auto;flex:none;max-width:230px;border:1px solid var(--line)}
+  .mj-plist .mj-all{border-radius:8px;margin-bottom:0}
+}
+@media (max-width:760px){
+  .mj{padding-top:12px;gap:14px}.mj-main,.mj-view{gap:14px}
+  .tt-kpi>div:first-child{grid-column:1/-1}.tt-kpi>div{padding:10px 12px}
+  .mj-bars button{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px}
+  .mj-track{grid-column:1/-1;grid-row:2}
+  .mj-ph{grid-template-columns:1fr}.mj-big{text-align:left}
+}
+
 /* ===== Celular ===== */
 @media (max-width:760px){
   header.top{padding:10px 12px 0}
@@ -535,6 +587,7 @@ label textarea{min-height:64px;resize:vertical}
       <button role="tab" data-tab="Compromiso" aria-selected="true" id="tab-comp">Compromisos<span class="cnt" id="c-comp">0</span></button>
       <button role="tab" data-tab="Hallazgo" aria-selected="false" id="tab-hall">Hallazgos<span class="cnt" id="c-hall">0</span></button>
       <button role="tab" data-tab="tareas" aria-selected="false" id="tab-tareas" hidden><span class="lg">Tareas de turno</span><span class="sm">Tareas</span><span class="cnt" id="c-tar">0</span></button>
+      <button role="tab" data-tab="mejoras" aria-selected="false" id="tab-mej" hidden><span class="lg">Seguimiento de mejoras</span><span class="sm">Mejoras</span><span class="cnt" id="c-mej">0</span></button>
       <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden><span class="lg">Administración</span><span class="sm">Admin</span></button>
     </nav>
   </div>
@@ -649,6 +702,80 @@ label textarea{min-height:64px;resize:vertical}
           <tbody id="t-body"></tbody>
         </table></div>
         <div class="empty" id="t-empty" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mejoras" hidden>
+    <div class="mj">
+      <aside class="card mj-side" aria-label="Proyectos de mejora">
+        <div class="mj-side-h"><h2>Proyectos</h2><button class="btn btn-primary btn-sm" id="mj-newp" type="button" hidden>+ Nuevo</button></div>
+        <nav class="mj-plist" id="mj-plist"></nav>
+      </aside>
+      <div class="mj-main">
+        <div class="notice" id="mj-err" hidden style="margin:0">No se pudo cargar Seguimiento de mejoras. El administrador debe publicar las reglas de Firebase actualizadas.</div>
+        <!-- Resumen -->
+        <div class="mj-view" id="mj-dash">
+          <div class="dash-head">
+            <div><h2 style="margin:0;font-size:18px;color:var(--azul)">Seguimiento de mejoras</h2><span class="sub">Resumen del cumplimiento de tareas y compromisos por proyecto</span></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="sub" id="mj-fecha"></span><button class="btn btn-ghost btn-sm" id="mj-csv-all" type="button">Exportar CSV</button></div>
+          </div>
+          <div class="tt-kpi">
+            <div><b id="mk-proy">0</b><span>Proyectos</span></div>
+            <div><b id="mk-tot">0</b><span id="mk-tot-l">Tareas y compromisos</span></div>
+            <div class="g"><b id="mk-pct">0%</b><span id="mk-pct-l">Cumplimiento global</span></div>
+            <div class="r"><b id="mk-ve">0</b><span>Vencidos</span></div>
+            <div class="o"><b id="mk-pv">0</b><span>Vencen en 3 días o menos</span></div>
+          </div>
+          <div class="card">
+            <h2>Cumplimiento por proyecto</h2>
+            <p class="sub" style="margin:0 0 10px">Porcentaje de tareas y compromisos cerrados con evidencia. Toque un proyecto para ver su detalle.</p>
+            <ul class="mj-bars" id="mj-bars"></ul>
+          </div>
+          <div class="jcards" id="mj-cards"></div>
+        </div>
+        <!-- Proyecto -->
+        <div class="mj-view" id="mj-proj" hidden>
+          <div class="card mj-ph">
+            <div>
+              <span class="sub">Proyecto de mejora</span>
+              <h2 id="mp-nombre"></h2>
+              <p id="mp-desc"></p>
+              <div class="mj-meta" id="mp-meta"></div>
+              <div class="mj-acts" id="mp-acts" hidden>
+                <button class="btn btn-ghost btn-sm" id="mp-edit" type="button">Editar proyecto</button>
+                <button class="btn btn-danger btn-sm" id="mp-del" type="button">Eliminar proyecto</button>
+              </div>
+            </div>
+            <div class="mj-big"><b id="mp-pct">0%</b><span id="mp-pct-l">cumplimiento</span><div class="progress"><i id="mp-bar"></i></div></div>
+          </div>
+          <nav class="tt-kpi" id="mp-kpi" aria-label="Filtrar">
+            <button data-k="" aria-pressed="true"><b id="mpk-tot">0</b><span>En total</span></button>
+            <button data-k="abiertos"><b id="mpk-ab">0</b><span>Abiertos</span></button>
+            <button data-k="cerrados" class="g"><b id="mpk-ce">0</b><span>Cerrados</span></button>
+            <button data-k="vencidos" class="r"><b id="mpk-ve">0</b><span>Vencidos</span></button>
+            <button data-k="porvencer" class="o"><b id="mpk-pv">0</b><span>Vencen en 3 días o menos</span></button>
+          </nav>
+          <div class="card" style="padding:14px">
+            <div class="tt-bar">
+              <div class="seg" id="mp-tipo" role="group" aria-label="Tipo">
+                <button type="button" data-t="" aria-pressed="true">Todos</button>
+                <button type="button" data-t="Tarea" aria-pressed="false" id="mp-tt">Tareas</button>
+                <button type="button" data-t="Compromiso" aria-pressed="false" id="mp-tc">Compromisos</button>
+              </div>
+              <input type="search" id="mp-q" placeholder="Buscar…" aria-label="Buscar en el proyecto">
+              <select id="mp-resp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
+              <button class="btn btn-ghost" id="mp-csv" type="button">Exportar CSV</button>
+              <button class="btn btn-primary" id="mp-addt" type="button" hidden>Agregar tarea</button>
+              <button class="btn btn-primary" id="mp-addc" type="button" hidden>Agregar compromiso</button>
+            </div>
+            <div class="tscroll" style="margin-top:10px"><table class="ttab">
+              <thead><tr><th>N°</th><th>Tarea / compromiso</th><th>Responsable</th><th>Fecha compromiso</th><th>Plazo</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="mp-body"></tbody>
+            </table></div>
+            <div class="empty" id="mp-empty" hidden></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -889,6 +1016,82 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost tcx">Cancelar</button><button type="submit" class="btn btn-close" id="tc-save">Cerrar con evidencia</button></div></div>
   </form>
 </dialog>
+<dialog id="dlg-pr" aria-labelledby="pr-title">
+  <form id="prfrm">
+    <div class="dlg-head"><h2 id="pr-title">Nuevo proyecto de mejora</h2><button type="button" class="prx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <div class="grid">
+        <label class="full">Nombre del proyecto <span class="req">obligatorio</span><input name="nombre" required autocomplete="off" placeholder="Ej.: Mejora de iluminación Sitio Norte"></label>
+        <label class="full">Descripción / objetivo<textarea name="descripcion" placeholder="Qué se quiere mejorar y qué resultado se espera"></textarea></label>
+        <label class="full">Líder del proyecto<select name="liderId"></select></label>
+        <label>Fecha de inicio<input type="date" name="fechaInicio"></label>
+        <label>Fecha meta de término<input type="date" name="fechaTermino"></label>
+        <p class="help full" style="margin:0">Los responsables se eligen de la lista de personas de Administración (marcadas como "Puede ser responsable").</p>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <div><button type="button" class="btn btn-danger" id="pr-del" hidden>Eliminar proyecto</button></div>
+      <div class="r"><button type="button" class="btn btn-ghost prx">Cancelar</button><button type="submit" class="btn btn-primary" id="pr-save">Crear proyecto</button></div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-m" aria-labelledby="m-title">
+  <form id="mfrm">
+    <div class="dlg-head"><h2 id="m-title">Agregar tarea</h2><button type="button" class="mx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" style="margin:0 0 12px">Proyecto: <b id="m-proy"></b></p>
+      <div class="closed-banner" id="m-banner" hidden></div>
+      <fieldset id="m-cierre" hidden><legend>Evidencia de cierre</legend><div class="evid" id="m-evid"></div></fieldset>
+      <div id="m-ro" class="t-ro" hidden></div>
+      <div id="m-edit" class="grid">
+        <label>Tipo<select name="tipo"><option>Tarea</option><option>Compromiso</option></select></label>
+        <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
+        <label class="full">Descripción <span class="req">obligatorio</span><input name="titulo" required autocomplete="off" placeholder="Ej.: Instalar 4 focos LED en el acceso al Sitio 2"></label>
+        <label class="full">Detalle / evidencia esperada<textarea name="descripcion" placeholder="Qué se espera y qué evidencia se pedirá para cerrarlo"></textarea></label>
+        <label>Responsable <span class="req">obligatorio</span><select name="responsableId" required></select></label>
+        <label>Fecha compromiso <span class="req">obligatorio</span><input type="date" name="fechaCompromiso" required></label>
+      </div>
+      <div id="m-estado-box" class="grid" style="margin-top:12px" hidden>
+        <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option><option>Bloqueado</option></select></label>
+      </div>
+      <fieldset id="m-hist-box" hidden style="margin-top:14px"><legend>Historial</legend><ul class="hist" id="m-hist"></ul></fieldset>
+    </div>
+    <div class="dlg-foot">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-danger" id="m-del" hidden>Eliminar</button>
+        <button type="button" class="btn btn-ghost" id="m-reopen" hidden>Reabrir</button>
+      </div>
+      <div class="r">
+        <span class="lock" id="m-why" hidden style="align-self:center;max-width:260px"></span>
+        <button type="button" class="btn btn-close" id="m-close-b" hidden>Cerrar con evidencia</button>
+        <button type="button" class="btn btn-ghost mx">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="m-save">Guardar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-mc" aria-labelledby="mc-title">
+  <form id="mcfrm">
+    <div class="dlg-head"><h2 id="mc-title">Cerrar con evidencia</h2><button type="button" class="mcx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" id="mc-what" style="margin:0 0 14px"></p>
+      <div class="stack">
+        <label>Comentario de cierre <span class="req">obligatorio</span><textarea name="comentario" required placeholder="Describa qué se hizo para cumplir"></textarea></label>
+        <div>
+          <label style="margin-bottom:6px">Evidencia objetiva <span class="req">obligatorio</span></label>
+          <label class="drop" id="mc-drop">
+            <input type="file" id="mc-file" accept="image/*,application/pdf">
+            <span id="mc-drop-txt">Toque para adjuntar una foto o un PDF</span>
+          </label>
+          <div class="prev" id="mc-prev"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost mcx">Cancelar</button><button type="submit" class="btn btn-close" id="mc-save">Cerrar con evidencia</button></div></div>
+  </form>
+</dialog>
 <button class="fab" id="fab" hidden><span>📷</span>Hallazgo en terreno</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
@@ -926,7 +1129,7 @@ function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"><
 function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
 
 /* ---------- Estado ---------- */
-let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[];
+let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], mjErr=false;
 const MAX_POR_CORREO=3;
 // Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
 const MAX_ESPECIAL={"supervisorhuachipato@reloncavi.cl":5};
@@ -983,7 +1186,7 @@ $("#b-logout").onclick=()=>signOut(auth);
 $("#b-retry").onclick=()=>boot();
 
 async function boot(){
-  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];proyectos=[];mejoras=[];mjErr=false;
   if(!authUser){showGate("g-login");return}
   const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
   let acc=null;
@@ -999,12 +1202,18 @@ async function boot(){
   esJefe=jefe;
   if(!canReadH())tab="tareas";
   else if(location.hash==="#tareas"&&verTareas())tab="tareas";
+  else if(location.hash==="#mejoras")tab="mejoras";
   setSync(false,"Conectando…");
   if(verTareas())unsubs.push(onSnapshot(collection(db,"tareas"),snap=>{tareas=snap.docs.map(d=>({id:d.id,...d.data()}));if(!canReadH())setSync(!snap.metadata.fromCache,snap.metadata.fromCache?"Sin señal":"Sincronizado");render()},
     e=>{console.error(e);toast("No se pudieron cargar las tareas de turno. Revise que las reglas de Firebase estén actualizadas")}));
   if(canReadH())unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
     repairResp();const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
+  if(canReadH()){
+    const mjFail=e=>{console.error(e);mjErr=true;render()};
+    unsubs.push(onSnapshot(collection(db,"proyectos"),snap=>{proyectos=snap.docs.map(d=>({id:d.id,...d.data()}));mjErr=false;render()},mjFail));
+    unsubs.push(onSnapshot(collection(db,"mejoras"),snap=>{mejoras=snap.docs.map(d=>({id:d.id,...d.data()}));render()},mjFail));
+  }
   unsubs.push(onSnapshot(collection(db,"personas"),snap=>{personas=snap.docs.map(d=>({id:d.id,...d.data()}));
     resolveMe();if(isAdmin&&!synced){synced=true;syncAccesos()}repairResp();render()},
     e=>{console.error(e);persona=null;enterApp()}));
@@ -1137,16 +1346,18 @@ function render(){
   $("#c-hall").textContent=items.filter(i=>i.tipo==="Hallazgo").length;
   $("#tab-admin").hidden=!isAdmin;
   $("#tab-tareas").hidden=!verTareas();
-  ["#tab-dash","#tab-comp","#tab-hall"].forEach(s=>$(s).hidden=!canReadH());
+  ["#tab-dash","#tab-comp","#tab-hall","#tab-mej"].forEach(s=>$(s).hidden=!canReadH());
+  $("#c-mej").textContent=mejoras.filter(m=>m.estado!=="Cerrado").length;
   $("#c-tar").textContent=tareas.filter(t=>t.estado!=="Cerrada").length;
   if(tab==="admin"&&!isAdmin)tab="Compromiso";
   if(tab==="tareas"&&!verTareas())tab="Compromiso";
   if(tab!=="tareas"&&tab!=="admin"&&!canReadH())tab="tareas";
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
-  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
+  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas"||tab==="mejoras";$("#mejoras").hidden=tab!=="mejoras";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
   $("#btn-new").hidden=!canWrite();
-  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas";
+  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas"||tab==="mejoras";
   if(tab==="tareas"){renderTareas();return}
+  if(tab==="mejoras"){renderMejoras();return}
   if(tab==="dash"){renderDash();return}
   if(tab==="admin"){renderAdmin();return}
   const q=$("#q").value.trim().toLowerCase(), fe=$("#f-estado").value, fr=$("#f-resp").value, fc=$("#f-cat").value, fem=$("#f-emp").value;
@@ -1808,6 +2019,326 @@ $("#t-csv").onclick=()=>{
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download=`tareas_turno_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
 };
+
+/* ---------- Seguimiento de mejoras ---------- */
+const prDlg=$("#dlg-pr"), prfrm=$("#prfrm"), mDlg=$("#dlg-m"), mfrm=$("#mfrm"), mcDlg=$("#dlg-mc"), mcfrm=$("#mcfrm");
+let mProj="", mTipo="", mKpi="", mResp="", mEditId=null, mPrEdit=null, mCloseId=null, mCloseFile=null;
+const M_ABIERTOS=["Pendiente","En proceso","Bloqueado"];
+const mAbierta=m=>m.estado!=="Cerrado";
+const mTipoDe=m=>m.tipo==="Compromiso"?"Compromiso":"Tarea";
+const mCode=m=>(mTipoDe(m)==="Compromiso"?"C-":"T-")+(m.num?String(m.num).padStart(2,"0"):"");
+const mPlazoTxt=m=>{if(!mAbierta(m))return m.fechaCierre?`Cerrado el ${fmt(m.fechaCierre)}`:"Cerrado";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";
+  return d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`};
+const esMiMejora=m=>String(m.responsableCorreo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||m.responsableId===persona.id);
+function mCloseBlock(m){
+  if(!mAbierta(m))return"Ya está cerrado";
+  if(!m.responsableCorreo)return"No tiene responsable asignado";
+  if(!esMiMejora(m))return`Solo ${m.responsable||"el responsable asignado"} puede cerrarlo`;
+  if(!canWrite())return"Su acceso es de solo lectura. Pida acceso Usuario al administrador";
+  return"";
+}
+function mStat(arr){const n=arr.length,c=arr.filter(m=>!mAbierta(m)).length,v=arr.filter(m=>alerta(m)==="Vencido").length,p=arr.filter(m=>alerta(m)==="Por vencer").length;
+  return{n,c,a:n-c,v,p,pc:n?Math.round(c/n*100):0,pa:n?100-Math.round(c/n*100):0}}
+const projItems=id=>mejoras.filter(m=>m.proyectoId===id);
+const projSorted=()=>proyectos.slice().sort((a,b)=>String(a.nombre||"").localeCompare(String(b.nombre||""),"es"));
+const projById=id=>proyectos.find(p=>p.id===id);
+const projColor=id=>{const i=projSorted().findIndex(p=>p.id===id);return JCOLS[(i<0?0:i)%JCOLS.length]};
+function metaTxt(p){if(!p.fechaTermino)return"";const d=dias(p.fechaTermino);return d<0?`vencida hace ${-d} día${d===-1?"":"s"}`:d===0?"vence hoy":`faltan ${d} día${d===1?"":"s"}`}
+
+function renderMejoras(){
+  if(mProj&&!projById(mProj))mProj="";
+  $("#mj-err").hidden=!mjErr;
+  $("#mj-newp").hidden=!isAdmin;
+  const ps=projSorted(),G=mStat(mejoras);
+  $("#mj-plist").innerHTML=`<button type="button" class="mj-all" data-p="" aria-current="${!mProj}"><span>Resumen general</span><b>${G.n?G.pc+"%":"—"}</b></button>`+
+    ps.map(p=>{const s=mStat(projItems(p.id));
+      return`<button type="button" data-p="${esc(p.id)}" aria-current="${mProj===p.id}" title="${esc(p.nombre)}"><span>${esc(p.nombre)}</span>${s.v?`<i class="mj-dot" title="${s.v} vencido${s.v>1?"s":""}">${s.v}</i>`:""}<b>${s.n?s.pc+"%":"—"}</b></button>`}).join("")+
+    (ps.length?"":`<p class="sub" style="padding:8px 6px;margin:0">${isAdmin?"Aún no hay proyectos. Use <b>+ Nuevo</b> para crear el primero.":"Aún no hay proyectos."}</p>`);
+  $("#mj-dash").hidden=!!mProj;$("#mj-proj").hidden=!mProj;
+  if(mProj)renderProyecto();else renderMjDash();
+}
+
+function renderMjDash(){
+  $("#mj-fecha").textContent="Actualizado al "+fmt(hoyISO());
+  const ps=projSorted(),G=mStat(mejoras);
+  $("#mk-proy").textContent=ps.length;
+  $("#mk-tot").textContent=G.n;$("#mk-tot-l").textContent=`Tareas y compromisos (${G.a} abiertos)`;
+  $("#mk-pct").textContent=G.pc+"%";$("#mk-pct-l").textContent=`Cumplimiento global (${G.c} de ${G.n})`;
+  $("#mk-ve").textContent=G.v;$("#mk-pv").textContent=G.p;
+  const rows=ps.map(p=>({p,s:mStat(projItems(p.id))})).sort((a,b)=>(b.s.n?b.s.pc:-1)-(a.s.n?a.s.pc:-1)||a.p.nombre.localeCompare(b.p.nombre,"es"));
+  $("#mj-bars").innerHTML=rows.length?rows.map(({p,s})=>`<li><button type="button" data-p="${esc(p.id)}" aria-label="${esc(p.nombre)}: ${s.pc}% de cumplimiento, ${s.c} de ${s.n} cerrados">
+      <span class="mj-bn">${esc(p.nombre)}</span>
+      <span class="mj-track"><i style="width:${s.pc}%"></i></span>
+      <span class="mj-bv">${s.n?`<b>${s.pc}%</b>${s.c} de ${s.n}`:"Sin tareas aún"}${s.v?` · <span class="rj">${s.v} venc.</span>`:""}</span></button></li>`).join("")
+    :`<li class="sub" style="padding:8px 0">${isAdmin?"Cree el primer proyecto con <b>+ Nuevo</b> en el menú Proyectos.":"Aún no hay proyectos de mejora."}</li>`;
+  $("#mj-cards").innerHTML=ps.map(p=>{const arr=projItems(p.id),s=mStat(arr),col=projColor(p.id);
+    const T=mStat(arr.filter(m=>mTipoDe(m)==="Tarea")),C=mStat(arr.filter(m=>mTipoDe(m)==="Compromiso"));
+    return`<button type="button" class="jcard" data-p="${esc(p.id)}" style="--ec:${col}">
+      <h3><span>${esc(p.nombre)}</span>${s.v?`<small>${s.v} vencido${s.v>1?"s":""}</small>`:""}</h3>
+      <div class="sub" style="margin-top:-6px">${p.lider?`Líder: ${esc(p.lider)}`:"Sin líder asignado"}${p.fechaTermino?` · Meta ${fmt(p.fechaTermino)}`:""}</div>
+      <div class="jring">${ring(s,col)}<ul>
+        <li><span><i style="background:var(--ok)"></i>Cerrados</span><b>${s.c} · ${s.pc}%</b></li>
+        <li><span><i style="background:${col}"></i>Abiertos</span><b>${s.a}</b></li>
+        <li><span><i style="background:#C0392B"></i>Vencidos</span><b style="color:${s.v?"var(--rojo)":"inherit"}">${s.v}</b></li>
+        <li><span><i style="background:transparent"></i>Tareas</span><b>${T.c} de ${T.n}</b></li>
+        <li><span><i style="background:transparent"></i>Compromisos</span><b>${C.c} de ${C.n}</b></li>
+      </ul></div></button>`}).join("");
+}
+
+function renderProyecto(){
+  const p=projById(mProj);if(!p)return;
+  const all=projItems(p.id),S=mStat(all);
+  $("#mp-nombre").textContent=p.nombre;
+  $("#mp-desc").textContent=p.descripcion||"";$("#mp-desc").hidden=!p.descripcion;
+  const mt=metaTxt(p);
+  $("#mp-meta").innerHTML=`<span>Líder: <b>${esc(p.lider||"Sin asignar")}</b></span>`+
+    (p.fechaInicio?`<span>Inicio: <b>${fmt(p.fechaInicio)}</b></span>`:"")+
+    (p.fechaTermino?`<span>Meta: <b>${fmt(p.fechaTermino)}</b>${mt&&S.a?` (${mt})`:""}</span>`:"")+
+    `<span>Tareas: <b>${all.filter(m=>mTipoDe(m)==="Tarea").length}</b></span><span>Compromisos: <b>${all.filter(m=>mTipoDe(m)==="Compromiso").length}</b></span>`;
+  $("#mp-acts").hidden=!isAdmin;
+  $("#mp-pct").textContent=S.pc+"%";$("#mp-pct-l").textContent=S.n?`cumplimiento · ${S.c} de ${S.n} cerrados`:"sin tareas ni compromisos";$("#mp-bar").style.width=S.pc+"%";
+  // Indicadores (según tipo elegido)
+  const baseT=mTipo?all.filter(m=>mTipoDe(m)===mTipo):all,K=mStat(baseT);
+  $("#mpk-tot").textContent=K.n;$("#mpk-ab").textContent=K.a;$("#mpk-ce").textContent=K.c;$("#mpk-ve").textContent=K.v;$("#mpk-pv").textContent=K.p;
+  document.querySelectorAll("#mp-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mKpi)));
+  document.querySelectorAll("#mp-tipo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===mTipo)));
+  $("#mp-tt").textContent=`Tareas (${all.filter(m=>mTipoDe(m)==="Tarea").length})`;$("#mp-tc").textContent=`Compromisos (${all.filter(m=>mTipoDe(m)==="Compromiso").length})`;
+  // Filtro responsable
+  const rs=[...new Map(all.filter(m=>m.responsableId).map(m=>[m.responsableId,m.responsable||""])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"es"));
+  if(mResp&&mResp!=="__me"&&!rs.some(r=>r[0]===mResp))mResp="";
+  $("#mp-resp").innerHTML='<option value="">Todos los responsables</option><option value="__me">Asignados a mí</option>'+rs.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");
+  $("#mp-resp").value=mResp;
+  $("#mp-addt").hidden=$("#mp-addc").hidden=!isAdmin;
+  // Lista
+  const q=$("#mp-q").value.trim().toLowerCase();
+  const list=baseT.filter(m=>{const a=alerta(m);
+    if(mKpi==="abiertos"&&!mAbierta(m))return false;if(mKpi==="cerrados"&&mAbierta(m))return false;
+    if(mKpi==="vencidos"&&a!=="Vencido")return false;if(mKpi==="porvencer"&&a!=="Por vencer")return false;
+    if(mResp==="__me"&&!esMiMejora(m))return false;if(mResp&&mResp!=="__me"&&m.responsableId!==mResp)return false;
+    return!q||[m.titulo,m.descripcion,m.responsable,mCode(m)].join(" ").toLowerCase().includes(q)})
+    .sort((a,b)=>(mAbierta(b)-mAbierta(a))||(alertOrder[alerta(a)]-alertOrder[alerta(b)])||String(a.fechaCompromiso||"9").localeCompare(String(b.fechaCompromiso||"9"))||mCode(a).localeCompare(mCode(b)));
+  $("#mp-body").innerHTML=list.map(m=>{const a=alerta(m),b=mCloseBlock(m),ab=mAbierta(m);
+    const puedeEst=ab&&(isAdmin||(esMiMejora(m)&&canWrite()));
+    const est=!ab?'<span class="pill p-cerr">Cerrado</span>':puedeEst?`<select class="estado" data-mest="${esc(m.id)}" aria-label="Estado">${M_ABIERTOS.map(e=>`<option ${e===m.estado?"selected":""}>${e}</option>`).join("")}</select>`:esc(m.estado||"Pendiente");
+    const acc=!ab?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?(esMiMejora(m)?`<span class="lock">${esc(b)}</span>`:""):`<button class="btn btn-close btn-sm" data-mclose="${esc(m.id)}" type="button">Cerrar</button>`;
+    return`<tr class="row ${rowCls[a]||""}" data-mid="${esc(m.id)}" tabindex="0">
+      <td class="num">${mCode(m)}</td>
+      <td>${mTipo?"":`<span class="tag${mTipoDe(m)==="Compromiso"?" mj-c":""}">${mTipoDe(m)}</span>`}<b>${esc(m.titulo)}</b>${m.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${m.descripcion?`<div class="sub">${esc(m.descripcion.length>110?m.descripcion.slice(0,110)+"…":m.descripcion)}</div>`:""}</td>
+      <td data-l="Responsable">${esc(m.responsable||"")}</td>
+      <td data-l="Fecha compromiso" style="white-space:nowrap">${fmt(m.fechaCompromiso)}</td>
+      <td><span class="pill ${pillCls[a]}">${esc(mPlazoTxt(m))}</span></td>
+      <td data-l="Estado">${est}</td>
+      <td>${acc}</td></tr>`}).join("");
+  const em=$("#mp-empty");em.hidden=list.length>0;
+  em.innerHTML=all.length?"Nada coincide con el filtro.":isAdmin?"Este proyecto aún no tiene tareas ni compromisos. Use <b>Agregar tarea</b> o <b>Agregar compromiso</b>.":"Este proyecto aún no tiene tareas ni compromisos.";
+}
+
+/* Menú y navegación */
+function irProyecto(id){mProj=id;mKpi="";mTipo="";mResp="";$("#mp-q").value="";renderMejoras();if(window.innerWidth<900)$("#mejoras").scrollIntoView({behavior:"smooth",block:"start"})}
+$("#mj-plist").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(b)irProyecto(b.dataset.p)});
+$("#mj-dash").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(b)irProyecto(b.dataset.p)});
+$("#mp-kpi").addEventListener("click",e=>{const b=e.target.closest("button[data-k]");if(!b)return;mKpi=mKpi===b.dataset.k?"":b.dataset.k;renderProyecto()});
+$("#mp-tipo").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(!b)return;mTipo=b.dataset.t;renderProyecto()});
+$("#mp-resp").addEventListener("change",e=>{mResp=e.target.value;renderProyecto()});
+$("#mp-q").addEventListener("input",renderProyecto);
+$("#mj-newp").onclick=()=>openProyecto(null);
+$("#mp-edit").onclick=()=>openProyecto(projById(mProj));
+$("#mp-del").onclick=()=>borrarProyecto(projById(mProj));
+$("#mp-addt").onclick=()=>openMejora(null,"Tarea");
+$("#mp-addc").onclick=()=>openMejora(null,"Compromiso");
+$("#mp-body").addEventListener("click",e=>{if(e.target.closest("select"))return;
+  const c=e.target.closest("[data-mclose]");if(c){openMClose(mejoras.find(m=>m.id===c.dataset.mclose));return}
+  const tr=e.target.closest("tr[data-mid]");if(tr)openMejora(mejoras.find(m=>m.id===tr.dataset.mid))});
+$("#mp-body").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-mid]"))openMejora(mejoras.find(m=>m.id===e.target.dataset.mid))});
+$("#mp-body").addEventListener("change",async e=>{const s=e.target.closest("select[data-mest]");if(!s)return;
+  const m=mejoras.find(x=>x.id===s.dataset.mest);if(!m||s.value===m.estado)return;
+  try{await updateDoc(doc(db,"mejoras",m.id),{estado:s.value,actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cambió estado a ${s.value}`)});toast(`Estado: ${s.value}`)}
+  catch(err){s.value=m.estado||"Pendiente";fbErr(err,"cambiar el estado")}});
+document.querySelectorAll(".prx").forEach(b=>b.onclick=()=>prDlg.close());
+document.querySelectorAll(".mx").forEach(b=>b.onclick=()=>mDlg.close());
+document.querySelectorAll(".mcx").forEach(b=>b.onclick=()=>mcDlg.close());
+
+/* Proyectos: agregar, editar, quitar */
+function openProyecto(p){
+  if(!isAdmin)return;
+  mPrEdit=p?p.id:null;prfrm.reset();
+  $("#pr-title").textContent=p?"Editar proyecto":"Nuevo proyecto de mejora";
+  fillPersonSelect(prfrm.liderId,responsables(),p?p.liderId||"":"",p?p.lider:"","Sin líder asignado");
+  if(p){for(const k of["nombre","descripcion","fechaInicio","fechaTermino"])prfrm[k].value=p[k]||""}else prfrm.fechaInicio.value=hoyISO();
+  $("#pr-del").hidden=!p;$("#pr-save").textContent=p?"Guardar":"Crear proyecto";
+  prDlg.showModal();setTimeout(()=>prfrm.nombre.focus(),30);
+}
+prfrm.addEventListener("submit",async e=>{
+  e.preventDefault();if(!isAdmin)return;
+  const nombre=prfrm.nombre.value.trim(),fi=prfrm.fechaInicio.value,ft=prfrm.fechaTermino.value,lid=prfrm.liderId.value;
+  if(!nombre){toast("Escriba el nombre del proyecto");return}
+  if(fi&&ft&&ft<fi){toast("La fecha meta no puede ser anterior al inicio");return}
+  if(proyectos.some(p=>p.id!==mPrEdit&&String(p.nombre).trim().toLowerCase()===nombre.toLowerCase())){toast("Ya existe un proyecto con ese nombre");return}
+  const lp=lid?pById(lid):null,old=mPrEdit?projById(mPrEdit):null;
+  const data={nombre,descripcion:prfrm.descripcion.value.trim(),fechaInicio:fi,fechaTermino:ft,
+    liderId:lid,lider:lp?lp.nombre:(lid&&old?old.lider||"":""),liderCorreo:lp?pCorreo(lp):(lid&&old?old.liderCorreo||"":""),actualizado:nowISO(),actualizadoPor:myName()};
+  const btn=$("#pr-save");btn.disabled=true;
+  try{
+    if(old){await updateDoc(doc(db,"proyectos",old.id),data);toast("Proyecto actualizado")}
+    else{const r=doc(collection(db,"proyectos"));const w=setDoc(r,{...data,creado:nowISO(),creadoPor:myName()});mProj=r.id;mKpi="";mTipo="";mResp="";prDlg.close();render();await w;toast("Proyecto creado. Ahora agregue sus tareas y compromisos")}
+    prDlg.close();
+  }catch(err){if(!old)mProj="";fbErr(err,"guardar el proyecto")}
+  finally{btn.disabled=false}
+});
+$("#pr-del").onclick=()=>{const p=projById(mPrEdit);if(p){prDlg.close();borrarProyecto(p)}};
+async function borrarProyecto(p){
+  if(!p||!isAdmin)return;
+  const arr=projItems(p.id);
+  if(!confirm(`¿Quitar el proyecto "${p.nombre}"${arr.length?` y sus ${arr.length} tareas y compromisos`:""}? Esta acción no se puede deshacer.`))return;
+  try{
+    for(let i=0;i<arr.length;i+=400){const b=writeBatch(db);arr.slice(i,i+400).forEach(m=>b.delete(doc(db,"mejoras",m.id)));await b.commit()}
+    await deleteDoc(doc(db,"proyectos",p.id));
+    if(mProj===p.id)mProj="";render();toast("Proyecto eliminado");
+  }catch(err){fbErr(err,"eliminar el proyecto")}
+}
+
+/* Tareas y compromisos */
+function openMejora(m,tipo){
+  if(!m&&!isAdmin)return;
+  const p=projById(m?m.proyectoId:mProj);if(!p)return;
+  mEditId=m?m.id:null;mfrm.reset();
+  const closed=!!m&&!mAbierta(m), edit=isAdmin&&!closed, tp=m?mTipoDe(m):tipo;
+  $("#m-title").textContent=m?`${tp} ${mCode(m)}`:`Agregar ${tp.toLowerCase()}`;
+  $("#m-proy").textContent=p.nombre;
+  mfrm.tipo.value=tp;
+  fillPersonSelect(mfrm.responsableId,responsables(),m?m.responsableId:"",m?m.responsable:"","Elija un responsable");
+  if(m){for(const k of["titulo","descripcion","prioridad","fechaCompromiso"])mfrm[k].value=m[k]||""}
+  $("#m-edit").hidden=!edit;
+  [...$("#m-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
+  const puedeEstado=!!m&&!closed&&(isAdmin||(esMiMejora(m)&&canWrite()));
+  const ro=$("#m-ro");ro.hidden=edit||!m;
+  if(!edit&&m)ro.innerHTML=`<div class="full"><span>${tp}</span><p><b>${esc(m.titulo)}</b></p></div>
+    ${m.descripcion?`<div class="full"><span>Detalle</span><p>${esc(m.descripcion)}</p></div>`:""}
+    <div><span>Responsable</span>${esc(m.responsable||"")}</div><div><span>Prioridad</span>${esc(m.prioridad||"")}</div>
+    <div><span>Fecha compromiso</span>${fmt(m.fechaCompromiso)} · <span class="pill ${pillCls[alerta(m)]}" style="display:inline-block;font-size:11px">${esc(mPlazoTxt(m))}</span></div>
+    <div><span>Registrado por</span>${esc(m.creadoPor||"")}${m.creado?` el ${fmtDT(m.creado)}`:""}</div>${puedeEstado?"":`<div><span>Estado</span>${esc(closed?"Cerrado":m.estado||"Pendiente")}</div>`}`;
+  $("#m-estado-box").hidden=!puedeEstado;if(puedeEstado)mfrm.estado.value=M_ABIERTOS.includes(m.estado)?m.estado:"Pendiente";
+  mfrm.estado.disabled=!puedeEstado;
+  $("#m-banner").hidden=!closed;$("#m-cierre").hidden=!closed;
+  if(closed){$("#m-banner").textContent=`Cerrado el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}`;if(m.cierre)renderEvid(m.cierre,$("#m-evid"))}
+  const h=m&&Array.isArray(m.historial)?m.historial:[];$("#m-hist-box").hidden=!h.length;
+  $("#m-hist").innerHTML=h.slice().reverse().map(x=>`<li><b>${fmtDT(x.fecha)}</b> · ${esc(x.por)}: ${esc(x.accion)}</li>`).join("");
+  const b=m?mCloseBlock(m):"x";
+  $("#m-close-b").hidden=!m||!!b;
+  $("#m-why").hidden=!m||closed||!b||!esMiMejora(m);$("#m-why").textContent=b;
+  $("#m-del").hidden=!m||!isAdmin;$("#m-reopen").hidden=!closed||!isAdmin;
+  $("#m-save").hidden=!(edit||puedeEstado);
+  $("#m-save").textContent=m?"Guardar":`Agregar ${tp.toLowerCase()}`;
+  mDlg.showModal();
+}
+const mNextNum=(pid,tipo)=>mejoras.filter(x=>x.proyectoId===pid&&mTipoDe(x)===tipo).reduce((mx,x)=>Math.max(mx,x.num||0),0)+1;
+mfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=mEditId?mejoras.find(x=>x.id===mEditId):null;
+  const btn=$("#m-save");btn.disabled=true;
+  try{
+    if(isAdmin&&(!m||mAbierta(m))){
+      const p=projById(m?m.proyectoId:mProj);if(!p){toast("El proyecto ya no existe");return}
+      const titulo=mfrm.titulo.value.trim(),rid=mfrm.responsableId.value,fc=mfrm.fechaCompromiso.value,tipo=mfrm.tipo.value;
+      if(!titulo||!rid||!fc){toast("Complete descripción, responsable y fecha compromiso");return}
+      const rp=pById(rid);
+      const data={tipo,titulo,descripcion:mfrm.descripcion.value.trim(),prioridad:mfrm.prioridad.value,fechaCompromiso:fc,
+        responsableId:rid,responsable:rp?rp.nombre:(m?m.responsable:""),responsableCorreo:rp?pCorreo(rp):(m?m.responsableCorreo:""),
+        proyectoId:p.id,proyecto:p.nombre,actualizado:nowISO(),actualizadoPor:myName()};
+      if(!m){
+        Object.assign(data,{num:mNextNum(p.id,tipo),estado:"Pendiente",creado:nowISO(),creadoPor:myName(),creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+          historial:[{fecha:nowISO(),por:myName(),accion:`Registró la ${tipo.toLowerCase()} con responsable ${data.responsable} y fecha compromiso ${fmt(fc)}`}]});
+        const w=addDoc(collection(db,"mejoras"),data);mDlg.close();await w;
+        toast(`${tipo} agregada al proyecto`);
+      }else{
+        const cambios=[];
+        if(mTipoDe(m)!==tipo){data.num=mNextNum(p.id,tipo);cambios.push(`cambió a ${tipo.toLowerCase()}`)}
+        if(m.responsableId!==rid)cambios.push(`reasignó a ${data.responsable}`);
+        if(m.fechaCompromiso!==fc)cambios.push(`cambió fecha compromiso al ${fmt(fc)}`);
+        if(m.titulo!==titulo||(m.descripcion||"")!==data.descripcion||m.prioridad!==data.prioridad)cambios.push("editó la descripción");
+        const est=mfrm.estado.value;if(est!==(m.estado||"Pendiente"))cambios.push(`cambió estado a ${est}`);
+        data.estado=est;
+        if(cambios.length)data.historial=addHistT(m,cambios.join(", ").replace(/^./,c=>c.toUpperCase()));
+        await updateDoc(doc(db,"mejoras",m.id),data);
+        mDlg.close();toast("Cambios guardados");
+      }
+    }else if(m&&mAbierta(m)&&esMiMejora(m)&&canWrite()){
+      const est=mfrm.estado.value;
+      if(est!==(m.estado||"Pendiente")){await updateDoc(doc(db,"mejoras",m.id),{estado:est,actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cambió estado a ${est}`)});toast(`Estado: ${est}`)}
+      mDlg.close();
+    }else mDlg.close();
+  }catch(err){fbErr(err,"guardar")}
+  finally{btn.disabled=false}
+});
+$("#m-del").onclick=async()=>{const m=mejoras.find(x=>x.id===mEditId);if(!m||!isAdmin)return;
+  if(!confirm(`¿Eliminar ${mTipoDe(m).toLowerCase()} ${mCode(m)} "${m.titulo}"? No se puede deshacer.`))return;
+  try{await deleteDoc(doc(db,"mejoras",m.id));mDlg.close();toast("Eliminado")}catch(err){fbErr(err,"eliminar")}};
+$("#m-reopen").onclick=async()=>{const m=mejoras.find(x=>x.id===mEditId);if(!m||!isAdmin)return;
+  const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
+  const nf=prompt("Nueva fecha compromiso (dd-mm-aaaa). Deje vacío para mantener la actual:",fmt(m.fechaCompromiso));
+  let fc=m.fechaCompromiso;if(nf&&nf.trim()){const r=nf.trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);if(!r){toast("Fecha no válida. Use dd-mm-aaaa");return}fc=`${r[3]}-${r[2].padStart(2,"0")}-${r[1].padStart(2,"0")}`}
+  try{await updateDoc(doc(db,"mejoras",m.id),{estado:"En proceso",fechaCierre:"",cierre:null,fechaCompromiso:fc,cierresAnteriores:[...(m.cierresAnteriores||[]),m.cierre].filter(Boolean).slice(-5),
+    actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Reabrió: ${motivo.trim()}`)});mDlg.close();toast("Reabierto")}catch(err){fbErr(err,"reabrir")}};
+$("#m-close-b").onclick=()=>openMClose(mejoras.find(x=>x.id===mEditId));
+
+/* Cierre con evidencia */
+function openMClose(m){
+  if(!m)return;const b=mCloseBlock(m);if(b){toast(b);return}
+  mCloseId=m.id;mCloseFile=null;mcfrm.reset();$("#mc-prev").innerHTML="";$("#mc-drop-txt").textContent="Toque para adjuntar una foto o un PDF";
+  const p=projById(m.proyectoId);
+  $("#mc-title").textContent=`Cerrar ${mTipoDe(m).toLowerCase()} con evidencia`;
+  $("#mc-what").innerHTML=`<b>${esc(p?p.nombre:"")} · ${mCode(m)}:</b> ${esc(m.titulo)}<br>Fecha compromiso: ${fmt(m.fechaCompromiso)}`;
+  if(mDlg.open)mDlg.close();mcDlg.showModal();setTimeout(()=>mcfrm.comentario.focus(),30);
+}
+function mPick(f){
+  if(!f)return;
+  if(!(f.type.startsWith("image/")||f.type==="application/pdf")){toast("Adjunte una foto o un PDF");return}
+  if(f.type==="application/pdf"&&f.size>700*1024){toast("El PDF supera 700 KB. Comprímalo o adjunte una foto");return}
+  mCloseFile=f;$("#mc-drop-txt").textContent=`${f.name} (${Math.round(f.size/1024)} KB) · toque para cambiar`;
+  const pv=$("#mc-prev");pv.innerHTML="";
+  if(f.type.startsWith("image/")){const im=new Image();im.src=URL.createObjectURL(f);im.alt="Vista previa de la evidencia";pv.appendChild(im)}
+}
+$("#mc-file").addEventListener("change",e=>mPick(e.target.files[0]));
+{const d=$("#mc-drop");d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over")});d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");mPick(e.dataTransfer.files[0])})}
+mcfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=mejoras.find(x=>x.id===mCloseId);if(!m)return;
+  const b=mCloseBlock(m);if(b){toast(b);return}
+  const comentario=mcfrm.comentario.value.trim();
+  if(!comentario){toast("Escriba el comentario de cierre");return}
+  if(!mCloseFile){toast("Adjunte la evidencia objetiva");return}
+  const btn=$("#mc-save");btn.disabled=true;btn.textContent="Subiendo evidencia…";
+  try{
+    const isImg=mCloseFile.type.startsWith("image/");
+    const data=isImg?await compressImage(mCloseFile):await readDataURL(mCloseFile);
+    if(!data||data.length>MAX_DATAURL)throw{code:"too_large"};
+    const nombre=isImg&&!/\.jpe?g$/i.test(mCloseFile.name)?mCloseFile.name.replace(/\.[^.]+$/,"")+".jpg":mCloseFile.name;
+    const archivo={nombre,tipo:isImg?"image/jpeg":mCloseFile.type,kb:Math.round(data.length*.75/1024)};
+    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,mejoraId:m.id,uso:"mejora",creadoPor:myEmail(),creado:nowISO()});
+    archivo.evidId=ref.id;
+    await updateDoc(doc(db,"mejoras",m.id),{estado:"Cerrado",fechaCierre:hoyISO(),
+      cierre:{comentario,archivo,por:myName(),porId:persona?persona.id:"",porCorreo:myEmail(),fecha:nowISO()},
+      actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cerró con evidencia (${nombre}): ${comentario}`)});
+    mcDlg.close();toast("Cerrado con evidencia");
+  }catch(err){console.error(err);
+    toast(err&&err.code==="too_large"?"El archivo es demasiado pesado. Pruebe con otra foto o un PDF más liviano":err&&err.code==="permission-denied"?"No tiene permiso para cerrar este registro":"No se pudo cerrar. Revise la conexión e intente de nuevo");
+  }finally{btn.disabled=false;btn.textContent="Cerrar con evidencia"}
+});
+
+/* CSV */
+function mCsv(list,nombre){
+  const cols=[["proyecto","Proyecto"],["codigo","N°"],["tipo","Tipo"],["titulo","Descripción"],["descripcion","Detalle"],["responsable","Responsable"],["prioridad","Prioridad"],["fechaCompromiso","Fecha compromiso"],["estado","Estado"],["plazo","Plazo"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierreArchivo","Archivo de evidencia"],["creadoPor","Registrado por"]];
+  const rows=list.slice().sort((a,b)=>String(a.proyecto||"").localeCompare(String(b.proyecto||""),"es")||mCode(a).localeCompare(mCode(b))).map(m=>({...m,proyecto:(projById(m.proyectoId)||{}).nombre||m.proyecto||"",codigo:mCode(m),tipo:mTipoDe(m),plazo:mPlazoTxt(m),
+    fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),cierreComentario:m.cierre?m.cierre.comentario:"",cierreArchivo:m.cierre&&m.cierre.archivo?m.cierre.archivo.nombre:""}));
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`${nombre}_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
+}
+const slug=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40);
+$("#mj-csv-all").onclick=()=>mCsv(mejoras,"mejoras_HTP");
+$("#mp-csv").onclick=()=>{const p=projById(mProj);if(p)mCsv(projItems(p.id),"mejoras_"+slug(p.nombre))};
 
 /* ---------- CSV ---------- */
 $("#btn-csv").onclick=()=>{

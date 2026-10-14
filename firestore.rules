@@ -1,23 +1,39 @@
 rules_version = '2';
 // Reglas de seguridad · Seguimiento de compromisos y hallazgos HTP
 // Administrador principal: jvilla@csh.cl (debe coincidir con ADMIN_EMAILS de firebase-config.js).
+// Los permisos se leen de "accesos/{correo}" (un documento por correo, lo mantiene la app).
+// Hasta 3 personas pueden compartir un correo y comparten su acceso.
+// Tareas de turno: solo el administrador y los jefes de turno (accesos/{correo}.jefeTurno == true).
+// Seguimiento de mejoras: proyectos y sus tareas/compromisos. Los crea el administrador;
+// el responsable asignado cambia el estado y cierra con comentario y evidencia.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signed()   { return request.auth != null && request.auth.token.email_verified == true; }
+    function signed()   { return request.auth != null && request.auth.token.email != null; }
     function email()    { return request.auth.token.email.lower(); }
     function bootstrapAdmin() { return signed() && email() in ['jvilla@csh.cl']; }
-    function pRef()     { return /databases/$(database)/documents/personas/$(email()); }
-    function listed()   { return signed() && exists(pRef()) && get(pRef()).data.activo == true; }
-    function acceso()   { return listed() ? get(pRef()).data.acceso : 'Sin acceso'; }
+    function aRef()     { return /databases/$(database)/documents/accesos/$(email()); }
+    function pRef()     { return /databases/$(database)/documents/personas/$(email()); }   // formato antiguo
+    function hasA()     { return exists(aRef()); }
+    function listed()   { return signed() && (hasA() ? get(aRef()).data.activo == true
+                                                     : (exists(pRef()) && get(pRef()).data.activo == true)); }
+    function acceso()   { return !listed() ? 'Sin acceso' : (hasA() ? get(aRef()).data.acceso : get(pRef()).data.acceso); }
     function isAdmin()  { return bootstrapAdmin() || acceso() == 'Administrador'; }
     function canRead()  { return isAdmin() || acceso() in ['Lector', 'Usuario']; }
     function canWrite() { return isAdmin() || acceso() == 'Usuario'; }
+    function isJefe()   { return listed() && hasA() && get(aRef()).data.get('jefeTurno', false) == true; }
+
+    // Acceso por correo: lo mantiene solo el administrador
+    match /accesos/{correo} {
+      allow get:   if signed() && (correo == email() || isAdmin());
+      allow list:  if isAdmin();
+      allow write: if isAdmin();
+    }
 
     // Lista de personas: la mantiene solo el administrador
-    match /personas/{correo} {
-      allow get:   if signed() && (correo == email() || canRead());
-      allow list:  if canRead();
+    match /personas/{id} {
+      allow get:   if signed() && (id == email() || canRead() || isJefe());
+      allow list:  if canRead() || isJefe();
       allow write: if isAdmin();
     }
 
@@ -32,7 +48,8 @@ service cloud.firestore {
             && resource.data.estado != 'Cerrado'
             && request.resource.data.estado != 'Cerrado'
             && (isAdmin()
-                || request.resource.data.responsableCorreo == resource.data.responsableCorreo
+                || (request.resource.data.responsableCorreo == resource.data.responsableCorreo
+                    && request.resource.data.get('responsableId', '') == resource.data.get('responsableId', ''))
                 || resource.data.responsableCorreo == ''))
           // Cierre: solo el responsable asignado, con comentario y evidencia existente.
           || (canWrite()
@@ -40,6 +57,7 @@ service cloud.firestore {
             && request.resource.data.estado == 'Cerrado'
             && resource.data.responsableCorreo == email()
             && request.resource.data.responsableCorreo == email()
+            && request.resource.data.get('responsableId', '') == resource.data.get('responsableId', '')
             && request.resource.data.cierre.porCorreo == email()
             && request.resource.data.cierre.comentario is string
             && request.resource.data.cierre.comentario.size() > 0
@@ -50,10 +68,70 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Tareas de turno: las asigna el administrador; las ven el administrador y los jefes de turno.
+    match /tareas/{id} {
+      allow read:   if isAdmin() || isJefe();
+      allow create: if isAdmin() && request.resource.data.estado != 'Cerrada';
+      allow delete: if isAdmin();
+      allow update: if isAdmin()
+          // El jefe de turno asignado solo puede cambiar el estado (Pendiente / En proceso)...
+          || (isJefe()
+            && resource.data.estado != 'Cerrada'
+            && resource.data.responsableCorreo == email()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor'])
+            && request.resource.data.estado in ['Pendiente', 'En proceso'])
+          // ...o cerrarla, siempre con comentario y evidencia objetiva.
+          || (isJefe()
+            && resource.data.estado != 'Cerrada'
+            && resource.data.responsableCorreo == email()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor', 'cierre', 'fechaCierre'])
+            && request.resource.data.estado == 'Cerrada'
+            && request.resource.data.cierre.porCorreo == email()
+            && request.resource.data.cierre.comentario is string
+            && request.resource.data.cierre.comentario.size() > 0
+            && request.resource.data.cierre.archivo.evidId is string
+            && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)));
+    }
+
+    // Seguimiento de mejoras: proyectos (los crea, edita y elimina solo el administrador)
+    match /proyectos/{id} {
+      allow read:  if canRead();
+      allow write: if isAdmin();
+    }
+
+    // Seguimiento de mejoras: tareas y compromisos de cada proyecto
+    match /mejoras/{id} {
+      allow read:   if canRead();
+      allow create: if isAdmin() && request.resource.data.estado != 'Cerrado';
+      allow delete: if isAdmin();
+      allow update: if isAdmin()
+          // El responsable asignado solo puede cambiar el estado (Pendiente / En proceso / Bloqueado)...
+          || (canWrite()
+            && resource.data.estado != 'Cerrado'
+            && resource.data.responsableCorreo == email()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor'])
+            && request.resource.data.estado in ['Pendiente', 'En proceso', 'Bloqueado'])
+          // ...o cerrarlo, siempre con comentario y evidencia objetiva.
+          || (canWrite()
+            && resource.data.estado != 'Cerrado'
+            && resource.data.responsableCorreo == email()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor', 'cierre', 'fechaCierre'])
+            && request.resource.data.estado == 'Cerrado'
+            && request.resource.data.cierre.porCorreo == email()
+            && request.resource.data.cierre.comentario is string
+            && request.resource.data.cierre.comentario.size() > 0
+            && request.resource.data.cierre.archivo.evidId is string
+            && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)));
+    }
+
     // Archivos de evidencia (guardados dentro de Firestore)
     match /evidencias/{id} {
-      allow read:   if canRead();
-      allow create: if canWrite()
+      allow read:   if canRead() || isJefe();
+      allow create: if (canWrite() || isJefe())
                     && request.resource.data.creadoPor == email()
                     && request.resource.data.data is string;
       allow update: if false;

@@ -68,3 +68,13 @@ El administrador puede reabrir un registro indicando el motivo; el cierre anteri
 ## Actualizar la aplicación
 
 Edite `index.html` en GitHub (ícono de lápiz) o suba una nueva versión. GitHub Pages publica los cambios en uno o dos minutos. Los datos no se tocan.
+
+## Seguimiento de mejoras (proyectos)
+
+Pestaña visible para todos los que tienen acceso Lector, Usuario o Administrador.
+- **Menú de proyectos** (izquierda): el administrador agrega proyectos con **+ Nuevo** y los quita con **Eliminar proyecto** (se borran también sus tareas y compromisos).
+- Cada proyecto tiene **tareas** (T-01, T-02…) y **compromisos** (C-01, C-02…), cada uno con responsable, fecha compromiso y prioridad. Los responsables salen de la lista de personas de **Administración** (marcadas "Puede ser responsable").
+- El responsable asignado cambia el estado (Pendiente / En proceso / Bloqueado) y cierra solo con comentario y evidencia (foto o PDF). Para cerrar necesita acceso Usuario o Administrador.
+- **Resumen general**: porcentaje de cumplimiento por proyecto (cerrados / total), vencidos y próximos a vencer.
+
+Datos en Firestore: colecciones `proyectos` y `mejoras`. Requiere publicar el `firestore.rules` actualizado.
