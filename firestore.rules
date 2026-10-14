@@ -107,12 +107,12 @@ service cloud.firestore {
       allow create: if isAdmin() && request.resource.data.estado != 'Cerrado';
       allow delete: if isAdmin();
       allow update: if isAdmin()
-          // El responsable asignado solo puede cambiar el estado (Pendiente / En proceso / Bloqueado)...
+          // El responsable asignado solo puede cambiar el estado (Pendiente / En proceso / Bloqueado) y las etapas de design thinking...
           || (canWrite()
             && resource.data.estado != 'Cerrado'
             && resource.data.responsableCorreo == email()
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor'])
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor', 'dt'])
             && request.resource.data.estado in ['Pendiente', 'En proceso', 'Bloqueado'])
           // ...o cerrarlo, siempre con comentario y evidencia objetiva.
           || (canWrite()

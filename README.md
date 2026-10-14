@@ -78,3 +78,10 @@ Pestaña visible para todos los que tienen acceso Lector, Usuario o Administrado
 - **Resumen general**: porcentaje de cumplimiento por proyecto (cerrados / total), vencidos y próximos a vencer.
 
 Datos en Firestore: colecciones `proyectos` y `mejoras`. Requiere publicar el `firestore.rules` actualizado.
+
+### Etapas de design thinking
+Cada tarea o compromiso nuevo trae automáticamente las 5 etapas: **Empatizar, Definir, Idear, Prototipar y Testear** (se puede desmarcar al crearlo).
+- En la lista, bajo cada tarea, una barra de 5 segmentos muestra el avance y la etapa actual.
+- En el detalle, el administrador o el responsable marcan cada etapa como Pendiente / En curso / Hecha y dejan una nota. Al marcar una como Hecha, la siguiente pasa a En curso. Los cambios quedan en el historial.
+- Las tareas creadas antes de este cambio también muestran las etapas (todas pendientes).
+- El CSV incluye la columna "Etapa design thinking". Requiere publicar el `firestore.rules` actualizado para que el responsable pueda avanzar etapas.

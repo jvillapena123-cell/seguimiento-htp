@@ -396,6 +396,24 @@ label textarea{min-height:64px;resize:vertical}
 .mj-big .progress i{background:var(--ok)}
 .mj-acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .tag.mj-c{background:var(--nar-bg);color:var(--nar)}
+/* Etapas de design thinking */
+.dt-mini{display:flex;align-items:center;gap:3px;margin-top:7px}
+.dt-mini i{width:18px;height:6px;border-radius:3px;background:var(--gris)}
+.dt-mini i.h{background:var(--ok)}.dt-mini i.c{background:var(--naranja)}
+.dt-mini span{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:6px}
+.dt-chk{flex-direction:row!important;align-items:center;gap:8px!important;color:var(--text)!important;font-size:13.5px!important}
+.dt-chk input{width:16px;height:16px;accent-color:var(--naranja);padding:0}
+.dt-list{display:flex;flex-direction:column;gap:8px}
+.dt-row{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.dt-row.s-h{border-left-color:var(--ok)}.dt-row.s-c{border-left-color:var(--naranja)}
+.dt-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.dt-n{width:24px;height:24px;border-radius:50%;background:var(--gris);display:grid;place-items:center;font-weight:800;font-size:12px}
+.dt-row.s-h .dt-n{background:var(--ok);color:#fff}.dt-row.s-c .dt-n{background:var(--naranja);color:#fff}
+.dt-h b{font-size:14px}.dt-h .sub{grid-column:2/3;margin:0}
+.dt-h select{padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;grid-row:1/3;grid-column:3}
+.dt-row textarea{width:100%;margin-top:8px;min-height:48px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);resize:vertical;font-size:13.5px}
+.dt-row .nota{margin:8px 0 0;white-space:pre-wrap;font-size:13.5px}
+.dt-row .dt-meta{font-size:12px;color:var(--muted);margin-top:4px}
 @media (max-width:900px){
   .mj{grid-template-columns:minmax(0,1fr)}
   .mj-side{position:static;min-width:0}
@@ -1051,10 +1069,15 @@ label textarea{min-height:64px;resize:vertical}
         <label class="full">Detalle / evidencia esperada<textarea name="descripcion" placeholder="Qué se espera y qué evidencia se pedirá para cerrarlo"></textarea></label>
         <label>Responsable <span class="req">obligatorio</span><select name="responsableId" required></select></label>
         <label>Fecha compromiso <span class="req">obligatorio</span><input type="date" name="fechaCompromiso" required></label>
+        <label class="full dt-chk"><input type="checkbox" name="usaDT" checked> Agregar las etapas de design thinking (Empatizar, Definir, Idear, Prototipar, Testear)</label>
       </div>
       <div id="m-estado-box" class="grid" style="margin-top:12px" hidden>
         <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option><option>Bloqueado</option></select></label>
       </div>
+      <fieldset id="m-dt-box" hidden style="margin-top:14px"><legend>Etapas de design thinking</legend>
+        <p class="sub" style="margin:0 0 10px">Avance cada etapa y deje en la nota lo que se observó, decidió o probó.</p>
+        <div class="dt-list" id="m-dt"></div>
+      </fieldset>
       <fieldset id="m-hist-box" hidden style="margin-top:14px"><legend>Historial</legend><ul class="hist" id="m-hist"></ul></fieldset>
     </div>
     <div class="dlg-foot">
@@ -2037,6 +2060,40 @@ function mCloseBlock(m){
   if(!canWrite())return"Su acceso es de solo lectura. Pida acceso Usuario al administrador";
   return"";
 }
+/* Design thinking: cada tarea o compromiso nuevo trae sus 5 etapas */
+const DT_ETAPAS=[["Empatizar","Observar en terreno y conversar con quienes viven el problema"],["Definir","Escribir el problema en una frase concreta y medible"],["Idear","Generar varias alternativas antes de elegir una"],["Prototipar","Hacer una versión rápida y barata de la solución"],["Testear","Probar en faena real, medir y ajustar"]];
+const DT_EST=["Pendiente","En curso","Hecha"];
+const dtUsa=m=>!m||m.dt!==false;
+const dtNuevo=()=>DT_ETAPAS.map(([etapa])=>({etapa,estado:"Pendiente",nota:"",fecha:"",por:""}));
+const dtOf=m=>{const a=Array.isArray(m&&m.dt)?m.dt:[];return DT_ETAPAS.map(([etapa],i)=>({etapa,estado:"Pendiente",nota:"",fecha:"",por:"",...(a[i]||{})}))};
+const dtActual=arr=>{const i=arr.findIndex(s=>s.estado!=="Hecha");return i<0?"Etapas completas":arr[i].etapa};
+function dtMini(m){if(!dtUsa(m))return"";const a=dtOf(m),h=a.filter(s=>s.estado==="Hecha").length;
+  return`<div class="dt-mini" title="Design thinking: ${h} de 5 etapas hechas">${a.map(s=>`<i class="${s.estado==="Hecha"?"h":s.estado==="En curso"?"c":""}"></i>`).join("")}<span>${esc(dtActual(a))}</span></div>`}
+let mDtEdit=null;
+function renderDt(m,puede){
+  const a=mDtEdit||dtOf(m),box=$("#m-dt");
+  box.innerHTML=a.map((s,i)=>{const cls=s.estado==="Hecha"?"s-h":s.estado==="En curso"?"s-c":"";
+    return`<div class="dt-row ${cls}"><div class="dt-h"><span class="dt-n">${i+1}</span><b>${esc(s.etapa)}</b>
+      ${puede?`<select data-dt-est="${i}" aria-label="Estado de ${esc(s.etapa)}">${DT_EST.map(e=>`<option ${e===s.estado?"selected":""}>${e}</option>`).join("")}</select>`:`<span class="pill ${s.estado==="Hecha"?"p-cerr":s.estado==="En curso"?"p-porv":"p-sin"}" style="grid-row:1/3;grid-column:3">${esc(s.estado)}</span>`}
+      <span class="sub">${esc(DT_ETAPAS[i][1])}</span></div>
+      ${puede?`<textarea data-dt-nota="${i}" placeholder="Notas o evidencia de esta etapa">${esc(s.nota||"")}</textarea>`:s.nota?`<p class="nota">${esc(s.nota)}</p>`:""}
+      ${s.estado==="Hecha"&&s.fecha?`<div class="dt-meta">Hecha el ${fmt(s.fecha.slice(0,10))}${s.por?` por ${esc(s.por)}`:""}</div>`:""}</div>`}).join("");
+}
+$("#m-dt").addEventListener("change",e=>{const s=e.target.closest("[data-dt-est]");if(!s||!mDtEdit)return;
+  const i=+s.dataset.dtEst;mDtEdit[i].estado=s.value;
+  if(s.value==="Hecha"&&mDtEdit[i+1]&&mDtEdit[i+1].estado==="Pendiente")mDtEdit[i+1].estado="En curso";
+  renderDt(null,true)});
+mfrm.usaDT.addEventListener("change",()=>{const m=mEditId?mejoras.find(x=>x.id===mEditId):null;if(!m)return;$("#m-dt-box").hidden=!mfrm.usaDT.checked;if(mfrm.usaDT.checked){if(!mDtEdit)mDtEdit=dtNuevo();renderDt(m,true)}});
+$("#m-dt").addEventListener("input",e=>{const t=e.target.closest("[data-dt-nota]");if(t&&mDtEdit)mDtEdit[+t.dataset.dtNota].nota=t.value});
+// Arma las etapas a guardar y anota en el historial los cambios de estado
+function dtGuardar(m,cambios){
+  const prev=dtOf(m);
+  return mDtEdit.map((s,i)=>{const p=prev[i],o={etapa:s.etapa,estado:s.estado,nota:(s.nota||"").trim(),fecha:p.fecha||"",por:p.por||""};
+    if(s.estado!==p.estado){cambios.push(`etapa ${s.etapa}: ${s.estado.toLowerCase()}`);
+      if(s.estado==="Hecha"){o.fecha=nowISO();o.por=myName()}else{o.fecha="";o.por=""}}
+    else if(o.nota!==(p.nota||""))cambios.push(`nota en etapa ${s.etapa}`);
+    return o});
+}
 function mStat(arr){const n=arr.length,c=arr.filter(m=>!mAbierta(m)).length,v=arr.filter(m=>alerta(m)==="Vencido").length,p=arr.filter(m=>alerta(m)==="Por vencer").length;
   return{n,c,a:n-c,v,p,pc:n?Math.round(c/n*100):0,pa:n?100-Math.round(c/n*100):0}}
 const projItems=id=>mejoras.filter(m=>m.proyectoId===id);
@@ -2123,7 +2180,7 @@ function renderProyecto(){
     const acc=!ab?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?(esMiMejora(m)?`<span class="lock">${esc(b)}</span>`:""):`<button class="btn btn-close btn-sm" data-mclose="${esc(m.id)}" type="button">Cerrar</button>`;
     return`<tr class="row ${rowCls[a]||""}" data-mid="${esc(m.id)}" tabindex="0">
       <td class="num">${mCode(m)}</td>
-      <td>${mTipo?"":`<span class="tag${mTipoDe(m)==="Compromiso"?" mj-c":""}">${mTipoDe(m)}</span>`}<b>${esc(m.titulo)}</b>${m.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${m.descripcion?`<div class="sub">${esc(m.descripcion.length>110?m.descripcion.slice(0,110)+"…":m.descripcion)}</div>`:""}</td>
+      <td>${mTipo?"":`<span class="tag${mTipoDe(m)==="Compromiso"?" mj-c":""}">${mTipoDe(m)}</span>`}<b>${esc(m.titulo)}</b>${m.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${m.descripcion?`<div class="sub">${esc(m.descripcion.length>110?m.descripcion.slice(0,110)+"…":m.descripcion)}</div>`:""}${dtMini(m)}</td>
       <td data-l="Responsable">${esc(m.responsable||"")}</td>
       <td data-l="Fecha compromiso" style="white-space:nowrap">${fmt(m.fechaCompromiso)}</td>
       <td><span class="pill ${pillCls[a]}">${esc(mPlazoTxt(m))}</span></td>
@@ -2208,6 +2265,7 @@ function openMejora(m,tipo){
   mfrm.tipo.value=tp;
   fillPersonSelect(mfrm.responsableId,responsables(),m?m.responsableId:"",m?m.responsable:"","Elija un responsable");
   if(m){for(const k of["titulo","descripcion","prioridad","fechaCompromiso"])mfrm[k].value=m[k]||""}
+  mfrm.usaDT.checked=dtUsa(m);
   $("#m-edit").hidden=!edit;
   [...$("#m-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
   const puedeEstado=!!m&&!closed&&(isAdmin||(esMiMejora(m)&&canWrite()));
@@ -2219,6 +2277,11 @@ function openMejora(m,tipo){
     <div><span>Registrado por</span>${esc(m.creadoPor||"")}${m.creado?` el ${fmtDT(m.creado)}`:""}</div>${puedeEstado?"":`<div><span>Estado</span>${esc(closed?"Cerrado":m.estado||"Pendiente")}</div>`}`;
   $("#m-estado-box").hidden=!puedeEstado;if(puedeEstado)mfrm.estado.value=M_ABIERTOS.includes(m.estado)?m.estado:"Pendiente";
   mfrm.estado.disabled=!puedeEstado;
+  // Etapas de design thinking
+  const puedeDT=!!m&&!closed&&(isAdmin||(esMiMejora(m)&&canWrite()));
+  mDtEdit=puedeDT?dtOf(m).map(x=>({...x})):null;
+  $("#m-dt-box").hidden=!m||!dtUsa(m);
+  if(m&&dtUsa(m))renderDt(m,puedeDT);
   $("#m-banner").hidden=!closed;$("#m-cierre").hidden=!closed;
   if(closed){$("#m-banner").textContent=`Cerrado el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}`;if(m.cierre)renderEvid(m.cierre,$("#m-evid"))}
   const h=m&&Array.isArray(m.historial)?m.historial:[];$("#m-hist-box").hidden=!h.length;
@@ -2245,7 +2308,9 @@ mfrm.addEventListener("submit",async e=>{
       const data={tipo,titulo,descripcion:mfrm.descripcion.value.trim(),prioridad:mfrm.prioridad.value,fechaCompromiso:fc,
         responsableId:rid,responsable:rp?rp.nombre:(m?m.responsable:""),responsableCorreo:rp?pCorreo(rp):(m?m.responsableCorreo:""),
         proyectoId:p.id,proyecto:p.nombre,actualizado:nowISO(),actualizadoPor:myName()};
+      const usaDT=mfrm.usaDT.checked;
       if(!m){
+        data.dt=usaDT?dtNuevo():false;
         Object.assign(data,{num:mNextNum(p.id,tipo),estado:"Pendiente",creado:nowISO(),creadoPor:myName(),creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
           historial:[{fecha:nowISO(),por:myName(),accion:`Registró la ${tipo.toLowerCase()} con responsable ${data.responsable} y fecha compromiso ${fmt(fc)}`}]});
         const w=addDoc(collection(db,"mejoras"),data);mDlg.close();await w;
@@ -2258,13 +2323,19 @@ mfrm.addEventListener("submit",async e=>{
         if(m.titulo!==titulo||(m.descripcion||"")!==data.descripcion||m.prioridad!==data.prioridad)cambios.push("editó la descripción");
         const est=mfrm.estado.value;if(est!==(m.estado||"Pendiente"))cambios.push(`cambió estado a ${est}`);
         data.estado=est;
+        if(!usaDT){if(dtUsa(m)){data.dt=false;cambios.push("quitó las etapas de design thinking")}}
+        else if(!dtUsa(m)){data.dt=dtNuevo();cambios.push("agregó las etapas de design thinking")}
+        else if(mDtEdit)data.dt=dtGuardar(m,cambios);
         if(cambios.length)data.historial=addHistT(m,cambios.join(", ").replace(/^./,c=>c.toUpperCase()));
         await updateDoc(doc(db,"mejoras",m.id),data);
         mDlg.close();toast("Cambios guardados");
       }
     }else if(m&&mAbierta(m)&&esMiMejora(m)&&canWrite()){
-      const est=mfrm.estado.value;
-      if(est!==(m.estado||"Pendiente")){await updateDoc(doc(db,"mejoras",m.id),{estado:est,actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cambió estado a ${est}`)});toast(`Estado: ${est}`)}
+      const est=mfrm.estado.value,cambios=[];
+      if(est!==(m.estado||"Pendiente"))cambios.push(`cambió estado a ${est}`);
+      const upd={estado:est,actualizado:nowISO(),actualizadoPor:myName()};
+      if(dtUsa(m)&&mDtEdit)upd.dt=dtGuardar(m,cambios);
+      if(cambios.length){upd.historial=addHistT(m,cambios.join(", ").replace(/^./,c=>c.toUpperCase()));await updateDoc(doc(db,"mejoras",m.id),upd);toast("Cambios guardados")}
       mDlg.close();
     }else mDlg.close();
   }catch(err){fbErr(err,"guardar")}
@@ -2328,8 +2399,8 @@ mcfrm.addEventListener("submit",async e=>{
 
 /* CSV */
 function mCsv(list,nombre){
-  const cols=[["proyecto","Proyecto"],["codigo","N°"],["tipo","Tipo"],["titulo","Descripción"],["descripcion","Detalle"],["responsable","Responsable"],["prioridad","Prioridad"],["fechaCompromiso","Fecha compromiso"],["estado","Estado"],["plazo","Plazo"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierreArchivo","Archivo de evidencia"],["creadoPor","Registrado por"]];
-  const rows=list.slice().sort((a,b)=>String(a.proyecto||"").localeCompare(String(b.proyecto||""),"es")||mCode(a).localeCompare(mCode(b))).map(m=>({...m,proyecto:(projById(m.proyectoId)||{}).nombre||m.proyecto||"",codigo:mCode(m),tipo:mTipoDe(m),plazo:mPlazoTxt(m),
+  const cols=[["proyecto","Proyecto"],["codigo","N°"],["tipo","Tipo"],["titulo","Descripción"],["descripcion","Detalle"],["responsable","Responsable"],["prioridad","Prioridad"],["fechaCompromiso","Fecha compromiso"],["estado","Estado"],["plazo","Plazo"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierreArchivo","Archivo de evidencia"],["etapaDT","Etapa design thinking"],["creadoPor","Registrado por"]];
+  const rows=list.slice().sort((a,b)=>String(a.proyecto||"").localeCompare(String(b.proyecto||""),"es")||mCode(a).localeCompare(mCode(b))).map(m=>({...m,proyecto:(projById(m.proyectoId)||{}).nombre||m.proyecto||"",codigo:mCode(m),tipo:mTipoDe(m),plazo:mPlazoTxt(m),etapaDT:dtUsa(m)?dtActual(dtOf(m)):"",
     fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),cierreComentario:m.cierre?m.cierre.comentario:"",cierreArchivo:m.cierre&&m.cierre.archivo?m.cierre.archivo.nombre:""}));
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
   const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
