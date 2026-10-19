@@ -13,7 +13,7 @@ const HORA_DESDE = 8;                   // los recordatorios se envían desde la
 const REPETIR_VENCIDA_CADA = 3;         // días entre avisos de tarea vencida
 
 const { FIREBASE_SERVICE_ACCOUNT, SMTP_USER, SMTP_PASS } = process.env;
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "jvilla@csh.cl").trim();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "jvilla@htpchile.cl").trim();
 const APP_URL = (process.env.APP_URL || "https://jvillapena123-cell.github.io/seguimiento-htp/").trim();
 
 if (!FIREBASE_SERVICE_ACCOUNT || !SMTP_USER || !SMTP_PASS) {
