@@ -10,4 +10,4 @@ export const firebaseConfig = {
 
 // Correo del administrador principal. Puede ingresar aunque aún no esté en la lista de personas.
 // Debe coincidir con el correo escrito en las reglas de Firestore.
-export const ADMIN_EMAILS = ["jvilla@csh.cl"];
+   export const ADMIN_EMAILS = ["jvilla@csh.cl"   , "jvilla@htpchile.cl"];
