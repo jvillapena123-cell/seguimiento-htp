@@ -1392,7 +1392,7 @@ async function boot(){
   myAcceso=acc?acc.acceso:"";
   isAdmin=bootstrap||myAcceso==="Administrador";
   esJefe=jefe;
-  if(!canReadH())tab=location.hash==="#mant"?"mant":"tareas";
+  if(!canReadH())tab=location.hash==="#mant"&&verMant()?"mant":"tareas";
   else if(location.hash==="#tareas"&&verTareas())tab="tareas";
   else if(location.hash==="#mejoras")tab="mejoras";
   else if(location.hash==="#mant")tab="mant";
@@ -1402,7 +1402,7 @@ async function boot(){
   if(canReadH())unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
     repairResp();const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
-  if(canReadH()||esJefe)unsubs.push(onSnapshot(collection(db,"mantenimiento"),snap=>{mant=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
+  if(isAdmin||esJefe)unsubs.push(onSnapshot(collection(db,"mantenimiento"),snap=>{mant=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
     e=>{console.error(e);toast("No se pudieron cargar las solicitudes de mantenimiento. Revise que las reglas de Firebase estén actualizadas")}));
   if(canReadH()){
     const mjFail=e=>{console.error(e);mjErr=true;render()};
@@ -2252,8 +2252,9 @@ const MT_ABIERTOS=["Pendiente","En proceso","Esperando repuesto"];
 const MT_COLS={LSur:"#1F3A6E",LNorte:"#2A8FA8",TTMM:"#7A4FA0"};
 const mtDlg=$("#dlg-mt"), mtfrm=$("#mtfrm"), mtcDlg=$("#dlg-mtc"), mtcfrm=$("#mtcfrm");
 let mtKpi="", mtEq="", mtSeg="", mtEditId=null, mtCloseId=null, mtCloseFile=null, mtPhotos=[];
-const verMant=()=>canReadH()||esJefe;
-const puedeCrearMt=()=>canWrite()||esJefe;
+// Tareas de turno y Mantenimiento: solo el administrador y quienes están marcados como Jefe de turno
+const verMant=()=>isAdmin||esJefe;
+const puedeCrearMt=()=>isAdmin||esJefe;
 const areaDe=eq=>{const a=MT_AREAS.find(a=>a.equipos.includes(eq));return a?a.id:""};
 const mtNum=m=>m.num?String(m.num).padStart(3,"0"):"";
 const mtAbierta=m=>m.estado!=="Cerrada";
@@ -2264,10 +2265,10 @@ const esYo=(correo,id)=>String(correo||"").toLowerCase()===myEmail()&&(!persona|
 const mtSoyResp=m=>esYo(m.responsableCorreo,m.responsableId);
 const mtSoySeg=m=>esYo(m.seguidorCorreo,m.seguidorId);
 const mtSoyCreador=m=>esYo(m.creadoPorCorreo,m.creadoPorId);
-const mtPuedeEditar=m=>!m?puedeCrearMt():mtAbierta(m)&&(isAdmin||((canWrite()||esJefe)&&(mtSoyResp(m)||mtSoySeg(m)||mtSoyCreador(m))));
+const mtPuedeEditar=m=>!m?puedeCrearMt():mtAbierta(m)&&(isAdmin||(esJefe&&(mtSoyResp(m)||mtSoySeg(m)||mtSoyCreador(m))));
 function mtCloseBlock(m){
   if(!mtAbierta(m))return"Ya está cerrada";
-  if(!(canWrite()||esJefe))return"Su acceso no permite cerrar";
+  if(!(isAdmin||esJefe))return"Solo los jefes de turno pueden cerrarla";
   if(isAdmin||mtSoyResp(m)||mtSoySeg(m))return"";
   return`Solo ${m.responsable||"el responsable"} o ${m.seguidor||"el jefe de turno que la sigue"} pueden cerrarla`;
 }

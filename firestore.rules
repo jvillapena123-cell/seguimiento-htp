@@ -128,17 +128,17 @@ service cloud.firestore {
             && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)));
     }
 
-    // Mantenimiento de equipos: solicitudes con aviso SAP, responsable y jefe de turno que hace el seguimiento.
-    // Las crea cualquier Usuario o jefe de turno. Las editan quien la creó, el responsable y el jefe de turno asignado.
-    // Se cierran solo con comentario y evidencia, por el responsable o el jefe de turno que la sigue.
+    // Mantenimiento de equipos: solo el administrador y los jefes de turno (accesos/{correo}.jefeTurno == true).
+    // Cualquier jefe de turno crea solicitudes; las editan quien la creó, el responsable o el jefe de turno asignado.
+    // Se cierran solo con comentario y evidencia.
     match /mantenimiento/{id} {
-      allow read:   if canRead() || isJefe();
-      allow create: if (canWrite() || isJefe())
+      allow read:   if isAdmin() || isJefe();
+      allow create: if (isAdmin() || isJefe())
                     && request.resource.data.estado != 'Cerrada'
                     && request.resource.data.creadoPorCorreo == email();
       allow delete: if isAdmin();
       allow update: if isAdmin()
-          || ((canWrite() || isJefe())
+          || (isJefe()
             && resource.data.estado != 'Cerrada'
             && request.resource.data.estado != 'Cerrada'
             && (resource.data.get('responsableCorreo', '') == email()
@@ -146,7 +146,7 @@ service cloud.firestore {
                 || resource.data.get('creadoPorCorreo', '') == email())
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny(['num', 'creadoPorCorreo', 'creadoPor', 'creado', 'cierre', 'notif']))
-          || ((canWrite() || isJefe())
+          || (isJefe()
             && resource.data.estado != 'Cerrada'
             && (resource.data.get('responsableCorreo', '') == email()
                 || resource.data.get('seguidorCorreo', '') == email())

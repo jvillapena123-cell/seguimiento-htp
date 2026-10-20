@@ -250,7 +250,7 @@ for (const d of snapM.docs) {
       enviados++;
     };
     const asunto = `Mantenimiento N° ${num(m)} · ${m.equipo}${m.avisoSap ? ` · aviso SAP ${m.avisoSap}` : ""}`;
-    const notaResp = "Ingrese a la aplicación para cambiar el estado (En proceso, Esperando repuesto). Para cerrarla use <b>Cerrar con evidencia</b>: describa la reparación y adjunte una foto o un PDF.";
+    const notaResp = "Cuando el trabajo esté terminado, informe al jefe de turno que hace el seguimiento: él la cierra en la aplicación con comentario y evidencia objetiva (foto o PDF).";
     const notaSeg = "Usted hace el seguimiento de esta solicitud. Puede actualizar el aviso SAP, la fecha comprometida y el estado, y cerrarla con evidencia cuando el trabajo esté terminado.";
 
     if (avisarResp && avisarSeg && resp === seg) {

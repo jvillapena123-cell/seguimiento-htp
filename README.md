@@ -88,9 +88,9 @@ Cada tarea o compromiso nuevo trae automáticamente las 5 etapas: **Empatizar, D
 
 ## Mantenimiento de equipos
 
-Pestaña visible para quienes tienen acceso Lector, Usuario o Administrador, y para los jefes de turno.
+Pestaña visible solo para el administrador y las personas marcadas como **Jefe de turno** en Administración (igual que Tareas de turno). El responsable de una solicitud que no es jefe de turno recibe los correos, pero no entra a la pestaña.
 - **Equipos**: LSur (C-32, C-33, C-34, Apilador ST34), LNorte (MKS1, Apilador Sumitomo) y TTMM (C-31, TD3). Tocando un equipo o un área se filtran sus solicitudes.
-- **Nueva solicitud** (Usuarios, jefes de turno y administrador): equipo, descripción del problema, al menos una foto (hasta 3), N° de aviso SAP, prioridad, fecha comprometida (opcional), **responsable** y **jefe de turno** que hace el seguimiento.
+- **Nueva solicitud** (jefes de turno y administrador): equipo, descripción del problema, al menos una foto (hasta 3), N° de aviso SAP, prioridad, fecha comprometida (opcional), **responsable** y **jefe de turno** que hace el seguimiento.
 - Al crearla, o si cambia el responsable o el jefe de turno, cada uno recibe un correo con la solicitud y la foto (lo envía la misma automatización de GitHub Actions de Tareas de turno, cada 15 minutos).
 - Quien la creó, el responsable y el jefe de turno pueden editarla (aviso SAP, fecha, estado: Pendiente / En proceso / Esperando repuesto). El responsable o el jefe de turno la cierran con comentario y evidencia; se avisa por correo al jefe de turno y a quien la solicitó.
 
