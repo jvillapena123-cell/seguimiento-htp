@@ -236,6 +236,54 @@ label textarea{min-height:64px;resize:vertical}
 .mt-dot{position:absolute;top:9px;right:9px;width:9px;height:9px;border-radius:50%}
 .mt-dot.r{background:#C0392B}.mt-dot.o{background:var(--naranja)}
 @media (max-width:1000px){.mt-areas{grid-template-columns:1fr}}
+.mt-proc{display:flex;margin:0 0 16px;padding:14px 6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.mt-st{flex:1;min-width:88px;position:relative;text-align:center;background:none;border:0;font:inherit;color:inherit;padding:0 4px;cursor:default}
+.mt-st.clk{cursor:pointer}
+.mt-st::before{content:"";position:absolute;top:13px;left:-50%;width:100%;height:3px;background:var(--line)}
+.mt-st:first-child::before{display:none}
+.mt-st.done::before,.mt-st.cur::before{background:var(--ok)}
+.mt-st i{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;margin:0 auto 6px;border-radius:50%;background:var(--surface);border:3px solid var(--line);font-style:normal;font-size:13px;font-weight:800;color:var(--muted)}
+.mt-st.done i{background:var(--ok);border-color:var(--ok);color:#fff}
+.mt-st.cur i{border-color:var(--naranja);color:var(--naranja);box-shadow:0 0 0 4px var(--nar-bg)}
+.mt-st.skip i{border-style:dashed}
+.mt-st b{display:block;font-size:12.5px;line-height:1.25}
+.mt-st small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.mt-st.cur b{color:var(--nar)}
+.mt-st.clk:hover b{color:var(--naranja);text-decoration:underline}
+.mt-mini{display:flex;align-items:center;margin-bottom:4px}
+.mt-mini i{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+.mt-mini i.done{background:var(--ok)}.mt-mini i.cur{background:var(--naranja);box-shadow:0 0 0 3px var(--nar-bg)}.mt-mini i.skip{background:transparent;border:1.5px dashed var(--muted)}
+.mt-mini s{width:9px;height:2px;background:var(--line);flex:none}.mt-mini s.done{background:var(--ok)}
+.mt-lista{display:contents}
+.mr{display:grid;gap:18px;min-width:0}
+.mr-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.mr-top select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}
+.mr-kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.mr-kpi div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.mr-kpi b{display:block;font-size:26px;font-weight:800;color:var(--azul);line-height:1.1}
+.mr-kpi b small{font-size:13px;font-weight:700;margin-left:3px}
+.mr-kpi span{font-size:12px;color:var(--muted)}
+.mr-kpi .g b{color:var(--ok)}.mr-kpi .o b{color:var(--naranja)}
+:root[data-theme="dark"] .mr-kpi b{color:#BFD0EE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mr-kpi b{color:#BFD0EE}}
+.mr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mr-grid>.card,.mr>.card{padding:16px;min-width:0}
+.mr h3{margin:0 0 4px;font-size:15px}
+.mr .sub{margin:0 0 12px}
+.mr-bars{display:grid;gap:9px}
+.mr-bar{display:grid;grid-template-columns:minmax(90px,140px) 1fr 104px;align-items:center;gap:10px;font-size:13px}
+.mr-bar>span:first-child{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mr-track{background:var(--gris);height:14px;border-radius:7px;overflow:hidden;display:flex}
+.mr-track i{display:block;height:100%;background:var(--azul-claro)}
+.mr-track i.ok{background:var(--ok)}.mr-track i.o{background:var(--naranja)}
+.mr-bar em{font-style:normal;font-size:12.5px;text-align:right;white-space:nowrap}
+.mr-leg{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 0 10px}
+.mr-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.mr-pct{display:inline-block;min-width:44px;font-weight:700}
+@media (max-width:1100px){.mr-kpi{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:860px){.mr-grid{grid-template-columns:1fr}}
+@media (max-width:760px){.mr-kpi{grid-template-columns:repeat(2,1fr)}.mr-kpi b{font-size:22px}.mr-bar{grid-template-columns:90px 1fr 92px}}
+.mt-lbl{font-size:12.5px;font-weight:600;white-space:nowrap}.mt-lbl.cur{color:var(--nar)}.mt-lbl.done{color:var(--ok)}
 @media (max-width:760px){.mt-eqs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Fotos del hallazgo */
 .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
@@ -820,8 +868,13 @@ label textarea{min-height:64px;resize:vertical}
     <div class="tt">
       <div class="dash-head">
         <div><h2 style="margin:0;font-size:18px;color:var(--azul)">Solicitudes de mantenimiento</h2><span class="sub">Avisos de mejora a los equipos, con aviso SAP, responsable y jefe de turno que los sigue</span></div>
-        <span class="sub" id="mt-fecha"></span>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div class="seg" id="mt-vista" role="group" aria-label="Vista"><button type="button" data-v="lista" aria-pressed="true">Solicitudes</button><button type="button" data-v="rend" aria-pressed="false">Rendimiento de cierre</button></div>
+          <span class="sub" id="mt-fecha"></span>
+        </div>
       </div>
+      <div id="mt-rend" class="mr" hidden></div>
+      <div id="mt-lista" class="mt-lista">
       <nav class="tt-kpi" id="mt-kpi" aria-label="Filtrar solicitudes">
         <button data-k="" aria-pressed="true"><b id="mk-total">0</b><span id="mk-total-l">Solicitudes en total</span></button>
         <button data-k="abiertas"><b id="mk-ab">0</b><span>Abiertas</span></button>
@@ -843,10 +896,11 @@ label textarea{min-height:64px;resize:vertical}
           <button class="btn btn-primary" id="mt-new" type="button" hidden>Nueva solicitud</button>
         </div>
         <div class="tscroll" style="margin-top:10px"><table class="ttab">
-          <thead><tr><th>N°</th><th>Equipo</th><th>Problema</th><th>Aviso SAP</th><th>Responsable</th><th>Seguimiento</th><th>Fecha comprometida</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>N°</th><th>Equipo</th><th>Problema</th><th>Aviso SAP</th><th>Responsable</th><th>Seguimiento</th><th>Fecha comprometida</th><th>Proceso</th><th></th></tr></thead>
           <tbody id="mt-body"></tbody>
         </table></div>
         <div class="empty" id="mt-empty" hidden></div>
+      </div>
       </div>
     </div>
   </section>
@@ -1173,6 +1227,7 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-head"><h2 id="mt-title">Nueva solicitud de mantenimiento</h2><button type="button" class="mtx" aria-label="Cerrar">×</button></div>
     <div class="body">
       <div class="closed-banner" id="mt-banner" hidden></div>
+      <div id="mt-proc-box" hidden><div class="mt-proc" id="mt-proc"></div><p class="sub" id="mt-proc-help" style="margin:-8px 0 14px"></p></div>
       <fieldset id="mt-cierre" hidden><legend>Evidencia de cierre</legend><div class="evid" id="mt-evid"></div></fieldset>
       <div id="mt-ro" class="t-ro" hidden></div>
       <div id="mt-edit" class="grid">
@@ -2220,7 +2275,118 @@ function mtStat(arr){const n=arr.length,c=arr.filter(m=>!mtAbierta(m)).length,v=
   return{n,c,a:n-c,v,s,pc:n?Math.round(c/n*100):0}}
 const mtEnFiltro=m=>!mtEq||(mtEq.startsWith("area:")?m.area===mtEq.slice(5):m.equipo===mtEq);
 
+/* Proceso: etapas de cada solicitud */
+const MT_ETAPAS=[{k:"solicitada",n:"Solicitada"},{k:"sap",n:"Aviso SAP"},{k:"ejecucion",n:"En ejecución"},{k:"repuesto",n:"Esperando repuesto"},{k:"cerrada",n:"Cerrada"}];
+const MT_LBL={solicitada:"Solicitada · falta aviso SAP",sap:"Con aviso SAP · por iniciar",ejecucion:"En ejecución",repuesto:"Esperando repuesto",cerrada:"Cerrada"};
+const fD=iso=>iso?(iso.length===10?fmt(iso):new Date(iso).toLocaleDateString("es-CL")):"";
+const tieneSap=m=>!!String(m.avisoSap||"").trim();
+function mtEtapaActual(m){if(!mtAbierta(m))return"cerrada";if(m.estado==="Esperando repuesto")return"repuesto";if(m.estado==="En proceso")return"ejecucion";return tieneSap(m)?"sap":"solicitada"}
+function mtPasos(m){
+  const e=m.etapas||{}, cur=mtEtapaActual(m), ci=MT_ETAPAS.findIndex(x=>x.k===cur);
+  const fecha={solicitada:e.solicitada||m.creado||"",sap:tieneSap(m)?(e.sap||""):"",ejecucion:e.ejecucion||"",repuesto:e.repuesto||"",cerrada:!mtAbierta(m)?(m.fechaCierre||(m.cierre&&m.cierre.fecha)||""):""};
+  return MT_ETAPAS.map((s,i)=>{let st;
+    if(s.k===cur)st=cur==="cerrada"?"done":"cur";
+    else if(i<ci)st=(s.k==="repuesto"&&!fecha.repuesto)||(s.k==="sap"&&!tieneSap(m))?"skip":"done";
+    else st=fecha[s.k]&&s.k!=="cerrada"?"done":"pend";
+    const extra=st==="skip"?(s.k==="sap"?"Sin aviso":"No aplicó"):s.k==="sap"&&tieneSap(m)?`N° ${m.avisoSap}`:"";
+    return{...s,st,fecha:fD(fecha[s.k]),extra}});
+}
+function mtMini(m){const p=mtPasos(m),cur=mtEtapaActual(m);
+  return`<div class="mt-mini" title="${esc(MT_LBL[cur])}">${p.map((s,i)=>`${i?`<s class="${s.st==="done"||s.st==="cur"?"done":""}"></s>`:""}<i class="${s.st}"></i>`).join("")}</div><span class="mt-lbl ${cur==="cerrada"?"done":"cur"}">${esc(MT_LBL[cur])}</span>`}
+function renderMtProc(m,interactivo){
+  const p=mtPasos(m);
+  $("#mt-proc").innerHTML=p.map((s,i)=>{const clk=interactivo&&s.st!=="cur"&&(s.k!=="cerrada"||!mtCloseBlock(m));
+    const tag=clk?"button":"div";
+    return`<${tag} ${clk?`type="button" class="mt-st ${s.st} clk" data-etapa="${s.k}"`:`class="mt-st ${s.st}"`}><i>${s.st==="done"?"✓":i+1}</i><b>${esc(s.n)}</b>${s.extra?`<small>${esc(s.extra)}</small>`:""}${s.fecha&&s.st!=="skip"?`<small>${esc(s.fecha)}</small>`:""}</${tag}>`}).join("");
+  $("#mt-proc-help").textContent=interactivo?"Toque una etapa para avanzar la solicitud y luego Guardar. Para terminarla toque Cerrada: se pide comentario y evidencia objetiva.":"";
+  $("#mt-proc-help").hidden=!interactivo;
+}
+function mtPreview(){const m=mtEditId?mant.find(x=>x.id===mtEditId):null;if(!m||!mtAbierta(m))return;
+  renderMtProc({...m,estado:mtfrm.estado.value,avisoSap:mtfrm.avisoSap.value,etapas:{...(m.etapas||{}),sap:(m.etapas&&m.etapas.sap)||(mtfrm.avisoSap.value.trim()&&!tieneSap(m)?nowISO():"")}},true)}
+$("#mt-proc").addEventListener("click",e=>{const b=e.target.closest("[data-etapa]");if(!b)return;const k=b.dataset.etapa;
+  const m=mant.find(x=>x.id===mtEditId);if(!m)return;
+  if(k==="cerrada"){openMtClose(m);return}
+  if(k==="sap"){mtfrm.avisoSap.focus();if(!mtfrm.avisoSap.value.trim()){toast("Escriba el N° de aviso SAP y toque Guardar");return}mtfrm.estado.value="Pendiente"}
+  if(k==="solicitada")mtfrm.estado.value="Pendiente";
+  if(k==="ejecucion")mtfrm.estado.value="En proceso";
+  if(k==="repuesto")mtfrm.estado.value="Esperando repuesto";
+  mtPreview();
+});
+mtfrm.estado.addEventListener("change",mtPreview);
+mtfrm.avisoSap.addEventListener("input",mtPreview);
+
+/* Rendimiento de cierre */
+let mtVista="lista", mrPer="90";
+const diasEntreISO=(a,b)=>{if(!a||!b)return null;const x=new Date(a.length===10?a+"T12:00:00":a),y=new Date(b.length===10?b+"T12:00:00":b);const d=(y-x)/864e5;return isFinite(d)&&d>=0?d:null};
+const tCierre=m=>mtAbierta(m)?null:diasEntreISO(m.creado,(m.cierre&&m.cierre.fecha)||m.fechaCierre);
+const prom=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+const mediana=a=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),k=Math.floor(s.length/2);return s.length%2?s[k]:(s[k-1]+s[k])/2};
+const fDias=d=>{if(d==null)return"—";if(d<1)return Math.max(1,Math.round(d*24))+" h";const r=Math.round(d*10)/10;return r.toLocaleString("es-CL",{maximumFractionDigits:1})+(r===1?" día":" días")};
+const enPlazo=m=>!mtAbierta(m)&&m.fechaCompromiso&&m.fechaCierre?m.fechaCierre<=m.fechaCompromiso:null;
+function mrGrupo(arr){const cerr=arr.filter(m=>!mtAbierta(m)),t=cerr.map(tCierre).filter(x=>x!=null);
+  return{n:arr.length,c:cerr.length,pc:arr.length?Math.round(cerr.length/arr.length*100):0,prom:prom(t),med:mediana(t)}}
+function renderMtRend(){
+  const desde=mrPer==="todo"?"":mrPer==="anio"?hoyISO().slice(0,4)+"-01-01":(()=>{const d=new Date();d.setDate(d.getDate()-Number(mrPer));return d.toISOString().slice(0,10)})();
+  const arr=mant.filter(m=>!desde||String(m.creado||"").slice(0,10)>=desde);
+  const G=mrGrupo(arr), cerr=arr.filter(m=>!mtAbierta(m));
+  const conFecha=cerr.filter(m=>enPlazo(m)!=null), ok=conFecha.filter(enPlazo).length;
+  const abiertas=arr.filter(mtAbierta), edad=prom(abiertas.map(m=>diasEntreISO(m.creado,nowISO())).filter(x=>x!=null));
+  const max=v=>Math.max(1,...v.filter(x=>x!=null));
+  // Por equipo
+  const eqs=MT_AREAS.flatMap(a=>a.equipos.map(e=>({k:e,a:a.nombre,...mrGrupo(arr.filter(m=>m.equipo===e))})));
+  const mxE=max(eqs.map(e=>e.prom));
+  const barE=eqs.map(e=>`<div class="mr-bar"><span title="${esc(e.a)}">${esc(e.k)}</span><div class="mr-track">${e.prom!=null?`<i style="width:${Math.max(3,e.prom/mxE*100)}%"></i>`:""}</div><em>${e.c?`<b>${fDias(e.prom)}</b> · ${e.c} cerr.`:'<span class="sub">Sin cierres</span>'}</em></div>`).join("");
+  const barC=eqs.map(e=>`<div class="mr-bar"><span>${esc(e.k)}</span><div class="mr-track">${e.n?`<i class="ok" style="width:${e.c/e.n*100}%"></i><i class="o" style="width:${(e.n-e.c)/e.n*100}%"></i>`:""}</div><em>${e.n?`<b>${e.pc}%</b> · ${e.c} de ${e.n}`:'<span class="sub">Sin solicitudes</span>'}</em></div>`).join("");
+  // Por persona
+  const tablaP=(campoId,campoN,titulo)=>{const ids=[...new Map(arr.filter(m=>m[campoId]).map(m=>[m[campoId],m[campoN]||"(sin nombre)"])).entries()];
+    const rows=ids.map(([id,nom])=>({nom,...mrGrupo(arr.filter(m=>m[campoId]===id))})).sort((a,b)=>b.n-a.n);
+    return`<div class="card"><h3>${titulo}</h3><p class="sub">Solicitudes en el período, cumplimiento de cierre y tiempo promedio desde que se ingresó.</p>
+      <div class="tscroll"><table class="ttab"><thead><tr><th>Nombre</th><th>Ingresadas</th><th>Cerradas</th><th>% cierre</th><th>Prom. cierre</th><th>Mediana</th></tr></thead><tbody>
+      ${rows.length?rows.map(r=>`<tr><td><b>${esc(r.nom)}</b></td><td data-l="Ingresadas">${r.n}</td><td data-l="Cerradas">${r.c}</td><td data-l="% cierre"><span class="mr-pct" style="color:${r.pc>=80?"var(--ok)":r.pc>=50?"var(--nar)":"var(--rojo)"}">${r.pc}%</span></td><td data-l="Prom. cierre">${fDias(r.prom)}</td><td data-l="Mediana">${fDias(r.med)}</td></tr>`).join(""):'<tr><td colspan="6" class="sub">Sin datos en el período</td></tr>'}
+      </tbody></table></div></div>`};
+  // Tiempo por etapa
+  const tramo=(f)=>prom(cerr.concat(abiertas).map(f).filter(x=>x!=null));
+  const et=m=>m.etapas||{};
+  const tramos=[["Solicitada → aviso SAP",tramo(m=>et(m).sap?diasEntreISO(m.creado,et(m).sap):null)],
+    ["Aviso SAP → inicio de ejecución",tramo(m=>et(m).sap&&et(m).ejecucion?diasEntreISO(et(m).sap,et(m).ejecucion):null)],
+    ["Inicio de ejecución → cierre",tramo(m=>!mtAbierta(m)&&et(m).ejecucion?diasEntreISO(et(m).ejecucion,(m.cierre&&m.cierre.fecha)||m.fechaCierre):null)],
+    ["Solicitada → cierre (total)",G.prom]];
+  const mxT=max(tramos.map(t=>t[1]));
+  // Por mes de ingreso (últimos 6)
+  const meses=[];{const d=new Date();d.setDate(1);for(let i=5;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);meses.push(x.toISOString().slice(0,7))}}
+  const nomMes=k=>new Date(k+"-15").toLocaleDateString("es-CL",{month:"short",year:"2-digit"});
+  const porMes=meses.map(k=>({k,...mrGrupo(mant.filter(m=>String(m.creado||"").slice(0,7)===k))}));
+  const mxM=max(porMes.map(x=>x.n));
+  $("#mt-rend").innerHTML=`
+    <div class="mr-top"><p class="sub" style="margin:0">El tiempo de cierre se mide desde que se ingresa la solicitud hasta que se cierra con evidencia.</p>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600">Período (por fecha de ingreso)
+      <select id="mr-per"><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="anio">Este año</option><option value="todo">Todo</option></select></label></div>
+    <div class="mr-kpi">
+      <div><b>${G.n}</b><span>Solicitudes ingresadas</span></div>
+      <div class="g"><b>${G.pc}<small>%</small></b><span>Cerradas (${G.c} de ${G.n})</span></div>
+      <div><b>${fDias(G.prom)}</b><span>Tiempo promedio de cierre</span></div>
+      <div><b>${fDias(G.med)}</b><span>Mediana de cierre (caso típico)</span></div>
+      <div class="g"><b>${conFecha.length?Math.round(ok/conFecha.length*100)+"<small>%</small>":"—"}</b><span>Cerradas a tiempo${conFecha.length?` (${ok} de ${conFecha.length} con fecha comprometida)`:" (sin fechas comprometidas)"}</span></div>
+      <div class="o"><b>${fDias(edad)}</b><span>Antigüedad promedio de las ${abiertas.length} abiertas</span></div>
+    </div>
+    <div class="mr-grid">
+      <div class="card"><h3>Tiempo promedio de cierre por equipo</h3><p class="sub">Días desde el ingreso hasta el cierre. Barra más larga = equipo que más demora.</p><div class="mr-bars">${barE}</div></div>
+      <div class="card"><h3>Cumplimiento de cierre por equipo</h3><div class="mr-leg"><span><i style="background:var(--ok)"></i>Cerradas</span><span><i style="background:var(--naranja)"></i>Abiertas</span></div><div class="mr-bars">${barC}</div></div>
+    </div>
+    <div class="mr-grid">
+      <div class="card"><h3>Tiempo promedio por etapa</h3><p class="sub">Dónde se va el tiempo. Considera las solicitudes con fecha registrada en cada etapa.</p><div class="mr-bars">${tramos.map(([n,v],i)=>`<div class="mr-bar" style="grid-template-columns:minmax(120px,210px) 1fr 80px"><span>${n}</span><div class="mr-track">${v!=null?`<i class="${i===3?"ok":""}" style="width:${Math.max(3,v/mxT*100)}%"></i>`:""}</div><em><b>${fDias(v)}</b></em></div>`).join("")}</div></div>
+      <div class="card"><h3>Ingresadas y cerradas por mes</h3><p class="sub">Últimos 6 meses, según el mes en que se ingresó la solicitud.</p><div class="mr-leg"><span><i style="background:var(--ok)"></i>Cerradas</span><span><i style="background:var(--naranja)"></i>Aún abiertas</span></div><div class="mr-bars">${porMes.map(x=>`<div class="mr-bar"><span>${nomMes(x.k)}</span><div class="mr-track">${x.n?`<i class="ok" style="width:${x.c/mxM*100}%"></i><i class="o" style="width:${(x.n-x.c)/mxM*100}%"></i>`:""}</div><em>${x.n?`<b>${x.c}/${x.n}</b> · ${fDias(x.prom)}`:'<span class="sub">—</span>'}</em></div>`).join("")}</div></div>
+    </div>
+    <div class="mr-grid">${tablaP("responsableId","responsable","Por responsable")}${tablaP("seguidorId","seguidor","Por jefe de turno (seguimiento)")}</div>`;
+  $("#mr-per").value=mrPer;
+}
+$("#mt-vista").addEventListener("click",e=>{const b=e.target.closest("button[data-v]");if(!b)return;mtVista=b.dataset.v;renderMant()});
+$("#mt-rend").addEventListener("change",e=>{if(e.target.id==="mr-per"){mrPer=e.target.value;renderMtRend()}});
+
 function renderMant(){
+  document.querySelectorAll("#mt-vista button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===mtVista)));
+  $("#mt-lista").hidden=mtVista!=="lista";$("#mt-rend").hidden=mtVista!=="rend";
+  if(mtVista==="rend"){$("#mt-fecha").textContent="Actualizado al "+fmt(hoyISO());renderMtRend();return}
   $("#mt-fecha").textContent="Actualizado al "+fmt(hoyISO());
   $("#mt-new").hidden=!puedeCrearMt();
   if(mtSeg&&!mant.some(m=>m.seguidorId===mtSeg))mtSeg="";
@@ -2264,7 +2430,7 @@ function renderMant(){
       <td data-l="Responsable">${esc(m.responsable||"")}</td>
       <td data-l="Seguimiento">${esc(m.seguidor||"")}</td>
       <td data-l="Fecha comprometida" style="white-space:nowrap">${fmt(m.fechaCompromiso)||'<span class="sub">—</span>'}${m.fechaCompromiso||!mtAbierta(m)?`<div><span class="pill ${pillCls[a]}" style="display:inline-block;font-size:11px">${esc(mtPlazoTxt(m))}</span></div>`:""}</td>
-      <td data-l="Estado">${mtAbierta(m)?esc(m.estado||"Pendiente"):'<span class="pill p-cerr">Cerrada</span>'}</td>
+      <td data-l="Proceso">${mtMini(m)}</td>
       <td>${acc}</td></tr>`}).join("");
   const em=$("#mt-empty");em.hidden=list.length>0;
   em.textContent=mant.length?"Ninguna solicitud coincide con el filtro.":puedeCrearMt()?"Aún no hay solicitudes de mantenimiento. Use Nueva solicitud para crear la primera.":"Aún no hay solicitudes de mantenimiento.";
@@ -2325,6 +2491,7 @@ function openMant(m){
   $("#mt-meta").hidden=!(m&&edit);
   if(m&&edit)$("#mt-meta").textContent=`Solicitada por ${m.creadoPor||"—"}${m.creado?` el ${fmtDT(m.creado)}`:""}`;
   renderMtPhotos(m,!edit);
+  $("#mt-proc-box").hidden=!m;if(m)renderMtProc(m,edit);
   $("#mt-banner").hidden=!closed;$("#mt-cierre").hidden=!closed;
   if(closed){$("#mt-banner").textContent=`Cerrada el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}.${isAdmin?" Puede reabrirla si la evidencia no es suficiente.":""}`;if(m.cierre)renderEvid(m.cierre,$("#mt-evid"))}
   const hb=$("#mt-hist-box"),h=m&&Array.isArray(m.historial)?m.historial:[];hb.hidden=!h.length;
@@ -2361,7 +2528,7 @@ mtfrm.addEventListener("submit",async e=>{
     }
     if(!m){
       const num=mant.reduce((x,y)=>Math.max(x,y.num||0),0)+1;
-      Object.assign(data,{num,estado:"Pendiente",fotos,creado:nowISO(),creadoPor:myName(),creadoPorId:persona?persona.id:"",creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+      Object.assign(data,{num,estado:"Pendiente",fotos,etapas:{solicitada:nowISO(),sap:data.avisoSap?nowISO():""},creado:nowISO(),creadoPor:myName(),creadoPorId:persona?persona.id:"",creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
         historial:[{fecha:nowISO(),por:myName(),accion:`Creó la solicitud para ${equipo}. Responsable: ${data.responsable}. Seguimiento: ${data.seguidor}`}]});
       await setDoc(doc(db,"mantenimiento",id),data);
       mtDlg.close();toast(`Solicitud N° ${String(num).padStart(3,"0")} creada. ${data.responsable} y ${data.seguidor} recibirán un correo en los próximos minutos`);
@@ -2375,6 +2542,11 @@ mtfrm.addEventListener("submit",async e=>{
       if(m.descripcion!==descripcion||m.prioridad!==data.prioridad)ch.push("editó la solicitud");
       const est=MT_ABIERTOS.includes(mtfrm.estado.value)?mtfrm.estado.value:"Pendiente";if(est!==(m.estado||"Pendiente"))ch.push(`cambió estado a ${est}`);
       data.estado=est;
+      {const et={...(m.etapas||{})};if(!et.solicitada)et.solicitada=m.creado||nowISO();
+        if(data.avisoSap&&!tieneSap(m))et.sap=nowISO();if(!data.avisoSap)et.sap="";
+        if(est==="En proceso"&&m.estado!=="En proceso"&&!et.ejecucion)et.ejecucion=nowISO();
+        if(est==="Esperando repuesto"&&m.estado!=="Esperando repuesto")et.repuesto=nowISO();
+        data.etapas=et}
       if(mtPhotos.length){data.fotos=fotos;ch.push(`agregó ${mtPhotos.length} foto${mtPhotos.length>1?"s":""}`)}
       if(ch.length)data.historial=addHistT(m,ch.join(", ").replace(/^./,c=>c.toUpperCase()));
       await updateDoc(doc(db,"mantenimiento",m.id),data);
@@ -2436,8 +2608,8 @@ mtcfrm.addEventListener("submit",async e=>{
 });
 $("#mt-csv").onclick=()=>{
   const cols=[["num","N°"],["area","Área"],["equipo","Equipo"],["descripcion","Descripción del problema"],["avisoSap","Aviso SAP"],["prioridad","Prioridad"],["responsable","Responsable"],["seguidor","Seguimiento (jefe de turno)"],
-    ["fechaCompromiso","Fecha comprometida"],["estado","Estado"],["plazo","Plazo"],["creadoPor","Solicitada por"],["creadoF","Fecha solicitud"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrada por"]];
-  const rows=mant.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(m=>({...m,plazo:mtPlazoTxt(m),fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),creadoF:m.creado?fmtDT(m.creado):"",
+    ["fechaCompromiso","Fecha comprometida"],["etapa","Etapa del proceso"],["plazo","Plazo"],["creadoPor","Solicitada por"],["creadoF","Fecha solicitud"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrada por"]];
+  const rows=mant.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(m=>({...m,etapa:MT_LBL[mtEtapaActual(m)],plazo:mtPlazoTxt(m),fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),creadoF:m.creado?fmtDT(m.creado):"",
     cierreComentario:m.cierre?m.cierre.comentario:"",cierrePor:m.cierre?m.cierre.por:""}));
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
   const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");

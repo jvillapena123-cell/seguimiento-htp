@@ -165,7 +165,7 @@ for (const d of snap.docs) {
 
 // ---------- Solicitudes de mantenimiento ----------
 // Correo al responsable y al jefe de turno que hace el seguimiento cuando se asignan (o cambian),
-// con la primera foto del problema. Al cerrarse, aviso al jefe de turno y a quien la solicitó.
+// con la primera foto del problema. Al cerrarse, aviso al jefe de turno del seguimiento y al administrador.
 function plantillaMant({ titulo, color = "#1F3A6E", intro, m, nota, conFoto }) {
   const fila = (k, v) => `<tr><td style="padding:6px 12px 6px 0;color:#5A6478;font-size:13px;white-space:nowrap;vertical-align:top">${k}</td><td style="padding:6px 0;font-size:14px;color:#1A2233">${v}</td></tr>`;
   return `<!doctype html><html><body style="margin:0;background:#F6F6F8;font-family:Segoe UI,Arial,sans-serif">
@@ -214,14 +214,17 @@ for (const d of snapM.docs) {
     if (m.estado === "Cerrada") {
       if (!n.cierre && m.cierre && m.cierre.fecha) {
         const seg = String(m.seguidorCorreo || "").toLowerCase();
-        const cre = String(m.creadoPorCorreo || "").toLowerCase();
-        const to = seg || cre || ADMIN_EMAIL;
+        const to = seg || ADMIN_EMAIL;
+        const fin = (m.cierre && m.cierre.fecha) || (m.fechaCierre ? m.fechaCierre + "T12:00:00" : "");
+        const dd = m.creado && fin ? (new Date(fin) - new Date(m.creado)) / 864e5 : null;
+        const tiempo = dd == null || dd < 0 ? "" : dd < 1 ? `${Math.max(1, Math.round(dd * 24))} hora(s)` : `${dd.toLocaleString("es-CL", { maximumFractionDigits: 1 })} días`;
+        const plazo = m.fechaCompromiso && m.fechaCierre ? (m.fechaCierre <= m.fechaCompromiso ? " · dentro de la fecha comprometida" : ` · <b style="color:#A3261B">${diasEntre(m.fechaCompromiso, m.fechaCierre)} día(s) después de la fecha comprometida</b>`) : "";
         await enviar({
-          to, cc: cre && cre !== to ? cre : undefined,
-          subject: `✅ Mantenimiento N° ${num(m)} · ${m.equipo} cerrado por ${m.cierre.por || ""}`,
+          to, cc: ADMIN_EMAIL,
+          subject: `✅ Mantenimiento N° ${num(m)} · ${m.equipo} cerrado por ${m.cierre.por || ""}${tiempo ? ` (${tiempo})` : ""}`,
           html: plantillaMant({
             titulo: "Solicitud cerrada con evidencia", color: "#1E6B3A", m,
-            intro: `<b>${esc(m.cierre.por || "")}</b> cerró la solicitud de <b>${esc(m.equipo)}</b> el ${fmt(m.fechaCierre)}.`,
+            intro: `<b>${esc(m.cierre.por || "")}</b> cerró la solicitud de <b>${esc(m.equipo)}</b> el ${fmt(m.fechaCierre)}.${tiempo ? `<br>Tiempo de cierre desde que se ingresó: <b>${tiempo}</b>${plazo}.` : ""}`,
             nota: `<b>Comentario de cierre:</b> ${esc(m.cierre.comentario)}<br>Evidencia: ${esc(m.cierre.archivo && m.cierre.archivo.nombre || "adjunta en la aplicación")}`
           })
         });
