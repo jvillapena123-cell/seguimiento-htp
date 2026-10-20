@@ -85,3 +85,13 @@ Cada tarea o compromiso nuevo trae automáticamente las 5 etapas: **Empatizar, D
 - En el detalle, el administrador o el responsable marcan cada etapa como Pendiente / En curso / Hecha y dejan una nota. Al marcar una como Hecha, la siguiente pasa a En curso. Los cambios quedan en el historial.
 - Las tareas creadas antes de este cambio también muestran las etapas (todas pendientes).
 - El CSV incluye la columna "Etapa design thinking". Requiere publicar el `firestore.rules` actualizado para que el responsable pueda avanzar etapas.
+
+## Mantenimiento de equipos
+
+Pestaña visible para quienes tienen acceso Lector, Usuario o Administrador, y para los jefes de turno.
+- **Equipos**: LSur (C-32, C-33, C-34, Apilador ST34), LNorte (MKS1, Apilador Sumitomo) y TTMM (C-31, TD3). Tocando un equipo o un área se filtran sus solicitudes.
+- **Nueva solicitud** (Usuarios, jefes de turno y administrador): equipo, descripción del problema, al menos una foto (hasta 3), N° de aviso SAP, prioridad, fecha comprometida (opcional), **responsable** y **jefe de turno** que hace el seguimiento.
+- Al crearla, o si cambia el responsable o el jefe de turno, cada uno recibe un correo con la solicitud y la foto (lo envía la misma automatización de GitHub Actions de Tareas de turno, cada 15 minutos).
+- Quien la creó, el responsable y el jefe de turno pueden editarla (aviso SAP, fecha, estado: Pendiente / En proceso / Esperando repuesto). El responsable o el jefe de turno la cierran con comentario y evidencia; se avisa por correo al jefe de turno y a quien la solicitó.
+
+Datos en Firestore: colección `mantenimiento`. Requiere publicar el `firestore.rules` actualizado.

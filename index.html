@@ -220,6 +220,23 @@ label textarea{min-height:64px;resize:vertical}
 @media (max-width:820px){
   .admin{grid-template-columns:1fr}
 }
+/* Mantenimiento de equipos */
+.mt-areas{display:grid;grid-template-columns:2fr 1.15fr 1.15fr;gap:14px}
+.mt-area{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--ec);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mt-ah{display:flex;justify-content:space-between;align-items:baseline;gap:8px;background:none;border:0;padding:2px 0;font:inherit;color:inherit;cursor:pointer;text-align:left;font-weight:800;font-size:15px}
+.mt-ah small{font-size:12px;font-weight:600;color:var(--muted)}
+.mt-ah[aria-pressed="true"] span{color:var(--naranja);text-decoration:underline;text-underline-offset:3px}
+.mt-eqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.mt-eq{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;font:inherit;color:inherit;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mt-eq b{font-size:14px;padding-right:12px}
+.mt-eq span{font-size:12px;color:var(--muted)}
+.mt-eq.on span{color:var(--nar);font-weight:700}
+.mt-eq:hover{border-color:var(--azul-claro)}
+.mt-eq[aria-pressed="true"]{outline:2px solid var(--naranja);outline-offset:1px;border-color:var(--naranja)}
+.mt-dot{position:absolute;top:9px;right:9px;width:9px;height:9px;border-radius:50%}
+.mt-dot.r{background:#C0392B}.mt-dot.o{background:var(--naranja)}
+@media (max-width:1000px){.mt-areas{grid-template-columns:1fr}}
+@media (max-width:760px){.mt-eqs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Fotos del hallazgo */
 .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 .ph{position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;background:var(--gris);border:1px solid var(--line)}
@@ -606,6 +623,7 @@ label textarea{min-height:64px;resize:vertical}
       <button role="tab" data-tab="Hallazgo" aria-selected="false" id="tab-hall">Hallazgos<span class="cnt" id="c-hall">0</span></button>
       <button role="tab" data-tab="tareas" aria-selected="false" id="tab-tareas" hidden><span class="lg">Tareas de turno</span><span class="sm">Tareas</span><span class="cnt" id="c-tar">0</span></button>
       <button role="tab" data-tab="mejoras" aria-selected="false" id="tab-mej" hidden><span class="lg">Seguimiento de mejoras</span><span class="sm">Mejoras</span><span class="cnt" id="c-mej">0</span></button>
+      <button role="tab" data-tab="mant" aria-selected="false" id="tab-mant" hidden><span class="lg">Mantenimiento</span><span class="sm">Mant.</span><span class="cnt" id="c-mant">0</span></button>
       <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden><span class="lg">Administración</span><span class="sm">Admin</span></button>
     </nav>
   </div>
@@ -798,6 +816,41 @@ label textarea{min-height:64px;resize:vertical}
     </div>
   </section>
 
+  <section id="mant" hidden>
+    <div class="tt">
+      <div class="dash-head">
+        <div><h2 style="margin:0;font-size:18px;color:var(--azul)">Solicitudes de mantenimiento</h2><span class="sub">Avisos de mejora a los equipos, con aviso SAP, responsable y jefe de turno que los sigue</span></div>
+        <span class="sub" id="mt-fecha"></span>
+      </div>
+      <nav class="tt-kpi" id="mt-kpi" aria-label="Filtrar solicitudes">
+        <button data-k="" aria-pressed="true"><b id="mk-total">0</b><span id="mk-total-l">Solicitudes en total</span></button>
+        <button data-k="abiertas"><b id="mk-ab">0</b><span>Abiertas</span></button>
+        <button data-k="cerradas" class="g"><b id="mk-ce">0</b><span id="mk-ce-l">Cerradas</span></button>
+        <button data-k="vencidas" class="r"><b id="mk-ve">0</b><span>Fecha comprometida vencida</span></button>
+        <button data-k="sinsap" class="o"><b id="mk-sap">0</b><span>Abiertas sin aviso SAP</span></button>
+      </nav>
+      <div>
+        <h2 style="margin:0 0 4px;font-size:15px">Equipos</h2>
+        <p class="sub" style="margin:0 0 10px">Toque un equipo o un área para ver solo sus solicitudes. Vuelva a tocarlo para ver todas.</p>
+        <div class="mt-areas" id="mt-areas"></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="tt-bar">
+          <input type="search" id="mt-q" placeholder="Buscar por equipo, problema, aviso SAP o persona…" aria-label="Buscar solicitud">
+          <select id="mt-f-eq" aria-label="Equipo"></select>
+          <select id="mt-f-seg" aria-label="Jefe de turno que sigue"><option value="">Todos los jefes de turno</option></select>
+          <button class="btn btn-ghost" id="mt-csv" type="button">Exportar CSV</button>
+          <button class="btn btn-primary" id="mt-new" type="button" hidden>Nueva solicitud</button>
+        </div>
+        <div class="tscroll" style="margin-top:10px"><table class="ttab">
+          <thead><tr><th>N°</th><th>Equipo</th><th>Problema</th><th>Aviso SAP</th><th>Responsable</th><th>Seguimiento</th><th>Fecha comprometida</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="mt-body"></tbody>
+        </table></div>
+        <div class="empty" id="mt-empty" hidden></div>
+      </div>
+    </div>
+  </section>
+
   <section id="admin" hidden>
     <div class="admin">
       <div class="card">
@@ -815,7 +868,7 @@ label textarea{min-height:64px;resize:vertical}
             <option value="Administrador">Administrador: además gestiona personas</option>
             <option value="Sin acceso">Sin acceso: solo figura como responsable</option>
           </select></label>
-          <div class="checks"><label><input type="checkbox" name="responsable" checked> Puede ser responsable</label><label><input type="checkbox" name="jefeTurno"> Jefe de turno (ve la pestaña Tareas de turno)</label></div>
+          <div class="checks"><label><input type="checkbox" name="responsable" checked> Puede ser responsable</label><label><input type="checkbox" name="jefeTurno"> Jefe de turno (ve Tareas de turno y sigue solicitudes de mantenimiento)</label></div>
           <div style="display:flex;gap:10px">
             <button class="btn btn-primary" type="submit" id="p-save">Agregar persona</button>
             <button class="btn btn-ghost" type="button" id="p-cancel" hidden>Cancelar</button>
@@ -1115,6 +1168,67 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost mcx">Cancelar</button><button type="submit" class="btn btn-close" id="mc-save">Cerrar con evidencia</button></div></div>
   </form>
 </dialog>
+<dialog id="dlg-mt" aria-labelledby="mt-title">
+  <form id="mtfrm">
+    <div class="dlg-head"><h2 id="mt-title">Nueva solicitud de mantenimiento</h2><button type="button" class="mtx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <div class="closed-banner" id="mt-banner" hidden></div>
+      <fieldset id="mt-cierre" hidden><legend>Evidencia de cierre</legend><div class="evid" id="mt-evid"></div></fieldset>
+      <div id="mt-ro" class="t-ro" hidden></div>
+      <div id="mt-edit" class="grid">
+        <label>Equipo <span class="req">obligatorio</span><select name="equipo" required></select></label>
+        <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
+        <label class="full">Descripción del problema <span class="req">obligatorio</span><textarea name="descripcion" required placeholder="Qué se observó, dónde está en el equipo y desde cuándo"></textarea></label>
+        <label>N° aviso SAP<input name="avisoSap" inputmode="numeric" autocomplete="off" placeholder="Ej.: 10456789"></label>
+        <label>Fecha comprometida<input type="date" name="fechaCompromiso"></label>
+        <label>Responsable <span class="req">obligatorio</span><select name="responsableId" required></select></label>
+        <label>Seguimiento: jefe de turno <span class="req">obligatorio</span><select name="seguidorId" required></select></label>
+      </div>
+      <div id="mt-estado-box" class="grid" style="margin-top:12px" hidden>
+        <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option><option>Esperando repuesto</option></select></label>
+      </div>
+      <fieldset style="margin-top:14px"><legend>Fotografías del problema <span class="req" id="mt-photo-req">al menos una</span></legend>
+        <div class="photos" id="mt-photos"></div>
+        <input type="file" id="mt-ph-in" accept="image/*" multiple hidden>
+      </fieldset>
+      <p class="help" id="mt-mail-help" style="margin:12px 0 0">Al guardar, el responsable y el jefe de turno que hace el seguimiento reciben un correo con la solicitud y la foto. Si se cambia alguno de ellos, el nuevo también recibe el correo.</p>
+      <p class="sub" id="mt-meta" hidden style="margin:10px 0 0"></p>
+      <fieldset id="mt-hist-box" hidden style="margin-top:14px"><legend>Historial</legend><ul class="hist" id="mt-hist"></ul></fieldset>
+    </div>
+    <div class="dlg-foot">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-danger" id="mt-del" hidden>Eliminar</button>
+        <button type="button" class="btn btn-ghost" id="mt-reopen" hidden>Reabrir</button>
+      </div>
+      <div class="r">
+        <button type="button" class="btn btn-close" id="mt-close-b" hidden>Cerrar con evidencia</button>
+        <button type="button" class="btn btn-ghost mtx">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="mt-save">Crear solicitud</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-mtc" aria-labelledby="mtc-title">
+  <form id="mtcfrm">
+    <div class="dlg-head"><h2 id="mtc-title">Cerrar solicitud con evidencia</h2><button type="button" class="mtcx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" id="mtc-what" style="margin:0 0 14px"></p>
+      <div class="stack">
+        <label>Comentario de cierre <span class="req">obligatorio</span><textarea name="comentario" required placeholder="Describa la reparación o mejora realizada"></textarea></label>
+        <div>
+          <label style="margin-bottom:6px">Evidencia objetiva <span class="req">obligatorio</span></label>
+          <label class="drop" id="mtc-drop">
+            <input type="file" id="mtc-file" accept="image/*,application/pdf">
+            <span id="mtc-drop-txt">Toque para adjuntar una foto o un PDF</span>
+          </label>
+          <div class="prev" id="mtc-prev"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost mtcx">Cancelar</button><button type="submit" class="btn btn-close" id="mtc-save">Cerrar con evidencia</button></div></div>
+  </form>
+</dialog>
 <button class="fab" id="fab" hidden><span>📷</span>Hallazgo en terreno</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
@@ -1152,7 +1266,7 @@ function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"><
 function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
 
 /* ---------- Estado ---------- */
-let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], mjErr=false;
+let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], mjErr=false, mant=[];
 const MAX_POR_CORREO=3;
 // Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
 const MAX_ESPECIAL={"supervisorhuachipato@reloncavi.cl":5};
@@ -1209,7 +1323,7 @@ $("#b-logout").onclick=()=>signOut(auth);
 $("#b-retry").onclick=()=>boot();
 
 async function boot(){
-  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];proyectos=[];mejoras=[];mjErr=false;
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];proyectos=[];mejoras=[];mjErr=false;mant=[];
   if(!authUser){showGate("g-login");return}
   const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
   let acc=null;
@@ -1223,15 +1337,18 @@ async function boot(){
   myAcceso=acc?acc.acceso:"";
   isAdmin=bootstrap||myAcceso==="Administrador";
   esJefe=jefe;
-  if(!canReadH())tab="tareas";
+  if(!canReadH())tab=location.hash==="#mant"?"mant":"tareas";
   else if(location.hash==="#tareas"&&verTareas())tab="tareas";
   else if(location.hash==="#mejoras")tab="mejoras";
+  else if(location.hash==="#mant")tab="mant";
   setSync(false,"Conectando…");
   if(verTareas())unsubs.push(onSnapshot(collection(db,"tareas"),snap=>{tareas=snap.docs.map(d=>({id:d.id,...d.data()}));if(!canReadH())setSync(!snap.metadata.fromCache,snap.metadata.fromCache?"Sin señal":"Sincronizado");render()},
     e=>{console.error(e);toast("No se pudieron cargar las tareas de turno. Revise que las reglas de Firebase estén actualizadas")}));
   if(canReadH())unsubs.push(onSnapshot(collection(db,"hallazgos"),{includeMetadataChanges:true},snap=>{items=snap.docs.map(d=>({id:d.id,...d.data()}));
     repairResp();const pend=snap.metadata.hasPendingWrites;setSync(!pend&&!snap.metadata.fromCache,pend?"Pendiente de envío":snap.metadata.fromCache?"Sin señal · trabajando sin conexión":"Sincronizado");render()},
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
+  if(canReadH()||esJefe)unsubs.push(onSnapshot(collection(db,"mantenimiento"),snap=>{mant=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
+    e=>{console.error(e);toast("No se pudieron cargar las solicitudes de mantenimiento. Revise que las reglas de Firebase estén actualizadas")}));
   if(canReadH()){
     const mjFail=e=>{console.error(e);mjErr=true;render()};
     unsubs.push(onSnapshot(collection(db,"proyectos"),snap=>{proyectos=snap.docs.map(d=>({id:d.id,...d.data()}));mjErr=false;render()},mjFail));
@@ -1369,17 +1486,21 @@ function render(){
   $("#c-hall").textContent=items.filter(i=>i.tipo==="Hallazgo").length;
   $("#tab-admin").hidden=!isAdmin;
   $("#tab-tareas").hidden=!verTareas();
+  $("#tab-mant").hidden=!verMant();
+  $("#c-mant").textContent=mant.filter(m=>m.estado!=="Cerrada").length;
   ["#tab-dash","#tab-comp","#tab-hall","#tab-mej"].forEach(s=>$(s).hidden=!canReadH());
   $("#c-mej").textContent=mejoras.filter(m=>m.estado!=="Cerrado").length;
   $("#c-tar").textContent=tareas.filter(t=>t.estado!=="Cerrada").length;
   if(tab==="admin"&&!isAdmin)tab="Compromiso";
   if(tab==="tareas"&&!verTareas())tab="Compromiso";
-  if(tab!=="tareas"&&tab!=="admin"&&!canReadH())tab="tareas";
+  if(tab==="mant"&&!verMant())tab="Compromiso";
+  if(tab!=="tareas"&&tab!=="admin"&&tab!=="mant"&&!canReadH())tab="tareas";
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
-  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas"||tab==="mejoras";$("#mejoras").hidden=tab!=="mejoras";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
+  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas"||tab==="mejoras"||tab==="mant";$("#mant").hidden=tab!=="mant";$("#mejoras").hidden=tab!=="mejoras";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
   $("#btn-new").hidden=!canWrite();
-  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas"||tab==="mejoras";
+  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas"||tab==="mejoras"||tab==="mant";
   if(tab==="tareas"){renderTareas();return}
+  if(tab==="mant"){renderMant();return}
   if(tab==="mejoras"){renderMejoras();return}
   if(tab==="dash"){renderDash();return}
   if(tab==="admin"){renderAdmin();return}
@@ -2064,6 +2185,264 @@ $("#t-csv").onclick=()=>{
   const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download=`tareas_turno_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
+};
+
+/* ---------- Mantenimiento de equipos ---------- */
+const MT_AREAS=[
+  {id:"LSur",nombre:"LSur",equipos:["C-32","C-33","C-34","Apilador ST34"]},
+  {id:"LNorte",nombre:"LNorte",equipos:["MKS1","Apilador Sumitomo"]},
+  {id:"TTMM",nombre:"TTMM",equipos:["C-31","TD3"]}
+];
+const MT_ABIERTOS=["Pendiente","En proceso","Esperando repuesto"];
+const MT_COLS={LSur:"#1F3A6E",LNorte:"#2A8FA8",TTMM:"#7A4FA0"};
+const mtDlg=$("#dlg-mt"), mtfrm=$("#mtfrm"), mtcDlg=$("#dlg-mtc"), mtcfrm=$("#mtcfrm");
+let mtKpi="", mtEq="", mtSeg="", mtEditId=null, mtCloseId=null, mtCloseFile=null, mtPhotos=[];
+const verMant=()=>canReadH()||esJefe;
+const puedeCrearMt=()=>canWrite()||esJefe;
+const areaDe=eq=>{const a=MT_AREAS.find(a=>a.equipos.includes(eq));return a?a.id:""};
+const mtNum=m=>m.num?String(m.num).padStart(3,"0"):"";
+const mtAbierta=m=>m.estado!=="Cerrada";
+function mtAlerta(m){if(!mtAbierta(m))return"Cerrado";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
+const mtPlazoTxt=m=>{if(!mtAbierta(m))return m.fechaCierre?`Cerrada el ${fmt(m.fechaCierre)}`:"Cerrada";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";
+  return d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`};
+const esYo=(correo,id)=>String(correo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||id===persona.id);
+const mtSoyResp=m=>esYo(m.responsableCorreo,m.responsableId);
+const mtSoySeg=m=>esYo(m.seguidorCorreo,m.seguidorId);
+const mtSoyCreador=m=>esYo(m.creadoPorCorreo,m.creadoPorId);
+const mtPuedeEditar=m=>!m?puedeCrearMt():mtAbierta(m)&&(isAdmin||((canWrite()||esJefe)&&(mtSoyResp(m)||mtSoySeg(m)||mtSoyCreador(m))));
+function mtCloseBlock(m){
+  if(!mtAbierta(m))return"Ya está cerrada";
+  if(!(canWrite()||esJefe))return"Su acceso no permite cerrar";
+  if(isAdmin||mtSoyResp(m)||mtSoySeg(m))return"";
+  return`Solo ${m.responsable||"el responsable"} o ${m.seguidor||"el jefe de turno que la sigue"} pueden cerrarla`;
+}
+function mtStat(arr){const n=arr.length,c=arr.filter(m=>!mtAbierta(m)).length,v=arr.filter(m=>mtAlerta(m)==="Vencido").length,s=arr.filter(m=>mtAbierta(m)&&!String(m.avisoSap||"").trim()).length;
+  return{n,c,a:n-c,v,s,pc:n?Math.round(c/n*100):0}}
+const mtEnFiltro=m=>!mtEq||(mtEq.startsWith("area:")?m.area===mtEq.slice(5):m.equipo===mtEq);
+
+function renderMant(){
+  $("#mt-fecha").textContent="Actualizado al "+fmt(hoyISO());
+  $("#mt-new").hidden=!puedeCrearMt();
+  if(mtSeg&&!mant.some(m=>m.seguidorId===mtSeg))mtSeg="";
+  const base=mant.filter(m=>mtEnFiltro(m)&&(!mtSeg||m.seguidorId===mtSeg));
+  const S=mtStat(base);
+  $("#mk-total").textContent=S.n;$("#mk-ab").textContent=S.a;$("#mk-ce").textContent=S.c;$("#mk-ce-l").textContent=`Cerradas (${S.pc}%)`;
+  $("#mk-ve").textContent=S.v;$("#mk-sap").textContent=S.s;
+  $("#mk-total-l").textContent=mtEq?`Solicitudes de ${mtEq.startsWith("area:")?mtEq.slice(5):mtEq}`:"Solicitudes en total";
+  document.querySelectorAll("#mt-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mtKpi)));
+  // Tarjetas por área y equipo
+  $("#mt-areas").innerHTML=MT_AREAS.map(a=>{
+    const arr=mant.filter(m=>m.area===a.id),ab=arr.filter(mtAbierta).length;
+    return`<div class="mt-area" style="--ec:${MT_COLS[a.id]}">
+      <button type="button" class="mt-ah" data-eq="area:${a.id}" aria-pressed="${mtEq==="area:"+a.id}"><span>${esc(a.nombre)}</span><small>${ab} abierta${ab===1?"":"s"}</small></button>
+      <div class="mt-eqs">${a.equipos.map(eq=>{const e=arr.filter(m=>m.equipo===eq),eab=e.filter(mtAbierta),alta=eab.some(m=>m.prioridad==="Alta"),venc=eab.some(m=>mtAlerta(m)==="Vencido");
+        return`<button type="button" class="mt-eq${eab.length?" on":""}" data-eq="${esc(eq)}" aria-pressed="${mtEq===eq}">
+          <b>${esc(eq)}</b><span>${eab.length?`${eab.length} abierta${eab.length===1?"":"s"}`:"Sin pendientes"}</span>
+          ${venc?'<i class="mt-dot r" title="Tiene solicitudes vencidas"></i>':alta?'<i class="mt-dot o" title="Tiene solicitudes de prioridad alta"></i>':""}</button>`}).join("")}</div></div>`}).join("");
+  // Filtros
+  const eqSel=$("#mt-f-eq");
+  eqSel.innerHTML='<option value="">Todos los equipos</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}"><option value="area:${a.id}">Todo ${esc(a.nombre)}</option>${a.equipos.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join("")}</optgroup>`).join("");
+  eqSel.value=mtEq;
+  const segs=[...new Map(mant.filter(m=>m.seguidorId).map(m=>[m.seguidorId,m.seguidor||"(sin nombre)"])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"es"));
+  $("#mt-f-seg").innerHTML='<option value="">Todos los jefes de turno</option>'+segs.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");
+  $("#mt-f-seg").value=mtSeg;
+  // Lista
+  const q=$("#mt-q").value.trim().toLowerCase();
+  const list=base.filter(m=>{const a=mtAlerta(m);
+    if(mtKpi==="abiertas"&&!mtAbierta(m))return false;if(mtKpi==="cerradas"&&mtAbierta(m))return false;
+    if(mtKpi==="vencidas"&&a!=="Vencido")return false;if(mtKpi==="sinsap"&&!(mtAbierta(m)&&!String(m.avisoSap||"").trim()))return false;
+    return!q||[m.equipo,m.area,m.descripcion,m.avisoSap,m.responsable,m.seguidor,m.creadoPor,mtNum(m)].join(" ").toLowerCase().includes(q)})
+    .sort((a,b)=>(mtAbierta(b)-mtAbierta(a))||((prioOrder[a.prioridad]??9)-(prioOrder[b.prioridad]??9))||(alertOrder[mtAlerta(a)]-alertOrder[mtAlerta(b)])||(b.num||0)-(a.num||0));
+  $("#mt-body").innerHTML=list.map(m=>{const a=mtAlerta(m),b=mtCloseBlock(m);
+    const acc=!mtAbierta(m)?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?"":`<button class="btn btn-close btn-sm" data-mtclose="${esc(m.id)}">Cerrar</button>`;
+    const sap=String(m.avisoSap||"").trim();
+    return`<tr class="row ${rowCls[a]||""}" data-mtid="${esc(m.id)}" tabindex="0">
+      <td class="num">${mtNum(m)}</td>
+      <td data-l="Equipo" style="white-space:nowrap"><b>${esc(m.equipo)}</b><div class="sub">${esc(m.area)}</div></td>
+      <td><span class="desc">${esc(m.descripcion&&m.descripcion.length>120?m.descripcion.slice(0,120)+"…":m.descripcion)}</span>${m.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${m.fotos&&m.fotos.length?`<span class="camicon">📷 ${m.fotos.length}</span>`:""}</td>
+      <td data-l="Aviso SAP" style="white-space:nowrap">${sap?esc(sap):'<span class="pill p-porv" style="display:inline-block">Sin aviso</span>'}</td>
+      <td data-l="Responsable">${esc(m.responsable||"")}</td>
+      <td data-l="Seguimiento">${esc(m.seguidor||"")}</td>
+      <td data-l="Fecha comprometida" style="white-space:nowrap">${fmt(m.fechaCompromiso)||'<span class="sub">—</span>'}${m.fechaCompromiso||!mtAbierta(m)?`<div><span class="pill ${pillCls[a]}" style="display:inline-block;font-size:11px">${esc(mtPlazoTxt(m))}</span></div>`:""}</td>
+      <td data-l="Estado">${mtAbierta(m)?esc(m.estado||"Pendiente"):'<span class="pill p-cerr">Cerrada</span>'}</td>
+      <td>${acc}</td></tr>`}).join("");
+  const em=$("#mt-empty");em.hidden=list.length>0;
+  em.textContent=mant.length?"Ninguna solicitud coincide con el filtro.":puedeCrearMt()?"Aún no hay solicitudes de mantenimiento. Use Nueva solicitud para crear la primera.":"Aún no hay solicitudes de mantenimiento.";
+}
+$("#mt-kpi").addEventListener("click",e=>{const b=e.target.closest("button[data-k]");if(!b)return;mtKpi=mtKpi===b.dataset.k?"":b.dataset.k;renderMant()});
+$("#mt-areas").addEventListener("click",e=>{const b=e.target.closest("[data-eq]");if(!b)return;mtEq=mtEq===b.dataset.eq?"":b.dataset.eq;renderMant()});
+$("#mt-f-eq").addEventListener("change",e=>{mtEq=e.target.value;renderMant()});
+$("#mt-f-seg").addEventListener("change",e=>{mtSeg=e.target.value;renderMant()});
+$("#mt-q").addEventListener("input",renderMant);
+$("#mt-new").onclick=()=>openMant(null);
+$("#mt-body").addEventListener("click",e=>{const c=e.target.closest("[data-mtclose]");if(c){openMtClose(mant.find(m=>m.id===c.dataset.mtclose));return}
+  const tr=e.target.closest("tr[data-mtid]");if(tr)openMant(mant.find(m=>m.id===tr.dataset.mtid))});
+$("#mt-body").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-mtid]"))openMant(mant.find(m=>m.id===e.target.dataset.mtid))});
+document.querySelectorAll(".mtx").forEach(b=>b.onclick=()=>mtDlg.close());
+document.querySelectorAll(".mtcx").forEach(b=>b.onclick=()=>mtcDlg.close());
+
+/* Fotos del problema */
+function renderMtPhotos(m,lock){
+  const box=$("#mt-photos"), saved=(m&&m.fotos)||[];
+  box.innerHTML="";
+  saved.forEach(f=>{const d=document.createElement("div");d.className="ph";d.innerHTML='<div class="ld">Cargando…</div>';box.appendChild(d);
+    evidData(f.evidId).then(src=>{if(!src){d.innerHTML='<div class="ld">No disponible</div>';return}d.innerHTML="";const im=new Image();im.src=src;im.alt="Foto del problema";im.onclick=()=>openViewer(src);d.appendChild(im)}).catch(()=>{d.innerHTML='<div class="ld">Error</div>'})});
+  mtPhotos.forEach((p,k)=>{const d=document.createElement("div");d.className="ph";const im=new Image();im.src=p.url;im.alt="Foto nueva";im.onclick=()=>openViewer(p.url);
+    const x=document.createElement("button");x.type="button";x.textContent="×";x.setAttribute("aria-label","Quitar foto");x.onclick=()=>{mtPhotos.splice(k,1);renderMtPhotos(m,lock)};d.append(im,x);box.appendChild(d)});
+  if(!lock&&saved.length+mtPhotos.length<3){const b=document.createElement("button");b.type="button";b.className="ph-add";b.innerHTML="<span>📷</span>Agregar foto";b.onclick=()=>$("#mt-ph-in").click();box.appendChild(b)}
+  if(lock&&!saved.length)box.innerHTML='<span class="sub">Sin fotos</span>';
+  renderMtPhotos._m=m;renderMtPhotos._lock=lock;
+}
+$("#mt-ph-in").addEventListener("change",e=>{
+  const files=[...e.target.files];e.target.value="";
+  for(const f of files){const m=renderMtPhotos._m,tot=((m&&m.fotos)||[]).length+mtPhotos.length;
+    if(tot>=3){toast("Máximo 3 fotos");break}
+    if(!f.type.startsWith("image/")){toast("Solo se aceptan fotos");continue}
+    mtPhotos.push({file:f,url:URL.createObjectURL(f)})}
+  renderMtPhotos(renderMtPhotos._m,renderMtPhotos._lock);
+});
+
+function openMant(m){
+  if(!m&&!puedeCrearMt())return;
+  mtEditId=m?m.id:null;mtfrm.reset();mtPhotos=[];
+  const closed=!!m&&!mtAbierta(m), edit=mtPuedeEditar(m);
+  $("#mt-title").textContent=m?`Solicitud N° ${mtNum(m)} · ${m.equipo}`:"Nueva solicitud de mantenimiento";
+  mtfrm.equipo.innerHTML='<option value="">Elija el equipo</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}">${a.equipos.map(e=>`<option>${esc(e)}</option>`).join("")}</optgroup>`).join("");
+  fillPersonSelect(mtfrm.responsableId,responsables(),m?m.responsableId:"",m?m.responsable:"","Elija el responsable");
+  fillPersonSelect(mtfrm.seguidorId,jefesTurno(),m?m.seguidorId:(persona&&persona.jefeTurno?persona.id:""),m?m.seguidor:"","Elija un jefe de turno");
+  if(m){for(const k of["equipo","descripcion","avisoSap","prioridad","fechaCompromiso"])mtfrm[k].value=m[k]||"";
+    mtfrm.estado.value=MT_ABIERTOS.includes(m.estado)?m.estado:"Pendiente"}
+  $("#mt-edit").hidden=!edit;
+  [...$("#mt-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
+  $("#mt-estado-box").hidden=!(m&&edit);mtfrm.estado.disabled=!(m&&edit);
+  $("#mt-photo-req").hidden=!!m;
+  const ro=$("#mt-ro");ro.hidden=edit||!m;
+  if(m&&!edit)ro.innerHTML=`<div><span>Equipo</span><b>${esc(m.equipo)}</b> · ${esc(m.area)}</div><div><span>Aviso SAP</span>${esc(m.avisoSap||"Sin aviso SAP")}</div>
+    <div class="full"><span>Descripción del problema</span><p>${esc(m.descripcion)}</p></div>
+    <div><span>Responsable</span>${esc(m.responsable||"")}</div><div><span>Seguimiento (jefe de turno)</span>${esc(m.seguidor||"")}</div>
+    <div><span>Prioridad</span>${esc(m.prioridad||"")}</div><div><span>Fecha comprometida</span>${fmt(m.fechaCompromiso)||"Sin fecha"}${m.fechaCompromiso?` · <span class="pill ${pillCls[mtAlerta(m)]}" style="display:inline-block;font-size:11px">${esc(mtPlazoTxt(m))}</span>`:""}</div>
+    <div><span>Estado</span>${esc(closed?"Cerrada":m.estado||"Pendiente")}</div><div><span>Solicitada por</span>${esc(m.creadoPor||"")}${m.creado?` el ${fmtDT(m.creado)}`:""}</div>`;
+  $("#mt-meta").hidden=!(m&&edit);
+  if(m&&edit)$("#mt-meta").textContent=`Solicitada por ${m.creadoPor||"—"}${m.creado?` el ${fmtDT(m.creado)}`:""}`;
+  renderMtPhotos(m,!edit);
+  $("#mt-banner").hidden=!closed;$("#mt-cierre").hidden=!closed;
+  if(closed){$("#mt-banner").textContent=`Cerrada el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}.${isAdmin?" Puede reabrirla si la evidencia no es suficiente.":""}`;if(m.cierre)renderEvid(m.cierre,$("#mt-evid"))}
+  const hb=$("#mt-hist-box"),h=m&&Array.isArray(m.historial)?m.historial:[];hb.hidden=!h.length;
+  $("#mt-hist").innerHTML=h.slice().reverse().map(x=>`<li><b>${fmtDT(x.fecha)}</b> · ${esc(x.por)}: ${esc(x.accion)}</li>`).join("");
+  const b=m?mtCloseBlock(m):"x";
+  $("#mt-close-b").hidden=!m||!!b;
+  $("#mt-del").hidden=!m||!isAdmin;$("#mt-reopen").hidden=!closed||!isAdmin;
+  $("#mt-save").hidden=!edit;$("#mt-save").textContent=m?"Guardar":"Crear solicitud";
+  $("#mt-mail-help").hidden=!edit;
+  mtDlg.showModal();
+}
+mtfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=mtEditId?mant.find(x=>x.id===mtEditId):null;
+  if(!mtPuedeEditar(m))return;
+  const g=k=>mtfrm[k].value.trim();
+  const equipo=g("equipo"),descripcion=g("descripcion"),rid=mtfrm.responsableId.value,sid=mtfrm.seguidorId.value,fc=g("fechaCompromiso");
+  if(!equipo||!descripcion||!rid||!sid){toast("Complete equipo, descripción, responsable y jefe de turno");return}
+  if(!m&&!mtPhotos.length){toast("Agregue al menos una fotografía del problema");return}
+  const rp=pById(rid),sp=pById(sid);
+  const data={equipo,area:areaDe(equipo),descripcion,avisoSap:g("avisoSap"),prioridad:g("prioridad")||"Media",fechaCompromiso:fc,
+    responsableId:rid,responsable:rp?rp.nombre:(m?m.responsable:""),responsableCorreo:rp?pCorreo(rp):(m?m.responsableCorreo:""),
+    seguidorId:sid,seguidor:sp?sp.nombre:(m?m.seguidor:""),seguidorCorreo:sp?pCorreo(sp):(m?m.seguidorCorreo:""),
+    actualizado:nowISO(),actualizadoPor:myName()};
+  const id=m?m.id:doc(collection(db,"mantenimiento")).id;
+  const btn=$("#mt-save");btn.disabled=true;btn.textContent=mtPhotos.length?"Subiendo fotos…":"Guardando…";
+  try{
+    const fotos=[...(m&&m.fotos||[])];
+    for(const ph of mtPhotos){
+      const d=await compressImage(ph.file);if(!d)throw{code:"too_large"};
+      const meta={nombre:(ph.file.name||"foto").replace(/\.[^.]+$/,"")+".jpg",tipo:"image/jpeg",kb:Math.round(d.length*.75/1024)};
+      const ref=await addDoc(collection(db,"evidencias"),{...meta,data:d,uso:"mantenimiento",mantId:id,creadoPor:myEmail(),creado:nowISO()});
+      fotos.push({...meta,evidId:ref.id});
+    }
+    if(!m){
+      const num=mant.reduce((x,y)=>Math.max(x,y.num||0),0)+1;
+      Object.assign(data,{num,estado:"Pendiente",fotos,creado:nowISO(),creadoPor:myName(),creadoPorId:persona?persona.id:"",creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+        historial:[{fecha:nowISO(),por:myName(),accion:`Creó la solicitud para ${equipo}. Responsable: ${data.responsable}. Seguimiento: ${data.seguidor}`}]});
+      await setDoc(doc(db,"mantenimiento",id),data);
+      mtDlg.close();toast(`Solicitud N° ${String(num).padStart(3,"0")} creada. ${data.responsable} y ${data.seguidor} recibirán un correo en los próximos minutos`);
+    }else{
+      const ch=[];
+      if(m.responsableId!==rid)ch.push(`reasignó responsable a ${data.responsable}`);
+      if(m.seguidorId!==sid)ch.push(`cambió seguimiento a ${data.seguidor}`);
+      if((m.avisoSap||"")!==data.avisoSap)ch.push(data.avisoSap?`registró aviso SAP ${data.avisoSap}`:"quitó el aviso SAP");
+      if((m.fechaCompromiso||"")!==fc)ch.push(`fecha comprometida ${fmt(fc)||"sin fecha"}`);
+      if(m.equipo!==equipo)ch.push(`cambió equipo a ${equipo}`);
+      if(m.descripcion!==descripcion||m.prioridad!==data.prioridad)ch.push("editó la solicitud");
+      const est=MT_ABIERTOS.includes(mtfrm.estado.value)?mtfrm.estado.value:"Pendiente";if(est!==(m.estado||"Pendiente"))ch.push(`cambió estado a ${est}`);
+      data.estado=est;
+      if(mtPhotos.length){data.fotos=fotos;ch.push(`agregó ${mtPhotos.length} foto${mtPhotos.length>1?"s":""}`)}
+      if(ch.length)data.historial=addHistT(m,ch.join(", ").replace(/^./,c=>c.toUpperCase()));
+      await updateDoc(doc(db,"mantenimiento",m.id),data);
+      mtDlg.close();toast(m.responsableId!==rid||m.seguidorId!==sid?"Solicitud reasignada. Se avisará por correo":"Solicitud actualizada");
+    }
+  }catch(err){console.error(err);toast(err&&err.code==="too_large"?"Una foto es demasiado pesada. Pruebe con otra":err&&err.code==="permission-denied"?"No tiene permiso para guardar esta solicitud":"No se pudo guardar. Revise la conexión e intente de nuevo")}
+  finally{btn.disabled=false;btn.textContent=m?"Guardar":"Crear solicitud"}
+});
+$("#mt-del").onclick=async()=>{const m=mant.find(x=>x.id===mtEditId);if(!m||!isAdmin)return;
+  if(!confirm(`¿Eliminar la solicitud N° ${mtNum(m)} de ${m.equipo}? No se puede deshacer.`))return;
+  try{await deleteDoc(doc(db,"mantenimiento",m.id));for(const f of m.fotos||[])deleteDoc(doc(db,"evidencias",f.evidId)).catch(()=>{});mtDlg.close();toast("Solicitud eliminada")}catch(err){fbErr(err,"eliminar la solicitud")}};
+$("#mt-reopen").onclick=async()=>{const m=mant.find(x=>x.id===mtEditId);if(!m||!isAdmin)return;
+  const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
+  try{await updateDoc(doc(db,"mantenimiento",m.id),{estado:"En proceso",fechaCierre:"",cierre:null,"notif.cierre":null,cierresAnteriores:[...(m.cierresAnteriores||[]),m.cierre].filter(Boolean).slice(-5),
+    actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Reabrió: ${motivo.trim()}`)});mtDlg.close();toast("Solicitud reabierta")}catch(err){fbErr(err,"reabrir la solicitud")}};
+$("#mt-close-b").onclick=()=>openMtClose(mant.find(x=>x.id===mtEditId));
+
+/* Cierre con evidencia */
+function openMtClose(m){
+  if(!m)return;const b=mtCloseBlock(m);if(b){toast(b);return}
+  mtCloseId=m.id;mtCloseFile=null;mtcfrm.reset();$("#mtc-prev").innerHTML="";$("#mtc-drop-txt").textContent="Toque para adjuntar una foto o un PDF";
+  $("#mtc-what").innerHTML=`<b>Solicitud N° ${mtNum(m)} · ${esc(m.equipo)}:</b> ${esc(m.descripcion)}${m.avisoSap?`<br>Aviso SAP: ${esc(m.avisoSap)}`:""}`;
+  if(mtDlg.open)mtDlg.close();mtcDlg.showModal();setTimeout(()=>mtcfrm.comentario.focus(),30);
+}
+function mtcPick(f){
+  if(!f)return;
+  if(!(f.type.startsWith("image/")||f.type==="application/pdf")){toast("Adjunte una foto o un PDF");return}
+  if(f.type==="application/pdf"&&f.size>700*1024){toast("El PDF supera 700 KB. Comprímalo o adjunte una foto");return}
+  mtCloseFile=f;$("#mtc-drop-txt").textContent=`${f.name} (${Math.round(f.size/1024)} KB) · toque para cambiar`;
+  const pv=$("#mtc-prev");pv.innerHTML="";
+  if(f.type.startsWith("image/")){const im=new Image();im.src=URL.createObjectURL(f);im.alt="Vista previa de la evidencia";pv.appendChild(im)}
+}
+$("#mtc-file").addEventListener("change",e=>mtcPick(e.target.files[0]));
+{const d=$("#mtc-drop");d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over")});d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");mtcPick(e.dataTransfer.files[0])})}
+mtcfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=mant.find(x=>x.id===mtCloseId);if(!m)return;
+  const b=mtCloseBlock(m);if(b){toast(b);return}
+  const comentario=mtcfrm.comentario.value.trim();
+  if(!comentario){toast("Escriba el comentario de cierre");return}
+  if(!mtCloseFile){toast("Adjunte la evidencia objetiva");return}
+  const btn=$("#mtc-save");btn.disabled=true;btn.textContent="Subiendo evidencia…";
+  try{
+    const isImg=mtCloseFile.type.startsWith("image/");
+    const data=isImg?await compressImage(mtCloseFile):await readDataURL(mtCloseFile);
+    if(!data||data.length>MAX_DATAURL)throw{code:"too_large"};
+    const nombre=isImg&&!/\.jpe?g$/i.test(mtCloseFile.name)?mtCloseFile.name.replace(/\.[^.]+$/,"")+".jpg":mtCloseFile.name;
+    const archivo={nombre,tipo:isImg?"image/jpeg":mtCloseFile.type,kb:Math.round(data.length*.75/1024)};
+    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,mantId:m.id,uso:"mantenimiento-cierre",creadoPor:myEmail(),creado:nowISO()});
+    archivo.evidId=ref.id;
+    await updateDoc(doc(db,"mantenimiento",m.id),{estado:"Cerrada",fechaCierre:hoyISO(),
+      cierre:{comentario,archivo,por:myName(),porId:persona?persona.id:"",porCorreo:myEmail(),fecha:nowISO()},
+      actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cerró con evidencia (${nombre}): ${comentario}`)});
+    mtcDlg.close();toast("Solicitud cerrada con evidencia");
+  }catch(err){console.error(err);
+    toast(err&&err.code==="too_large"?"El archivo es demasiado pesado. Pruebe con otra foto o un PDF más liviano":err&&err.code==="permission-denied"?"No tiene permiso para cerrar esta solicitud":"No se pudo cerrar. Revise la conexión e intente de nuevo");
+  }finally{btn.disabled=false;btn.textContent="Cerrar con evidencia"}
+});
+$("#mt-csv").onclick=()=>{
+  const cols=[["num","N°"],["area","Área"],["equipo","Equipo"],["descripcion","Descripción del problema"],["avisoSap","Aviso SAP"],["prioridad","Prioridad"],["responsable","Responsable"],["seguidor","Seguimiento (jefe de turno)"],
+    ["fechaCompromiso","Fecha comprometida"],["estado","Estado"],["plazo","Plazo"],["creadoPor","Solicitada por"],["creadoF","Fecha solicitud"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrada por"]];
+  const rows=mant.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(m=>({...m,plazo:mtPlazoTxt(m),fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),creadoF:m.creado?fmtDT(m.creado):"",
+    cierreComentario:m.cierre?m.cierre.comentario:"",cierrePor:m.cierre?m.cierre.por:""}));
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`mantenimiento_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
 };
 
 /* ---------- Seguimiento de mejoras ---------- */

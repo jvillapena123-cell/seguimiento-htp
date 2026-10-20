@@ -1,6 +1,6 @@
 rules_version = '2';
 // Reglas de seguridad · Seguimiento de compromisos y hallazgos HTP
-// Administrador principal: jvilla@csh.cl (debe coincidir con ADMIN_EMAILS de firebase-config.js).
+// Administrador principal: jvilla@htpchile.cl (antes jvilla@csh.cl) (debe coincidir con ADMIN_EMAILS de firebase-config.js).
 // Los permisos se leen de "accesos/{correo}" (un documento por correo, lo mantiene la app).
 // Hasta 3 personas pueden compartir un correo y comparten su acceso.
 // Tareas de turno: solo el administrador y los jefes de turno (accesos/{correo}.jefeTurno == true).
@@ -11,7 +11,7 @@ service cloud.firestore {
 
     function signed()   { return request.auth != null && request.auth.token.email != null; }
     function email()    { return request.auth.token.email.lower(); }
-    function bootstrapAdmin() { return signed() && email() in ['jvilla@csh.cl']; }
+    function bootstrapAdmin() { return signed() && email() in ['jvilla@csh.cl', 'jvilla@htpchile.cl']; }
     function aRef()     { return /databases/$(database)/documents/accesos/$(email()); }
     function pRef()     { return /databases/$(database)/documents/personas/$(email()); }   // formato antiguo
     function hasA()     { return exists(aRef()); }
@@ -121,6 +121,38 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor', 'cierre', 'fechaCierre'])
             && request.resource.data.estado == 'Cerrado'
+            && request.resource.data.cierre.porCorreo == email()
+            && request.resource.data.cierre.comentario is string
+            && request.resource.data.cierre.comentario.size() > 0
+            && request.resource.data.cierre.archivo.evidId is string
+            && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)));
+    }
+
+    // Mantenimiento de equipos: solicitudes con aviso SAP, responsable y jefe de turno que hace el seguimiento.
+    // Las crea cualquier Usuario o jefe de turno. Las editan quien la creó, el responsable y el jefe de turno asignado.
+    // Se cierran solo con comentario y evidencia, por el responsable o el jefe de turno que la sigue.
+    match /mantenimiento/{id} {
+      allow read:   if canRead() || isJefe();
+      allow create: if (canWrite() || isJefe())
+                    && request.resource.data.estado != 'Cerrada'
+                    && request.resource.data.creadoPorCorreo == email();
+      allow delete: if isAdmin();
+      allow update: if isAdmin()
+          || ((canWrite() || isJefe())
+            && resource.data.estado != 'Cerrada'
+            && request.resource.data.estado != 'Cerrada'
+            && (resource.data.get('responsableCorreo', '') == email()
+                || resource.data.get('seguidorCorreo', '') == email()
+                || resource.data.get('creadoPorCorreo', '') == email())
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['num', 'creadoPorCorreo', 'creadoPor', 'creado', 'cierre', 'notif']))
+          || ((canWrite() || isJefe())
+            && resource.data.estado != 'Cerrada'
+            && (resource.data.get('responsableCorreo', '') == email()
+                || resource.data.get('seguidorCorreo', '') == email())
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['estado', 'historial', 'actualizado', 'actualizadoPor', 'cierre', 'fechaCierre'])
+            && request.resource.data.estado == 'Cerrada'
             && request.resource.data.cierre.porCorreo == email()
             && request.resource.data.cierre.comentario is string
             && request.resource.data.cierre.comentario.size() > 0

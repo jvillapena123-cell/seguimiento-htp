@@ -5,6 +5,8 @@ name: Avisos de tareas de turno
 #  - recordatorios 3 días antes, 1 día antes y el día del vencimiento
 #  - un aviso de tarea vencida (cada 3 días mientras siga abierta), con copia al administrador
 #  - un aviso al administrador cuando una tarea se cierra con evidencia
+#  - Mantenimiento: correo al responsable y al jefe de turno que sigue cada solicitud (con la foto),
+#    y aviso al jefe de turno y a quien la solicitó cuando se cierra
 on:
   schedule:
     - cron: "*/15 * * * *"
