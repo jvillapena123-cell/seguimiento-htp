@@ -159,6 +159,10 @@ tfoot td.stk{background:var(--panel)}
   #informe .pie{margin-top:18px;font-size:8pt;color:#444}
   #informe tr.tot td{font-weight:700;border-top:2px solid #000}
 }
+dialog#dlgDesv{width:min(560px,calc(100vw - 32px));padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+dialog#dlgDesv::backdrop{background:rgba(10,20,28,.55)}
+.dv-chip{display:inline-block;margin-left:6px;background:var(--warn);color:var(--panel);font-size:11px;font-weight:600;padding:1px 6px}
+#btnDesv.on{border-color:var(--warn);color:var(--warn);font-weight:600}
 dialog#dlgTar{width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 dialog#dlgTar::backdrop{background:rgba(10,20,28,.55)}
 .dlg-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:3px solid var(--ink)}
@@ -194,6 +198,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
     </div>
     <div class="scen">
       <button type="button" id="btnTar">Tarifas y costos por cargo</button>
+      <button type="button" id="btnDesv">Desviación %</button>
       <label class="btnfile" for="xlsIn">Cargar Excel</label>
       <input id="xlsIn" type="file" accept=".xlsx,.xls,.xlsm" hidden>
       <button type="button" id="btnPdf">Descargar cotización (PDF)</button>
@@ -346,6 +351,23 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
 
 <div id="informe" aria-hidden="true"></div>
 
+<dialog id="dlgDesv" class="dlg" aria-labelledby="dlgDesvT">
+  <div class="dlg-h"><h2 id="dlgDesvT">Porcentaje de desviación</h2><button type="button" class="x" id="desvClose" aria-label="Cerrar">×</button></div>
+  <div class="dlg-b">
+    <p class="note">Se suma al costo antes de aplicar la utilidad, como resguardo por imprevistos (más dotación, horas extra, demoras de equipos).</p>
+    <div class="params">
+      <label class="f">Desviación personal %<input id="dv_pers" type="number" min="0" step="0.5"></label>
+      <label class="f">Desviación equipos %<input id="dv_eq" type="number" min="0" step="0.5"></label>
+    </div>
+    <label class="f" style="margin-top:12px">Motivo u observación<input id="dv_nota" type="text" placeholder="Ej: historial de demoras en descarga de chatarra"></label>
+    <div class="derived" id="dv_prev"></div>
+    <div class="actions">
+      <button type="button" class="pri" id="dv_ok">Aplicar</button>
+      <button type="button" id="dv_zero">Quitar desviación</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="dlgTar" aria-labelledby="dlgTarT">
   <div class="dlg-h"><h2 id="dlgTarT">Tarifas y costos por cargo</h2><button type="button" class="x" id="dlgClose" aria-label="Cerrar">×</button></div>
   <div class="tabs" role="tablist">
@@ -460,6 +482,9 @@ function calc(S){
     {id:"eqPet",k:"Petróleo equipos",usd:r.eqPet,c:"var(--warn)"},
     {id:"port",k:"Porteo",usd:S.incPorteo?r.portUSD:0,c:"var(--good)"}
   ];
+  const dv=p.desv||{};r.desvPers=num(dv.pers);r.desvEq=num(dv.eq);
+  r.parts.forEach(x=>{x.base=x.usd;x.desv=x.id==="pers"?r.desvPers:(x.id==="eqArr"||x.id==="eqPet")?r.desvEq:0;x.usd=x.base*(1+x.desv/100);x.desvUSD=x.usd-x.base});
+  r.desvUSD=r.parts.reduce((a,x)=>a+x.desvUSD,0);
   r.parts.forEach(x=>{x.util=util(p,x.id);x.venta=x.usd*(1+x.util/100);x.utilUSD=x.venta-x.usd});
   r.costoUSD=r.parts.reduce((a,x)=>a+x.usd,0);
   r.costoT=p.ton>0?r.costoUSD/p.ton:0;
@@ -557,15 +582,17 @@ function render(){
     $("r_rows").innerHTML=`<div class="row hd"><span>Servicio</span><span class="v">Costo USD</span><span class="u">Util. %</span><span class="v">Venta USD</span></div>`+
       r.parts.map(x=>`<div class="row" id="rw_${x.id}"><span>${x.k}</span><span class="v" id="rc_${x.id}"></span><span class="u"><input type="number" min="0" step="0.5" id="u_${x.id}" data-util="${x.id}" aria-label="Utilidad % ${x.k}"></span><span class="v" id="rv_${x.id}"></span></div>`).join("")+
       `<div class="row tot"><span>Total</span><span class="v" id="rc_tot"></span><span class="u" id="ru_tot"></span><span class="v" id="rv_tot"></span></div>
+       <div class="row" id="rw_desv"><span>Desviación incluida</span><span class="v"></span><span class="u"></span><span class="v" id="r_desvusd"></span></div>
        <div class="row"><span>Utilidad USD</span><span class="v"></span><span class="u"></span><span class="v" id="r_utilusd"></span></div>
        <div class="row"><span>Costo total CLP</span><span class="v"></span><span class="u"></span><span class="v" id="r_cclp"></span></div>
        <div class="row"><span>Venta total CLP</span><span class="v"></span><span class="u"></span><span class="v" id="r_vclp"></span></div>
        <div class="row"><span>Costo USD/t</span><span class="v"></span><span class="u"></span><span class="v" id="r_ct"></span></div>`;
   }
-  r.parts.forEach(x=>{$("rc_"+x.id).textContent=fUSD(x.usd);$("rv_"+x.id).textContent=fUSD(x.venta);
+  r.parts.forEach(x=>{$("rc_"+x.id).innerHTML=fUSD(x.usd)+(x.desv&&x.base>0?`<span class="dv-chip" title="Incluye ${fN(x.desv,1)}% de desviación">+${fN(x.desv,1)}%</span>`:"");$("rv_"+x.id).textContent=fUSD(x.venta);
     const el=$("u_"+x.id);if(document.activeElement!==el)el.value=x.util;$("rw_"+x.id).classList.toggle("zero",x.usd===0)});
   $("rc_tot").textContent=fUSD(r.costoUSD);$("ru_tot").textContent=fN(r.utilProm,1)+"%";$("rv_tot").textContent=fUSD(r.ventaUSD);
-  $("r_utilusd").textContent=fUSD(r.utilUSD);$("r_cclp").textContent=fCLP(r.costoUSD*p.usd);$("r_vclp").textContent=fCLP(r.ventaUSD*p.usd);$("r_ct").textContent=fN(r.costoT,3);
+  $("r_utilusd").textContent=fUSD(r.utilUSD);$("r_desvusd").textContent=fUSD(r.desvUSD);$("rw_desv").hidden=!r.desvUSD;
+  $("btnDesv").classList.toggle("on",!!(r.desvPers||r.desvEq));$("btnDesv").textContent=(r.desvPers||r.desvEq)?`Desviación P ${fN(r.desvPers,1)}% · E ${fN(r.desvEq,1)}%`:"Desviación %";$("r_cclp").textContent=fCLP(r.costoUSD*p.usd);$("r_vclp").textContent=fCLP(r.ventaUSD*p.usd);$("r_ct").textContent=fN(r.costoT,3);
   $("r_bar").innerHTML=r.parts.map(x=>`<i style="width:${x.usd/tot*100}%;background:${x.c}"></i>`).join("");
   $("r_leg").innerHTML=r.parts.filter(x=>x.usd>0).map(x=>`<span style="--c:${x.c}">${x.k}</span>`).join("");
   return r;
@@ -722,9 +749,10 @@ function armarInforme(){
   <div class="kpi"><div><small>Costo total USD</small><b>${fUSD(r.costoUSD)}</b></div><div><small>Costo USD/t</small><b>${fN(r.costoT,3)}</b></div>
     <div><small>Utilidad promedio</small><b>${fN(r.utilProm,1)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
   <h2>Resumen de costos</h2>
-  <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
-    ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
-    <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
+  <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Desv. %</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
+    ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${x.desv?fN(x.desv,1)+"%":"—"}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
+    <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td></td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
+  ${r.desvUSD?`<p><b>Desviación incluida en el costo:</b> personal ${fN(r.desvPers,1)}%, equipos ${fN(r.desvEq,1)}% (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
   <h2>Personal de muellaje</h2>
   <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th></tr>
     ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
@@ -750,8 +778,8 @@ $("btnXls").onclick=()=>{
   const r=calc(S),p=S.p,wb=XLSX.utils.book_new();
   const res=[["Cotización de servicio de transferencia · HTP"],["Folio",folio()],["Emitida",new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"})],[],
     ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Horas totales",r.horas],[],
-    ["Servicio","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"],...r.parts.map(x=>[x.k,+x.usd.toFixed(2),x.util,+x.venta.toFixed(2),Math.round(x.venta*p.usd),+(x.venta/p.ton).toFixed(4)]),
-    ["Total",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
+    ["Servicio","Costo base USD","Desviación %","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"],...r.parts.map(x=>[x.k,+x.base.toFixed(2),x.desv,+x.usd.toFixed(2),x.util,+x.venta.toFixed(2),Math.round(x.venta*p.usd),+(x.venta/p.ton).toFixed(4)]),
+    ["Total",+(r.costoUSD-r.desvUSD).toFixed(2),"",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Motivo desviación",(S.p.desv&&S.p.desv.nota)||""],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
     ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
   const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Total CLP"];
@@ -765,6 +793,16 @@ $("btnXls").onclick=()=>{
 };
 
 
+
+/* ---------- Desviación % ---------- */
+function dvPrev(){const pp=num($("dv_pers").value),pe=num($("dv_eq").value);const T=clone(S);T.p.desv={pers:pp,eq:pe};const a=calc(S),b=calc(T);
+  $("dv_prev").innerHTML=`<span>Costo extra <b>${fUSD(b.desvUSD)}</b></span><span>Tarifa <b>${fN(a.tarifaT,2)} → ${fN(b.tarifaT,2)} USD/t</b></span>`}
+$("btnDesv").onclick=()=>{const d=S.p.desv||{};$("dv_pers").value=d.pers||0;$("dv_eq").value=d.eq||0;$("dv_nota").value=d.nota||"";dvPrev();$("dlgDesv").showModal()};
+$("dv_pers").addEventListener("input",dvPrev);$("dv_eq").addEventListener("input",dvPrev);
+$("desvClose").onclick=()=>$("dlgDesv").close();
+function setDesv(d){S.p.desv=d;render();persist();if(window.CN&&CN.onChange)CN.onChange();$("dlgDesv").close()}
+$("dv_ok").onclick=()=>{setDesv({pers:num($("dv_pers").value),eq:num($("dv_eq").value),nota:$("dv_nota").value.trim()});toast("Desviación aplicada")};
+$("dv_zero").onclick=()=>{setDesv({pers:0,eq:0,nota:""});toast("Desviación quitada")};
 /* ---------- Costos por cargo (maestro) y tarifas Reloncaví ---------- */
 const TKEY="costeo-naves-htp-tarifas";
 const normT=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
