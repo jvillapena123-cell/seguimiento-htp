@@ -358,7 +358,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
 <dialog id="dlgDesv" class="dlg" aria-labelledby="dlgDesvT">
   <div class="dlg-h"><h2 id="dlgDesvT">Turnos de resguardo</h2><button type="button" class="x" id="desvClose" aria-label="Cerrar">×</button></div>
   <div class="dlg-b">
-    <p class="note">Agregue turnos adicionales como resguardo (demoras, lluvia, espera de nave). Se suman a los turnos calculados: el personal se paga con la dotación de "Base sig." en esos turnos (puede ajustarla en la grilla, columnas marcadas "resg."), y las horas de equipos y los ítems Reloncaví por turno u hora también aumentan.</p>
+    <p class="note">Turnos adicionales que se pagan al personal como resguardo (demoras, lluvia, espera de nave). No cambian el rendimiento: rate, días, turnos calculados, horas de equipos e ítems Reloncaví quedan igual. En la grilla de personal aparecen como columnas "resg." con la dotación de "Base sig." (se pueden ajustar).</p>
     <div class="params">
       <label class="f">Turnos adicionales de resguardo<input id="dv_turnos" type="number" min="0" step="1"></label>
       <label class="f">Desviación equipos % (opcional, sobre costo)<input id="dv_eq" type="number" min="0" step="0.5"></label>
@@ -453,10 +453,11 @@ function calc(S){
   r.turnosExact=r.dias*p.tdia;
   r.turnosCalc=Math.ceil(r.turnosExact-1e-6);  // cualquier fracción sube al turno siguiente (9,1 → 10)
   r.turnosRes=Math.max(0,Math.round(num((p.desv||{}).turnos)));  // turnos adicionales de resguardo
-  r.turnos=r.turnosCalc+r.turnosRes;
+  r.turnos=r.turnosCalc;                       // operación: el resguardo no cambia rate, días, turnos ni horas
+  r.turnosPers=r.turnosCalc+r.turnosRes;       // personal: turnos pagados incluyendo resguardo
   r.horasExact=r.turnosExact*p.hturno;
   r.horas=r.turnos*p.hturno;              // horas de turnos completos
-  r.pers=S.pers.map(([n,v,d1,dn,ov])=>{let tb=0,extra=0;for(let k=0;k<r.turnos;k++){const d=dot(d1,dn,ov,k);if(k<r.turnosCalc)tb+=d;else extra+=d}
+  r.pers=S.pers.map(([n,v,d1,dn,ov])=>{let tb=0,extra=0;for(let k=0;k<r.turnosPers;k++){const d=dot(d1,dn,ov,k);if(k<r.turnosCalc)tb+=d;else extra+=d}
     const tp=tb+extra;return{tb,extra,tp,clp:tp*num(v),clpBase:tb*num(v)}});
   r.persCLP=r.pers.reduce((a,x)=>a+x.clp,0);
   r.persBaseCLP=r.pers.reduce((a,x)=>a+x.clpBase,0);
@@ -498,7 +499,7 @@ function calc(S){
   r.parts.forEach(x=>{if(x.id==="pers"){x.desv=0;x.desvTxt=r.turnosRes?`+${r.turnosRes} turnos`:"";x.base=S.incPers===false?0:r.persBaseCLP/p.usd;x.desvUSD=x.usd-x.base;return}
     const sinRes=x.id==="eqArr"?r.eqArrB:x.id==="eqPet"?r.eqPetB:x.id==="rel"?(S.incRel===false?0:r.relUSDB):x.usd;
     x.desv=(x.id==="eqArr"||x.id==="eqPet")?r.desvEq:0;x.base=sinRes;x.usd=x.usd*(1+x.desv/100);x.desvUSD=x.usd-x.base;
-    x.desvTxt=[x.desvUSD>0.005&&r.turnosRes&&x.id!=="otros"&&x.id!=="port"?`+${r.turnosRes} turnos`:"",x.desv?`+${fN(x.desv,1)}%`:""].filter(Boolean).join(" ")});
+    x.desvTxt=[x.desv?`+${fN(x.desv,1)}%`:""].filter(Boolean).join(" ")});
   r.desvUSD=r.parts.reduce((a,x)=>a+x.desvUSD,0);
   r.parts.forEach(x=>{x.util=util(p,x.id);x.venta=x.usd*(1+x.util/100);x.utilUSD=x.venta-x.usd});
   r.costoUSD=r.parts.reduce((a,x)=>a+x.usd,0);
@@ -513,7 +514,7 @@ function calc(S){
 let builtT=-1, builtTd=-1, builtTc=-1;
 function cell(v,cls,attrs){return `<input ${attrs} class="${cls||""}" value="${esc(v)}">`}
 function buildTables(){
-  const r0=calc(S), T=Math.min(r0.turnos,MAXT), td=Math.max(1,S.p.tdia|0);
+  const r0=calc(S), T=Math.min(r0.turnosPers,MAXT), td=Math.max(1,S.p.tdia|0);
   builtT=T; builtTd=td;
   const dias=Math.ceil(T/td);
   let h1=`<tr><th rowspan="2" class="stk">Cargo</th><th rowspan="2" class="n">CLP / turno</th><th colspan="2" class="n grp">Dotación base</th>`;
@@ -533,7 +534,7 @@ function buildTables(){
   let f=`<tr><td class="stk">Total personas</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td>`;
   for(let k=0;k<T;k++)f+=`<td class="n tk${Math.floor(k/td)%2?" alt":""}${k>=r0.turnosCalc?" rg":""}" id="ft${k}"></td>`;
   $("f_persRow").innerHTML=f+`<td class="n" id="f_tp"></td><td class="n dvc" id="f_px"></td><td class="n" id="f_pers"></td><td></td></tr>`;
-  $("persWarn").hidden=r0.turnos<=MAXT;
+  $("persWarn").hidden=r0.turnosPers<=MAXT;
   $("t_rel").innerHTML=(S.rel||[]).length?S.rel.map((x,i)=>`<tr>
     <td>${esc(x.desc)}${x.grupo?`<br><span class="linked">${esc(x.grupo)}</span>`:""}</td><td>${esc(x.unidad)}</td>
     <td class="n"><input type="number" min="0" step="1" id="rl${i}_t" data-rel="${i}" data-f="tarifa" value="${esc(x.tarifa)}" aria-label="Tarifa"></td>
@@ -569,10 +570,10 @@ function render(){
   $("derived").innerHTML=`<span>Rate/turno <b>${fN(r.ratePorTurno)} t</b></span><span>Días de operación <b>${fN(r.dias,2)}</b></span><span>Turnos <b>${fN(r.turnosExact,2)}</b> → pagados <b>${r.turnos}</b></span><span>Horas totales <b>${fN(r.horas)}</b> (${r.turnos} × ${p.hturno} h)</span><span>Rate/mano/turno <b>${fN(p.manos>0?r.ratePorTurno/p.manos:0)} t</b></span>`;
   $("turnosBox").innerHTML=`<div><small>Toneladas ÷ rate</small><b>${fN(p.ton)} ÷ ${fN(p.rate)}</b><span>= ${fN(r.dias,2)} días</span></div>
     <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
-    <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${r.turnosRes?`${r.turnosCalc} + ${r.turnosRes} de resguardo`:(Math.abs(r.turnosCalc-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto")}</span></div>
-    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`;;
+    <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${Math.abs(r.turnosCalc-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto"}</span></div>
+    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`+(r.turnosRes?`<div class="dvt"><small>Resguardo personal</small><b>+${r.turnosRes} turnos</b><span>se pagan ${r.turnosPers} turnos al personal</span></div>`:"");;
   if(r.turnosCalc!==builtTc){builtTc=r.turnosCalc;builtT=-1}
-  if(Math.min(r.turnos,MAXT)!==builtT||Math.max(1,p.tdia|0)!==builtTd) buildTables();
+  if(Math.min(r.turnosPers,MAXT)!==builtT||Math.max(1,p.tdia|0)!==builtTd) buildTables();
   let d1=0,dn=0,tp=0; const colT=new Array(builtT).fill(0);
   let ext=0;
   r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tb);$("px"+i).textContent=x.extra?"+"+fN(x.extra):"";ext+=x.extra;$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp;
@@ -769,7 +770,7 @@ function armarInforme(){
   <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Resguardo</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
     ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${x.desvTxt||"—"}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
     <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td></td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
-  ${r.desvUSD?`<p><b>Resguardo incluido:</b> ${r.turnosRes} turno(s) adicional(es) sobre ${r.turnosCalc} calculados${r.desvEq?`, equipos +${fN(r.desvEq,1)}% en costo`:""} (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
+  ${r.desvUSD?`<p><b>Resguardo incluido:</b> ${r.turnosRes} turno(s) adicional(es) de personal sobre ${r.turnosCalc} turnos de operación (rendimiento sin cambios)${r.desvEq?`, equipos +${fN(r.desvEq,1)}% en costo`:""} (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
   <h2>Personal de muellaje</h2>
   <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Resguardo</th><th class="n">Total turnos-persona</th><th class="n">Total CLP</th></tr>
     ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tb)}</td><td class="n">${x.ex?"+"+fN(x.ex):"—"}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
@@ -794,12 +795,12 @@ $("btnXls").onclick=()=>{
   if(!window.XLSX){toast("No se pudo cargar el generador de Excel. Revise su conexión");return}
   const r=calc(S),p=S.p,wb=XLSX.utils.book_new();
   const res=[["Cotización de servicio de transferencia · HTP"],["Folio",folio()],["Emitida",new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"})],[],
-    ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Horas totales",r.horas],[],
+    ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Turnos de resguardo (personal)",r.turnosRes],["Horas totales",r.horas],[],
     ["Servicio","Costo base USD","Resguardo","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"],...r.parts.map(x=>[x.k,+x.base.toFixed(2),x.desvTxt||"",+x.usd.toFixed(2),x.util,+x.venta.toFixed(2),Math.round(x.venta*p.usd),+(x.venta/p.ton).toFixed(4)]),
     ["Total",+(r.costoUSD-r.desvUSD).toFixed(2),"",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Turnos de resguardo",r.turnosRes],["Motivo resguardo",(S.p.desv&&S.p.desv.nota)||""],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
     ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
-  const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Resguardo","Total turnos-persona","Total CLP"];
+  const T=r.turnosPers, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Resguardo","Total turnos-persona","Total CLP"];
   const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tb,r.pers[i].extra,r.pers[i].tp,Math.round(r.pers[i].clp)])];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pers),"Personal");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"],...S.eq.map((x,i)=>[x[0],num(x[1]),+r.eq[i].hrs.toFixed(2),num(x[3]),x[4],num(x[5]),+r.eq[i].arr.toFixed(2),+r.eq[i].pet.toFixed(2)])]),"Equipos");
@@ -813,7 +814,7 @@ $("btnXls").onclick=()=>{
 
 /* ---------- Desviación % ---------- */
 function dvPrev(){const pt=num($("dv_turnos").value),pe=num($("dv_eq").value);const T=clone(S);T.p.desv={turnos:pt,eq:pe};const A=clone(S);A.p.desv={};const a=calc(A),b=calc(T);
-  $("dv_prev").innerHTML=`<span>Turnos <b>${a.turnos} → ${b.turnos}</b></span><span>Horas <b>${fN(a.horas)} → ${fN(b.horas)}</b></span><span>Turnos-persona <b>${fN(a.pers.reduce((s,x)=>s+x.tp,0))} → ${fN(b.pers.reduce((s,x)=>s+x.tp,0))}</b></span><span>Costo extra <b>${fUSD(b.desvUSD)}</b></span><span>Tarifa <b>${fN(a.tarifaT,2)} → ${fN(b.tarifaT,2)} USD/t</b></span>`}
+  $("dv_prev").innerHTML=`<span>Turnos personal <b>${a.turnosPers} → ${b.turnosPers}</b></span><span>Turnos-persona <b>${fN(a.pers.reduce((s,x)=>s+x.tp,0))} → ${fN(b.pers.reduce((s,x)=>s+x.tp,0))}</b></span><span>Costo extra <b>${fUSD(b.desvUSD)}</b></span><span>Tarifa <b>${fN(a.tarifaT,2)} → ${fN(b.tarifaT,2)} USD/t</b></span>`}
 $("btnDesv").onclick=()=>{const d=S.p.desv||{};$("dv_turnos").value=d.turnos||0;$("dv_eq").value=d.eq||0;$("dv_nota").value=d.nota||"";dvPrev();$("dlgDesv").showModal()};
 $("dv_turnos").addEventListener("input",dvPrev);$("dv_eq").addEventListener("input",dvPrev);
 $("desvClose").onclick=()=>$("dlgDesv").close();
