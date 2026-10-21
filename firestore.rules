@@ -1,4 +1,5 @@
 rules_version = '2';
+// Se publican automáticamente en Firebase al cambiar este archivo (workflow "Publicar reglas de Firestore")
 // Reglas de seguridad · Seguimiento de compromisos y hallazgos HTP
 // Administrador principal: jvilla@htpchile.cl (antes jvilla@csh.cl) (debe coincidir con ADMIN_EMAILS de firebase-config.js).
 // Los permisos se leen de "accesos/{correo}" (un documento por correo, lo mantiene la app).
