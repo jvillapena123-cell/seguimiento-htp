@@ -33,7 +33,7 @@ header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justif
 .brand h1{margin:2px 0 0;font-size:30px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .brand h1 span{background:var(--signal);color:var(--signal-ink);padding:0 6px;margin-left:4px}
 .scen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:20px;align-items:start}
 @media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}.side{order:-1}}
 section.card{background:var(--panel);border:1px solid var(--line);margin-bottom:16px}
 .card>h2{margin:0;display:flex;gap:10px;align-items:baseline;font-size:16px;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
@@ -79,6 +79,12 @@ button.x:hover{color:var(--warn)}
 .brk{background:var(--panel);border:1px solid var(--line);border-top:none;padding:12px 16px}
 .row{display:grid;grid-template-columns:1fr auto auto;gap:4px 12px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
 .row:last-child{border-bottom:none}
+.row.hd{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:0}
+#r_rows .row{grid-template-columns:minmax(90px,1fr) 100px 58px 108px;gap:4px 8px;font-size:13px}
+#r_rows .row>span:first-child{overflow-wrap:anywhere}
+.row .u{text-align:center}
+.row .u input{width:54px;padding:3px 4px;font-size:13px;text-align:right}
+.row.zero{opacity:.55}
 .row .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
 .row .p{font-family:var(--f-num);font-size:12px;color:var(--muted);min-width:40px;text-align:right}
 .row.tot{font-weight:600;border-top:2px solid var(--ink);border-bottom:none;margin-top:4px}
@@ -213,7 +219,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
             <label class="f">Dólar (CLP)<input id="p_usd" type="number" min="1" step="1"></label>
             <label class="f">Valor UF (CLP)<input id="p_uf" type="number" min="1" step="0.01"></label>
             <label class="f">Petróleo (CLP/L)<input id="p_diesel" type="number" min="0" step="1"></label>
-            <label class="f">Margen rentabilidad %<input id="p_margen" type="number" min="0" step="1"></label>
+            <label class="f">Utilidad general %<input id="p_margen" type="number" min="0" step="0.5" title="Al cambiarla se aplica a todos los servicios"></label>
           </div>
           <div class="ind" id="indBox">
             <span id="indTxt">Buscando dólar y UF del día…</span>
@@ -405,6 +411,8 @@ const fN=(n,d=0)=>n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFract
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 const MAXT=60;
+const UTIL_KEYS=["pers","rel","otros","eqArr","eqPet","port"];
+function util(p,id){const u=p.util||{};return u[id]!==undefined&&u[id]!==""?num(u[id]):num(p.margen)}
 function normU(u){return String(u||"").toLowerCase().replace(/\s/g,"")}
 function relAuto(u,r,p){const x=normU(u);
   if(x.includes("ton"))return p.ton;
@@ -445,17 +453,20 @@ function calc(S){
   r.rel=(S.rel||[]).map(x=>{const q=(x.cant===""||x.cant==null)?relAuto(x.unidad,r,p):num(x.cant);const clp=num(x.tarifa)*num(x.mult)*q;return{q,clp,usd:clp/p.usd}});
   r.relUSD=r.rel.reduce((a,x)=>a+x.usd,0);
   r.parts=[
-    {k:"Personal",usd:S.incPers===false?0:r.persUSD,c:"var(--steel)"},
-    {k:"Servicios Reloncaví",usd:S.incRel===false?0:r.relUSD,c:"#7a5cc2"},
-    {k:"Otros servicios",usd:S.incOtros?r.otrosUSD:0,c:"var(--muted)"},
-    {k:"Arriendo equipos",usd:r.eqArr,c:"var(--signal)"},
-    {k:"Petróleo equipos",usd:r.eqPet,c:"var(--warn)"},
-    {k:"Porteo",usd:S.incPorteo?r.portUSD:0,c:"var(--good)"}
+    {id:"pers",k:"Personal",usd:S.incPers===false?0:r.persUSD,c:"var(--steel)"},
+    {id:"rel",k:"Servicios Reloncaví",usd:S.incRel===false?0:r.relUSD,c:"#7a5cc2"},
+    {id:"otros",k:"Otros servicios",usd:S.incOtros?r.otrosUSD:0,c:"var(--muted)"},
+    {id:"eqArr",k:"Arriendo equipos",usd:r.eqArr,c:"var(--signal)"},
+    {id:"eqPet",k:"Petróleo equipos",usd:r.eqPet,c:"var(--warn)"},
+    {id:"port",k:"Porteo",usd:S.incPorteo?r.portUSD:0,c:"var(--good)"}
   ];
+  r.parts.forEach(x=>{x.util=util(p,x.id);x.venta=x.usd*(1+x.util/100);x.utilUSD=x.venta-x.usd});
   r.costoUSD=r.parts.reduce((a,x)=>a+x.usd,0);
   r.costoT=p.ton>0?r.costoUSD/p.ton:0;
-  r.tarifaT=r.costoT*(1+p.margen/100);
-  r.ventaUSD=r.tarifaT*p.ton;
+  r.ventaUSD=r.parts.reduce((a,x)=>a+x.venta,0);
+  r.utilUSD=r.ventaUSD-r.costoUSD;
+  r.utilProm=r.costoUSD>0?r.utilUSD/r.costoUSD*100:0;
+  r.tarifaT=p.ton>0?r.ventaUSD/p.ton:0;
   return r;
 }
 
@@ -540,13 +551,21 @@ function render(){
   $("d_port").innerHTML=`<span>Turnos camión <b>${fN(num(S.porteo.cam)*r.camTurnos)}</b> → <b>${fCLP(r.portTurnoCLP)}</b></span><span>Ciclos <b>${fN(r.ciclos)}</b></span><span>Km <b>${fN(r.km)}</b></span><span>Litros <b>${fN(r.litros)}</b> → <b>${fCLP(r.portPetCLP)}</b></span>`;
   $("r_tarifa").innerHTML=`${fN(r.tarifaT,2)}<em>USD/t</em>`;
   $("r_vessel").textContent=[p.nave||"Nave sin nombre",p.carga,"Sitio "+p.sitio,fN(p.ton)+" t"].filter(Boolean).join(" · ");
-  $("r_margen").textContent=`Costo ${fN(r.costoT,3)} USD/t + ${fN(p.margen)}% margen`;
+  $("r_margen").textContent=`Costo ${fN(r.costoT,3)} USD/t + utilidad ${fN(r.utilProm,1)}% promedio`;
   const tot=r.costoUSD||1;
-  $("r_rows").innerHTML=r.parts.map(x=>`<div class="row"><span>${x.k}</span><span class="v">${fUSD(x.usd)}</span><span class="p">${fN(x.usd/tot*100,0)}%</span></div>`).join("")+
-    `<div class="row tot"><span>Costo total</span><span class="v">${fUSD(r.costoUSD)}</span><span class="p"></span></div>
-     <div class="row"><span>Costo total CLP</span><span class="v">${fCLP(r.costoUSD*p.usd)}</span><span class="p"></span></div>
-     <div class="row"><span>Costo USD/t</span><span class="v">${fN(r.costoT,3)}</span><span class="p"></span></div>
-     <div class="row tot"><span>Venta con margen</span><span class="v">${fUSD(r.ventaUSD)}</span><span class="p"></span></div>`;
+  if(!$("u_pers")){
+    $("r_rows").innerHTML=`<div class="row hd"><span>Servicio</span><span class="v">Costo USD</span><span class="u">Util. %</span><span class="v">Venta USD</span></div>`+
+      r.parts.map(x=>`<div class="row" id="rw_${x.id}"><span>${x.k}</span><span class="v" id="rc_${x.id}"></span><span class="u"><input type="number" min="0" step="0.5" id="u_${x.id}" data-util="${x.id}" aria-label="Utilidad % ${x.k}"></span><span class="v" id="rv_${x.id}"></span></div>`).join("")+
+      `<div class="row tot"><span>Total</span><span class="v" id="rc_tot"></span><span class="u" id="ru_tot"></span><span class="v" id="rv_tot"></span></div>
+       <div class="row"><span>Utilidad USD</span><span class="v"></span><span class="u"></span><span class="v" id="r_utilusd"></span></div>
+       <div class="row"><span>Costo total CLP</span><span class="v"></span><span class="u"></span><span class="v" id="r_cclp"></span></div>
+       <div class="row"><span>Venta total CLP</span><span class="v"></span><span class="u"></span><span class="v" id="r_vclp"></span></div>
+       <div class="row"><span>Costo USD/t</span><span class="v"></span><span class="u"></span><span class="v" id="r_ct"></span></div>`;
+  }
+  r.parts.forEach(x=>{$("rc_"+x.id).textContent=fUSD(x.usd);$("rv_"+x.id).textContent=fUSD(x.venta);
+    const el=$("u_"+x.id);if(document.activeElement!==el)el.value=x.util;$("rw_"+x.id).classList.toggle("zero",x.usd===0)});
+  $("rc_tot").textContent=fUSD(r.costoUSD);$("ru_tot").textContent=fN(r.utilProm,1)+"%";$("rv_tot").textContent=fUSD(r.ventaUSD);
+  $("r_utilusd").textContent=fUSD(r.utilUSD);$("r_cclp").textContent=fCLP(r.costoUSD*p.usd);$("r_vclp").textContent=fCLP(r.ventaUSD*p.usd);$("r_ct").textContent=fN(r.costoT,3);
   $("r_bar").innerHTML=r.parts.map(x=>`<i style="width:${x.usd/tot*100}%;background:${x.c}"></i>`).join("");
   $("r_leg").innerHTML=r.parts.filter(x=>x.usd>0).map(x=>`<span style="--c:${x.c}">${x.k}</span>`).join("");
   return r;
@@ -561,11 +580,13 @@ document.addEventListener("input",e=>{
   }
   else if(el.dataset.t){const v=el.type==="number"?(el.value===""&&el.dataset.j==="2"&&el.dataset.t==="eq"?"":num(el.value)):el.value;S[el.dataset.t][+el.dataset.i][+el.dataset.j]=v;}
   else if(el.id.startsWith("p_")){const k=el.id.slice(2);S.p[k]=el.type==="number"?num(el.value):el.value;
+    if(k==="margen"){S.p.util={}}
     if(k==="usd"){S.p.usdFecha=hoyISO();S.p.fuenteInd="Ingresado manualmente";pintarInd()}
     if(k==="uf"){S.p.ufFecha=hoyISO();S.p.fuenteInd="Ingresado manualmente";pintarInd()}}
   else if(el.id.startsWith("q_")){const m={q_cam:"cam",q_turnos:"turnos",q_vturno:"vturno",q_km:"km",q_tciclo:"tciclo",q_lkm:"lkm"};S.porteo[m[el.id]]=(el.id==="q_turnos"&&el.value==="")?"":num(el.value);}
   else if(el.id==="inc_otros") S.incOtros=el.checked;
   else if(el.id==="inc_porteo") S.incPorteo=el.checked;
+  else if(el.dataset.util){S.p.util=S.p.util||{};S.p.util[el.dataset.util]=el.value===""?"":num(el.value);}
   else if(el.id==="inc_pers") S.incPers=el.checked;
   else if(el.id==="inc_rel") S.incRel=el.checked;
   else if(el.dataset.rel!==undefined){const x=S.rel[+el.dataset.rel],f=el.dataset.f;x[f]=(f==="cant"&&el.value==="")?"":num(el.value);}
@@ -592,7 +613,7 @@ $("btnCopy").onclick=()=>{
   const r=calc(S),p=S.p;
   const txt=[`Costeo ${p.nave||"nave"} · ${p.carga} · Sitio ${p.sitio}`,`${fN(p.ton)} t a ${fN(p.rate)} t/día · ${fN(r.dias,2)} días · ${r.turnos} turnos`,
     ...r.parts.filter(x=>x.usd>0).map(x=>`${x.k}: ${fUSD(x.usd)}`),
-    `Costo total: ${fUSD(r.costoUSD)} (${fCLP(r.costoUSD*p.usd)})`,`Costo: ${fN(r.costoT,3)} USD/t`,`Tarifa con ${p.margen}% margen: ${fN(r.tarifaT,2)} USD/t`].join("\n");
+    `Costo total: ${fUSD(r.costoUSD)} (${fCLP(r.costoUSD*p.usd)})`,`Costo: ${fN(r.costoT,3)} USD/t`,...r.parts.filter(x=>x.usd>0).map(x=>`  ${x.k}: utilidad ${fN(x.util,1)}% → venta ${fUSD(x.venta)}`),`Venta total: ${fUSD(r.ventaUSD)} (utilidad ${fN(r.utilProm,1)}% promedio)`,`Tarifa: ${fN(r.tarifaT,2)} USD/t`].join("\n");
   navigator.clipboard.writeText(txt).then(()=>toast("Resumen copiado")).catch(()=>toast("No se pudo copiar en esta vista"));
 };
 function toast(m){$("toast").textContent=m;clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").textContent="",2500)}
@@ -699,12 +720,11 @@ function armarInforme(){
     <tr><th>Rate</th><td>${fN(p.rate)} t/día · ${fN(r.ratePorTurno)} t/turno</td><th>N° de manos</th><td>${fN(p.manos)}</td></tr>
     <tr><th>Duración</th><td>${fN(r.dias,2)} días</td><th>Turnos / horas</th><td>${r.turnos} turnos (${fN(r.turnosExact,2)} calculados) · ${fN(r.horas)} h</td></tr></table>
   <div class="kpi"><div><small>Costo total USD</small><b>${fUSD(r.costoUSD)}</b></div><div><small>Costo USD/t</small><b>${fN(r.costoT,3)}</b></div>
-    <div><small>Margen</small><b>${fN(p.margen)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
+    <div><small>Utilidad promedio</small><b>${fN(r.utilProm,1)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
   <h2>Resumen de costos</h2>
-  <table><tr><th>Concepto</th><th class="n">USD</th><th class="n">CLP</th><th class="n">USD/t</th></tr>
-    ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${fCLP(x.usd*p.usd)}</td><td class="n">${fN(x.usd/p.ton,3)}</td></tr>`).join("")}
-    <tr class="tot"><td>Costo total</td><td class="n">${fUSD(r.costoUSD)}</td><td class="n">${fCLP(r.costoUSD*p.usd)}</td><td class="n">${fN(r.costoT,3)}</td></tr>
-    <tr class="tot"><td>Valor venta (con ${fN(p.margen)}% margen)</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
+  <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
+    ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
+    <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
   <h2>Personal de muellaje</h2>
   <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th></tr>
     ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
@@ -730,8 +750,8 @@ $("btnXls").onclick=()=>{
   const r=calc(S),p=S.p,wb=XLSX.utils.book_new();
   const res=[["Cotización de servicio de transferencia · HTP"],["Folio",folio()],["Emitida",new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"})],[],
     ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Horas totales",r.horas],[],
-    ["Concepto","USD","CLP","USD/t"],...r.parts.map(x=>[x.k,+x.usd.toFixed(2),Math.round(x.usd*p.usd),+(x.usd/p.ton).toFixed(4)]),
-    ["Costo total",+r.costoUSD.toFixed(2),Math.round(r.costoUSD*p.usd),+r.costoT.toFixed(4)],["Margen %",p.margen],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
+    ["Servicio","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"],...r.parts.map(x=>[x.k,+x.usd.toFixed(2),x.util,+x.venta.toFixed(2),Math.round(x.venta*p.usd),+(x.venta/p.ton).toFixed(4)]),
+    ["Total",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
     ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
   const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Total CLP"];
