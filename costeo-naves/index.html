@@ -433,7 +433,7 @@ const BASE = {
     ["Supervisor",139467,0,0],["Jefe cubierta",139467,1,1],["Jefe molo",139467,1,1],["Capataz",131156,3,6],
     ["Oficinista",131156,0,0],["Tarjador",127338,2,5],["Winchero",127338,2,4],["Portaloneros",127338,3,4],
     ["Bombero",0,0,0],["Mov. a bordo",118022,0,15],["Mov. muelle",118022,11,0],["Cuidador nave",118022,0,0],
-    ["Aseo oficina",118022,0,0],["Pañolero",127338,1,1],["Operador",127338,2,2],["Amarrador",126441,0,0]
+    ["Aseo oficina",118022,0,0],["Pañolero",127338,1,1],["Operador",127338,2,2],["Cafetero",118022,0,0],["Amarrador",126441,0,0]
   ],
   otros:[["Turno retiro de madera",0,0],["Destrinca × bodega",0,1280733],["Amarra",0,1086800],["Desamarra",0,1086800],["Traslado equipo",3,350000]],
   incOtros:true,
@@ -996,11 +996,15 @@ $("dv_zero").onclick=()=>{setDesv({turnos:0,eq:0,nota:""});toast("Resguardo quit
 const TKEY="costeo-naves-htp-tarifas";
 const normT=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 let TAR=(()=>{try{return JSON.parse(localStorage.getItem(TKEY))||{}}catch(e){return{}}})();
-if(!TAR.cargos) TAR.cargos=BASE.pers.map(x=>({cargo:x[0],clp:x[1],rel:""}));
+if(!TAR.cargos) TAR.cargos=BASE.pers.map(x=>({cargo:x[0],clp:x[1],rel:x[0]==="Cafetero"?"cargo:Mov. muelle":""}));
+if(!TAR.cargos.find(c=>normT(c.cargo)==="cafetero")){const mm=TAR.cargos.find(c=>normT(c.cargo)==="mov muelle");TAR.cargos.push({cargo:"Cafetero",clp:mm?mm.clp:118022,rel:"cargo:"+(mm?mm.cargo:"Mov. muelle")})}
 function guardarTARlocal(){try{localStorage.setItem(TKEY,JSON.stringify(TAR))}catch(e){}}
 function relItems(){return (TAR.rel&&TAR.rel.items)||[]}
 function relByKey(k){return relItems().find(i=>i.key===k)}
-function aplicarVinculos(){let n=0;TAR.cargos.forEach(c=>{const it=c.rel&&relByKey(c.rel);if(it&&it.tarifa!==c.clp){c.clp=it.tarifa;n++}});return n}
+function valorVinculo(c,prof=0){if(!c.rel)return null;
+  if(c.rel.startsWith("cargo:")){const o=TAR.cargos.find(x=>normT(x.cargo)===normT(c.rel.slice(6)));if(!o||o===c||prof>3)return null;const v=valorVinculo(o,prof+1);return v!==null?v:num(o.clp)}
+  const it=relByKey(c.rel);return it?it.tarifa:null}
+function aplicarVinculos(){let n=0;for(let pasada=0;pasada<3;pasada++)TAR.cargos.forEach(c=>{const v=valorVinculo(c);if(v!==null&&v!==c.clp){c.clp=v;n++}});return n}
 function baseConMaestro(){const D=clone(BASE);D.pers.forEach(x=>{const m=TAR.cargos.find(c=>normT(c.cargo)===normT(x[0]));if(m)x[1]=m.clp});
   TAR.cargos.forEach(c=>{if(!D.pers.find(x=>normT(x[0])===normT(c.cargo)))D.pers.push([c.cargo,c.clp,0,0,{}])});return D}
 function aplicarCostosAlCosteo(){let n=0;S.pers.forEach(x=>{const m=TAR.cargos.find(c=>normT(c.cargo)===normT(x[0]));if(m&&num(x[1])!==num(m.clp)){x[1]=m.clp;n++}});buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange();return n}
@@ -1020,17 +1024,17 @@ function pintarRel(){
 }
 function pintarCC(){
   const its=relItems();
-  const sel=v=>`<option value="">— Sin vínculo (valor manual)</option>`+its.filter(i=>/hombre|turno/i.test(i.unidad)).map(i=>`<option value="${esc(i.key)}"${i.key===v?" selected":""}>${esc(i.desc)} · ${fCLP(i.tarifa)} ${esc(i.unidad)}</option>`).join("")+(v&&!relByKey(v)?`<option value="${esc(v)}" selected>${esc(v)} (no está en la tabla actual)</option>`:"");
+  const sel=(v,yo)=>`<option value="">— Sin vínculo (valor manual)</option><optgroup label="Mismo valor que otro cargo">`+TAR.cargos.filter(o=>o.cargo!==yo).map(o=>`<option value="cargo:${esc(o.cargo)}"${v==="cargo:"+o.cargo?" selected":""}>Igual que ${esc(o.cargo)}</option>`).join("")+`</optgroup><optgroup label="Contrato Reloncaví">`+its.filter(i=>/hombre|turno/i.test(i.unidad)).map(i=>`<option value="${esc(i.key)}"${i.key===v?" selected":""}>${esc(i.desc)} · ${fCLP(i.tarifa)} ${esc(i.unidad)}</option>`).join("")+`</optgroup>`+(v&&!v.startsWith("cargo:")&&!relByKey(v)?`<option value="${esc(v)}" selected>${esc(v)} (no está en la tabla actual)</option>`:"");
   $("t_cc").innerHTML=TAR.cargos.map((c,i)=>`<tr>
     <td><input type="text" class="name" id="cc${i}_n" data-cc="${i}" data-f="cargo" value="${esc(c.cargo)}" aria-label="Cargo"></td>
-    <td class="n"><input type="number" min="0" step="1" id="cc${i}_v" data-cc="${i}" data-f="clp" value="${esc(c.clp)}" aria-label="CLP por turno"${c.rel&&relByKey(c.rel)?" readonly title=\"Valor tomado del contrato Reloncaví\"":""}></td>
-    <td><select id="cc${i}_r" data-cc="${i}" data-f="rel" aria-label="Vínculo Reloncaví">${sel(c.rel)}</select></td>
+    <td class="n"><input type="number" min="0" step="1" id="cc${i}_v" data-cc="${i}" data-f="clp" value="${esc(c.clp)}" aria-label="CLP por turno"${valorVinculo(c)!==null?" readonly title=\"Valor vinculado\"":""}></td>
+    <td><select id="cc${i}_r" data-cc="${i}" data-f="rel" aria-label="Vínculo Reloncaví">${sel(c.rel,c.cargo)}</select></td>
     <td><button class="x" type="button" data-ccdel="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
   $("ccState").innerHTML=TAR.cargosEl?`Última actualización ${esc(TAR.cargosEl)}${TAR.cargosPor?" por "+esc(TAR.cargosPor):""}`:"Valores base de la planilla. Guarde para dejarlos en línea.";
 }
 $("t_cc").addEventListener("input",e=>{const el=e.target,i=+el.dataset.cc,f=el.dataset.f;if(isNaN(i))return;
   TAR.cargos[i][f]=f==="clp"?num(el.value):el.value;
-  if(f==="rel"){const it=relByKey(el.value);if(it)TAR.cargos[i].clp=it.tarifa;pintarCC()}
+  if(f==="rel"||f==="clp"){aplicarVinculos();if(f==="rel")pintarCC();else TAR.cargos.forEach((c,k)=>{if(k!==i){const x=$("cc"+k+"_v");if(x)x.value=c.clp}})}
   guardarTARlocal();});
 $("t_cc").addEventListener("change",e=>{if(e.target.tagName==="SELECT")e.target.dispatchEvent(new Event("input",{bubbles:true}))});
 $("t_cc").addEventListener("click",e=>{const b=e.target.closest("[data-ccdel]");if(!b)return;TAR.cargos.splice(+b.dataset.ccdel,1);guardarTARlocal();pintarCC()});
@@ -1089,7 +1093,7 @@ function setRel(R,local){
   TAR.rel=R; const n=aplicarVinculos(); guardarTARlocal(); pintarRel(); pintarCC();
   if(n&&local&&window.CN&&CN.saveCargos) CN.saveCargos(TAR.cargos);
 }
-window.TARIFAS={setRel,setCargos:(c,meta)=>{if(Array.isArray(c)&&c.length){TAR.cargos=c;TAR.cargosEl=meta&&meta.el||"";TAR.cargosPor=meta&&meta.por||"";aplicarVinculos();guardarTARlocal();pintarCC()}},base:baseConMaestro};
+window.TARIFAS={setRel,setCargos:(c,meta)=>{if(Array.isArray(c)&&c.length){TAR.cargos=c;if(!c.find(x=>normT(x.cargo)==="cafetero")){const mm=c.find(x=>normT(x.cargo)==="mov muelle");c.push({cargo:"Cafetero",clp:mm?mm.clp:118022,rel:"cargo:"+(mm?mm.cargo:"Mov. muelle")})}TAR.cargosEl=meta&&meta.el||"";TAR.cargosPor=meta&&meta.por||"";aplicarVinculos();guardarTARlocal();pintarCC()}},base:baseConMaestro};
 $("relAdd").addEventListener("change",e=>{const it=relItems()[+e.target.value];e.target.value="";if(!it)return;
   S.rel=S.rel||[];S.rel.push({desc:it.desc,grupo:it.grupo,unidad:it.unidad,tarifa:it.tarifa,mult:1,cant:"",key:it.key});
   buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange()});
