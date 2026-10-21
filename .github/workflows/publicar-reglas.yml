@@ -1,0 +1,26 @@
+name: Publicar reglas de Firestore
+
+# Publica firestore.rules en Firebase cada vez que cambia en main (o a mano desde Actions)
+on:
+  push:
+    branches: [main]
+    paths: [firestore.rules]
+  workflow_dispatch: {}
+
+jobs:
+  reglas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias
+        working-directory: avisos
+        run: npm install --no-audit --no-fund --omit=dev
+      - name: Publicar reglas
+        working-directory: avisos
+        run: node reglas.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
