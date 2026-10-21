@@ -614,7 +614,7 @@ function render(){
   $("d_port").innerHTML=`<span>Turnos camión <b>${fN(num(S.porteo.cam)*r.camTurnos)}</b> → <b>${fCLP(r.portTurnoCLP)}</b></span><span>Ciclos <b>${fN(r.ciclos)}</b></span><span>Km <b>${fN(r.km)}</b></span><span>Litros <b>${fN(r.litros)}</b> → <b>${fCLP(r.portPetCLP)}</b></span>`;
   $("r_tarifa").innerHTML=`${fN(r.tarifaT,2)}<em>USD/t</em>`;
   $("r_vessel").textContent=[p.nave||"Nave sin nombre",p.carga,"Sitio "+p.sitio,fN(p.ton)+" t"].filter(Boolean).join(" · ");
-  $("r_margen").textContent=`Costo ${fN(r.costoT,3)} USD/t + utilidad ${fN(r.utilProm,1)}% promedio`;
+  $("r_margen").textContent=`Costo ${fN(r.costoT,3)} USD/t + utilidad empresa de muellaje ${fN(r.utilProm,1)}%`;
   const tot=r.costoUSD||1;
   if(!$("u_pers")){
     $("r_rows").innerHTML=`<div class="row hd"><span>Servicio</span><span class="v">Costo USD</span><span class="u">Util. %</span><span class="v">Venta USD</span></div>`+
@@ -678,7 +678,7 @@ $("btnCopy").onclick=()=>{
   const r=calc(S),p=S.p;
   const txt=[`Costeo ${p.nave||"nave"} · ${p.carga} · Sitio ${p.sitio}`,`${fN(p.ton)} t a ${fN(p.rate)} t/día · ${fN(r.dias,2)} días · ${r.turnos} turnos`,
     ...r.parts.filter(x=>x.usd>0).map(x=>`${x.k}: ${fUSD(x.usd)}`),
-    `Costo total: ${fUSD(r.costoUSD)} (${fCLP(r.costoUSD*p.usd)})`,`Costo: ${fN(r.costoT,3)} USD/t`,...r.parts.filter(x=>x.usd>0).map(x=>`  ${x.k}: utilidad ${fN(x.util,1)}% → venta ${fUSD(x.venta)}`),`Venta total: ${fUSD(r.ventaUSD)} (utilidad ${fN(r.utilProm,1)}% promedio)`,`Tarifa: ${fN(r.tarifaT,2)} USD/t`].join("\n");
+    `Costo total: ${fUSD(r.costoUSD)} (${fCLP(r.costoUSD*p.usd)})`,`Costo: ${fN(r.costoT,3)} USD/t`,...r.parts.filter(x=>x.usd>0).map(x=>`  ${x.k}: utilidad ${fN(x.util,1)}% → venta ${fUSD(x.venta)}`),`Venta total: ${fUSD(r.ventaUSD)} (utilidad empresa de muellaje ${fN(r.utilProm,1)}%)`,`Tarifa: ${fN(r.tarifaT,2)} USD/t`].join("\n");
   navigator.clipboard.writeText(txt).then(()=>toast("Resumen copiado")).catch(()=>toast("No se pudo copiar en esta vista"));
 };
 function toast(m){$("toast").textContent=m;clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").textContent="",2500)}
@@ -785,7 +785,7 @@ function armarInforme(){
     <tr><th>Rate</th><td>${fN(p.rate)} t/día · ${fN(r.ratePorTurno)} t/turno</td><th>N° de manos</th><td>${fN(p.manos)}</td></tr>
     <tr><th>Duración</th><td>${fN(r.dias,2)} días</td><th>Turnos / horas</th><td>${r.turnos} turnos (${fN(r.turnosExact,2)} calculados) · ${fN(r.horas)} h</td></tr></table>
   <div class="kpi"><div><small>Costo total USD</small><b>${fUSD(r.costoUSD)}</b></div><div><small>Costo USD/t</small><b>${fN(r.costoT,3)}</b></div>
-    <div><small>Utilidad promedio</small><b>${fN(r.utilProm,1)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
+    <div><small>Utilidad empresa de muellaje</small><b>${fN(r.utilProm,1)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
   <h2>Resumen de costos</h2>
   <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Resguardo</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
     ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${x.desvTxt||"—"}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
@@ -856,7 +856,7 @@ $("btnXls").onclick=async()=>{
     for(let c=1;c<=8;c++)ws.getCell(row,c).border={bottom:thin};row++});
   row++;
   // KPIs
-  const kpis=[["Costo total",r.costoUSD,F_USD],["Costo USD/t",r.costoT,F_N3],["Utilidad promedio",r.utilProm,F_PCT],["Tarifa cotizada USD/t",r.tarifaT,F_N2]];
+  const kpis=[["Costo total",r.costoUSD,F_USD],["Costo USD/t",r.costoT,F_N3],["Utilidad empresa de muellaje",r.utilProm,F_PCT],["Tarifa cotizada USD/t",r.tarifaT,F_N2]];
   kpis.forEach((k,i)=>{const c0=1+i*2;ws.mergeCells(row,c0,row,c0+1);ws.mergeCells(row+1,c0,row+1,c0+1);
     const a=ws.getCell(row,c0),b=ws.getCell(row+1,c0);a.value=k[0].toUpperCase();b.value=k[1];b.numFmt=k[2];
     const last=i===3;a.font={size:8,bold:true,color:{argb:last?NAVY:GRAY}};b.font={size:16,bold:true,color:{argb:NAVY}};
