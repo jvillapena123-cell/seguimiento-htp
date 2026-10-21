@@ -166,32 +166,34 @@ for (const d of snap.docs) {
 // ---------- Solicitudes de mantenimiento ----------
 // Correo al responsable y al jefe de turno que hace el seguimiento cuando se asignan (o cambian),
 // con la primera foto del problema. Al cerrarse, aviso al jefe de turno del seguimiento y al administrador.
-function plantillaMant({ titulo, color = "#1F3A6E", intro, m, nota, conFoto }) {
+function plantillaMant({ titulo, color = "#1F3A6E", intro, m, nota, conFoto, cfg = CFG_MANT }) {
   const fila = (k, v) => `<tr><td style="padding:6px 12px 6px 0;color:#5A6478;font-size:13px;white-space:nowrap;vertical-align:top">${k}</td><td style="padding:6px 0;font-size:14px;color:#1A2233">${v}</td></tr>`;
   return `<!doctype html><html><body style="margin:0;background:#F6F6F8;font-family:Segoe UI,Arial,sans-serif">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F6F8;padding:24px 12px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #D9DBE3">
     <tr><td style="background:#1F3A6E;padding:16px 22px;color:#fff">
-      <div style="font-size:12px;opacity:.85">Huachipato Terminal Portuario · Mantenimiento de equipos</div>
+      <div style="font-size:12px;opacity:.85">Huachipato Terminal Portuario · ${cfg.seccion}</div>
       <div style="font-size:18px;font-weight:700;margin-top:2px">${esc(titulo)}</div></td></tr>
     <tr><td style="height:5px;background:${color}"></td></tr>
     <tr><td style="padding:20px 22px">
       <p style="margin:0 0 16px;font-size:14.5px;color:#1A2233;line-height:1.5">${intro}</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-top:1px solid #E8E8EC;border-bottom:1px solid #E8E8EC;margin-bottom:16px">
-        ${fila("Solicitud", `<b>N° ${num(m)} · ${esc(m.equipo)}</b> (${esc(m.area)})`)}
-        ${fila("Problema", esc(m.descripcion).replace(/\n/g, "<br>"))}
+        ${m.proyecto ? fila("Proyecto", `<b>${esc(m.proyecto)}</b>`) : ""}
+        ${fila(cfg.nom, `<b>N° ${num(m)}${m.equipo ? ` · ${esc(m.equipo)}` : ""}</b>${m.area ? ` (${esc(m.area)})` : ""}`)}
+        ${fila(cfg.desc, esc(m.descripcion).replace(/\n/g, "<br>"))}
         ${fila("Aviso SAP", m.avisoSap ? `<b>${esc(m.avisoSap)}</b>` : '<span style="color:#A0450F">Sin aviso SAP</span>')}
         ${fila("Prioridad", esc(m.prioridad || "Media"))}
         ${fila("Responsable", esc(m.responsable))}
         ${fila("Seguimiento", esc(m.seguidor) + " (jefe de turno)")}
         ${m.fechaCompromiso ? fila("Fecha comprometida", `<b>${fmt(m.fechaCompromiso)}</b>`) : ""}
-        ${m.creadoPor ? fila("Solicitada por", esc(m.creadoPor)) : ""}
+        ${m.creadoPor ? fila("Ingresada por", esc(m.creadoPor)) : ""}
+        ${m.origen ? fila("Origen", `Solicitud de Mantenimiento N° ${String(m.origen.num || "").padStart(3, "0")}`) : ""}
       </table>
       ${conFoto ? `<img src="cid:foto-problema" alt="Foto del problema" style="display:block;max-width:100%;border-radius:8px;border:1px solid #D9DBE3;margin:0 0 16px">` : ""}
       ${nota ? `<p style="margin:0 0 16px;font-size:13.5px;color:#5A6478;line-height:1.5">${nota}</p>` : ""}
-      <a href="${APP_URL}#mant" style="display:inline-block;background:#E8804A;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:7px;font-size:14px">Abrir Mantenimiento</a>
+      <a href="${APP_URL}${cfg.hash}" style="display:inline-block;background:#E8804A;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:7px;font-size:14px">${cfg.boton}</a>
     </td></tr>
-    <tr><td style="padding:12px 22px;background:#F6F6F8;font-size:11.5px;color:#8A93A6">Correo automático del sistema de seguimiento HTP. La solicitud solo puede cerrarse en la aplicación, con comentario y evidencia objetiva.</td></tr>
+    <tr><td style="padding:12px 22px;background:#F6F6F8;font-size:11.5px;color:#8A93A6">Correo automático del sistema de seguimiento HTP. Solo puede cerrarse en la aplicación, con comentario y evidencia objetiva.</td></tr>
   </table></td></tr></table></body></html>`;
 }
 
@@ -205,7 +207,13 @@ async function fotoDe(m) {
   } catch (e) { console.error("No se pudo leer la foto", id, e.message); return null; }
 }
 
-const snapM = await db.collection("mantenimiento").get();
+const CFG_MANT = { col: "mantenimiento", seccion: "Mantenimiento de equipos", nom: "Solicitud", desc: "Problema", hash: "#mant", boton: "Abrir Mantenimiento",
+  asunto: m => `Mantenimiento N° ${num(m)} · ${m.equipo}`, obj: "solicitud de mantenimiento" };
+const CFG_PROY = { col: "proyectoTareas", seccion: "Proyectos", nom: "Tarea", desc: "Tarea", hash: "#proyectos", boton: "Abrir Proyectos",
+  asunto: m => `Proyecto ${m.proyecto} · tarea N° ${num(m)}${m.equipo ? ` · ${m.equipo}` : ""}`, obj: "tarea del proyecto" };
+
+async function revisarCol(cfg) {
+const snapM = await db.collection(cfg.col).get();
 for (const d of snapM.docs) {
   const m = d.data();
   const n = m.notif || {};
@@ -221,10 +229,10 @@ for (const d of snapM.docs) {
         const plazo = m.fechaCompromiso && m.fechaCierre ? (m.fechaCierre <= m.fechaCompromiso ? " · dentro de la fecha comprometida" : ` · <b style="color:#A3261B">${diasEntre(m.fechaCompromiso, m.fechaCierre)} día(s) después de la fecha comprometida</b>`) : "";
         await enviar({
           to, cc: ADMIN_EMAIL,
-          subject: `✅ Mantenimiento N° ${num(m)} · ${m.equipo} cerrado por ${m.cierre.por || ""}${tiempo ? ` (${tiempo})` : ""}`,
+          subject: `✅ ${cfg.asunto(m)} cerrada por ${m.cierre.por || ""}${tiempo ? ` (${tiempo})` : ""}`,
           html: plantillaMant({
-            titulo: "Solicitud cerrada con evidencia", color: "#1E6B3A", m,
-            intro: `<b>${esc(m.cierre.por || "")}</b> cerró la solicitud de <b>${esc(m.equipo)}</b> el ${fmt(m.fechaCierre)}.${tiempo ? `<br>Tiempo de cierre desde que se ingresó: <b>${tiempo}</b>${plazo}.` : ""}`,
+            titulo: `${cfg.nom} cerrada con evidencia`, color: "#1E6B3A", m, cfg,
+            intro: `<b>${esc(m.cierre.por || "")}</b> cerró la ${cfg.obj} <b>${esc(m.proyecto || m.equipo)}</b> el ${fmt(m.fechaCierre)}.${tiempo ? `<br>Tiempo de cierre desde que se ingresó: <b>${tiempo}</b>${plazo}.` : ""}`,
             nota: `<b>Comentario de cierre:</b> ${esc(m.cierre.comentario)}<br>Evidencia: ${esc(m.cierre.archivo && m.cierre.archivo.nombre || "adjunta en la aplicación")}`
           })
         });
@@ -249,26 +257,26 @@ for (const d of snapM.docs) {
       console.log(`Enviado: "${opts.subject}" → ${opts.to}`);
       enviados++;
     };
-    const asunto = `Mantenimiento N° ${num(m)} · ${m.equipo}${m.avisoSap ? ` · aviso SAP ${m.avisoSap}` : ""}`;
+    const asunto = `${cfg.asunto(m)}${m.avisoSap ? ` · aviso SAP ${m.avisoSap}` : ""}`;
     const notaResp = "Cuando el trabajo esté terminado, informe al jefe de turno que hace el seguimiento: él la cierra en la aplicación con comentario y evidencia objetiva (foto o PDF).";
     const notaSeg = "Usted hace el seguimiento de esta solicitud. Puede actualizar el aviso SAP, la fecha comprometida y el estado, y cerrarla con evidencia cuando el trabajo esté terminado.";
 
     if (avisarResp && avisarSeg && resp === seg) {
       await enviarM({
         to: resp, subject: `Se le asignó: ${asunto}`,
-        html: plantillaMant({ titulo: "Nueva solicitud de mantenimiento", m, conFoto: !!foto,
-          intro: `Hola ${esc(m.responsable)}, quedó como <b>responsable</b> y a cargo del <b>seguimiento</b> de esta solicitud de mantenimiento.`, nota: notaResp })
+        html: plantillaMant({ titulo: `Nueva ${cfg.obj}`, m, cfg, conFoto: !!foto,
+          intro: `Hola ${esc(m.responsable)}, quedó como <b>responsable</b> y a cargo del <b>seguimiento</b> de esta ${cfg.obj}.`, nota: notaResp })
       });
     } else {
       if (avisarResp) await enviarM({
         to: resp, subject: `${n.respA ? "Se le reasignó" : "Se le asignó"}: ${asunto}`,
-        html: plantillaMant({ titulo: n.respA ? "Se le reasignó una solicitud de mantenimiento" : "Nueva solicitud de mantenimiento", m, conFoto: !!foto,
-          intro: `Hola ${esc(m.responsable)}, quedó como <b>responsable</b> de la siguiente solicitud de mantenimiento. ${esc(m.seguidor)} hará el seguimiento.`, nota: notaResp })
+        html: plantillaMant({ titulo: n.respA ? `Se le reasignó una ${cfg.obj}` : `Nueva ${cfg.obj}`, m, cfg, conFoto: !!foto,
+          intro: `Hola ${esc(m.responsable)}, quedó como <b>responsable</b> de la siguiente ${cfg.obj}. ${esc(m.seguidor)} hará el seguimiento.`, nota: notaResp })
       });
       if (avisarSeg) await enviarM({
         to: seg, subject: `Seguimiento asignado: ${asunto}`,
-        html: plantillaMant({ titulo: "Debe hacer el seguimiento de una solicitud", color: "#2A8FA8", m, conFoto: !!foto,
-          intro: `Hola ${esc(m.seguidor)}, se le asignó el <b>seguimiento</b> de esta solicitud de mantenimiento. El responsable es <b>${esc(m.responsable)}</b>.`, nota: notaSeg })
+        html: plantillaMant({ titulo: `Debe hacer el seguimiento de una ${cfg.obj}`, color: "#2A8FA8", m, cfg, conFoto: !!foto,
+          intro: `Hola ${esc(m.seguidor)}, se le asignó el <b>seguimiento</b> de esta ${cfg.obj}. El responsable es <b>${esc(m.responsable)}</b>.`, nota: notaSeg })
       });
     }
     if (avisarResp) upd["notif.respA"] = kResp;
@@ -277,9 +285,14 @@ for (const d of snapM.docs) {
     await d.ref.update(upd);
   } catch (e) {
     errores++;
-    console.error(`Error con la solicitud de mantenimiento ${d.id}:`, e.message);
+    console.error(`Error con ${cfg.col}/${d.id}:`, e.message);
   }
 }
+return snapM.size;
+}
+const nMant = await revisarCol(CFG_MANT);
+let nProy = 0;
+try { nProy = await revisarCol(CFG_PROY); } catch (e) { errores++; console.error("Error al revisar Proyectos:", e.message); }
 
-console.log(`Revisión ${hoy} ${hora}h · ${snap.size} tareas · ${snapM.size} solicitudes de mantenimiento · ${enviados} correos enviados · ${errores} errores`);
+console.log(`Revisión ${hoy} ${hora}h · ${snap.size} tareas · ${nMant} solicitudes de mantenimiento · ${nProy} tareas de proyectos · ${enviados} correos enviados · ${errores} errores`);
 if (errores) process.exit(1);

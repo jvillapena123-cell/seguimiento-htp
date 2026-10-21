@@ -428,6 +428,7 @@ label textarea{min-height:64px;resize:vertical}
 /* ===== Seguimiento de mejoras ===== */
 .tt-kpi>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .mj{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;padding-top:20px;align-items:start}
+#pj .mj-main{min-width:0;padding-top:0}#pj .mj-main>*,#pj .mt-lista>*{min-width:0}
 .mj-side{padding:14px;position:sticky;top:12px}
 .mj-side-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
 .mj-side-h h2{margin:0!important;font-size:15px}
@@ -672,6 +673,7 @@ label textarea{min-height:64px;resize:vertical}
       <button role="tab" data-tab="tareas" aria-selected="false" id="tab-tareas" hidden><span class="lg">Tareas de turno</span><span class="sm">Tareas</span><span class="cnt" id="c-tar">0</span></button>
       <button role="tab" data-tab="mejoras" aria-selected="false" id="tab-mej" hidden><span class="lg">Seguimiento de mejoras</span><span class="sm">Mejoras</span><span class="cnt" id="c-mej">0</span></button>
       <button role="tab" data-tab="mant" aria-selected="false" id="tab-mant" hidden><span class="lg">Mantenimiento</span><span class="sm">Mant.</span><span class="cnt" id="c-mant">0</span></button>
+      <button role="tab" data-tab="pj" aria-selected="false" id="tab-pj" hidden><span class="lg">Proyectos</span><span class="sm">Proy.</span><span class="cnt" id="c-pj">0</span></button>
       <button role="tab" data-tab="admin" aria-selected="false" id="tab-admin" hidden><span class="lg">Administración</span><span class="sm">Admin</span></button>
     </nav>
   </div>
@@ -864,6 +866,47 @@ label textarea{min-height:64px;resize:vertical}
     </div>
   </section>
 
+  <section id="pj" hidden>
+    <div class="mj">
+      <aside class="card mj-side" aria-label="Proyectos">
+        <div class="mj-side-h"><h2>Proyectos</h2><button class="btn btn-primary btn-sm" id="pj-newp" type="button" hidden>+ Nuevo</button></div>
+        <nav class="mj-plist" id="pj-plist"></nav>
+      </aside>
+      <div class="mj-main tt">
+        <div class="dash-head">
+          <div><h2 style="margin:0;font-size:18px;color:var(--azul)" id="pj-h">Proyectos</h2><span class="sub" id="pj-hsub">Tareas agrupadas por proyecto, con aviso SAP, responsable y jefe de turno que las sigue</span></div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div class="seg" id="pj-vista" role="group" aria-label="Vista"><button type="button" data-v="lista" aria-pressed="true">Tareas</button><button type="button" data-v="rend" aria-pressed="false">Rendimiento de cierre</button></div>
+            <span class="sub" id="pj-fecha"></span>
+          </div>
+        </div>
+        <div id="pj-rend" class="mr" hidden></div>
+        <div id="pj-lista" class="mt-lista">
+          <nav class="tt-kpi" id="pj-kpi" aria-label="Filtrar tareas">
+            <button data-k="" aria-pressed="true"><b id="pk-total">0</b><span id="pk-total-l">Tareas en total</span></button>
+            <button data-k="abiertas"><b id="pk-ab">0</b><span>Abiertas</span></button>
+            <button data-k="cerradas" class="g"><b id="pk-ce">0</b><span id="pk-ce-l">Cerradas</span></button>
+            <button data-k="vencidas" class="r"><b id="pk-ve">0</b><span>Fecha comprometida vencida</span></button>
+            <button data-k="sinsap" class="o"><b id="pk-sap">0</b><span>Abiertas sin aviso SAP</span></button>
+          </nav>
+          <div class="card" style="padding:14px">
+            <div class="tt-bar">
+              <input type="search" id="pj-q" placeholder="Buscar por proyecto, tarea, equipo, aviso SAP o persona…" aria-label="Buscar tarea">
+              <select id="pj-f-seg" aria-label="Jefe de turno que sigue"><option value="">Todos los jefes de turno</option></select>
+              <button class="btn btn-ghost" id="pj-csv" type="button">Exportar CSV</button>
+              <button class="btn btn-primary" id="pj-new" type="button" hidden>Nueva tarea</button>
+            </div>
+            <div class="tscroll" style="margin-top:10px"><table class="ttab">
+              <thead><tr><th>N°</th><th id="pj-th1">Proyecto</th><th>Tarea</th><th>Aviso SAP</th><th>Responsable</th><th>Seguimiento</th><th>Fecha comprometida</th><th>Proceso</th><th></th></tr></thead>
+              <tbody id="pj-body"></tbody>
+            </table></div>
+            <div class="empty" id="pj-empty" hidden></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="mant" hidden>
     <div class="tt">
       <div class="dash-head">
@@ -879,7 +922,7 @@ label textarea{min-height:64px;resize:vertical}
         <button data-k="" aria-pressed="true"><b id="mk-total">0</b><span id="mk-total-l">Solicitudes en total</span></button>
         <button data-k="abiertas"><b id="mk-ab">0</b><span>Abiertas</span></button>
         <button data-k="cerradas" class="g"><b id="mk-ce">0</b><span id="mk-ce-l">Cerradas</span></button>
-        <button data-k="vencidas" class="r"><b id="mk-ve">0</b><span>Fecha comprometida vencida</span></button>
+        <button data-k="vencidas" class="r"><b id="mtk-ve">0</b><span>Fecha comprometida vencida</span></button>
         <button data-k="sinsap" class="o"><b id="mk-sap">0</b><span>Abiertas sin aviso SAP</span></button>
       </nav>
       <div>
@@ -1254,6 +1297,8 @@ label textarea{min-height:64px;resize:vertical}
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button type="button" class="btn btn-danger" id="mt-del" hidden>Eliminar</button>
         <button type="button" class="btn btn-ghost" id="mt-reopen" hidden>Reabrir</button>
+        <button type="button" class="btn btn-ghost" id="mt-toproj" hidden>Enviar a proyecto</button>
+        <button type="button" class="btn btn-ghost" id="mt-goproj" hidden>Ver en Proyectos</button>
       </div>
       <div class="r">
         <button type="button" class="btn btn-close" id="mt-close-b" hidden>Cerrar con evidencia</button>
@@ -1284,6 +1329,66 @@ label textarea{min-height:64px;resize:vertical}
     <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost mtcx">Cancelar</button><button type="submit" class="btn btn-close" id="mtc-save">Cerrar con evidencia</button></div></div>
   </form>
 </dialog>
+<dialog id="dlg-pj" aria-labelledby="pj-title">
+  <form id="pjfrm">
+    <div class="dlg-head"><h2 id="pj-title">Nueva tarea de proyecto</h2><button type="button" class="pjx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <div class="closed-banner" id="pj-banner" hidden></div>
+      <div class="notice" id="pj-origen" hidden style="margin:0 0 14px"></div>
+      <div id="pj-proc-box" hidden><div class="mt-proc" id="pj-proc"></div><p class="sub" id="pj-proc-help" style="margin:-8px 0 14px"></p></div>
+      <fieldset id="pj-cierre" hidden><legend>Evidencia de cierre</legend><div class="evid" id="pj-evid"></div></fieldset>
+      <div id="pj-ro" class="t-ro" hidden></div>
+      <div id="pj-edit" class="grid">
+        <label>Proyecto <span class="req">obligatorio</span><input name="proyecto" list="dl-pj" required autocomplete="off" placeholder="Elija uno o escriba un nombre nuevo"></label>
+        <label>Equipo<select name="equipo"></select></label>
+        <label class="full">Descripción de la tarea <span class="req">obligatorio</span><textarea name="descripcion" required placeholder="Qué se debe hacer, dónde y con qué alcance"></textarea></label>
+        <label>Prioridad<select name="prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></label>
+        <label>N° aviso SAP<input name="avisoSap" inputmode="numeric" autocomplete="off" placeholder="Ej.: 10456789"></label>
+        <label>Fecha comprometida<input type="date" name="fechaCompromiso"></label>
+        <label>Responsable <span class="req">obligatorio</span><select name="responsableId" required></select></label>
+        <label>Seguimiento: jefe de turno <span class="req">obligatorio</span><select name="seguidorId" required></select></label>
+      </div>
+      <div id="pj-estado-box" class="grid" style="margin-top:12px" hidden>
+        <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option><option>Esperando repuesto</option></select></label>
+      </div>
+      <fieldset style="margin-top:14px"><legend>Fotografías</legend>
+        <div class="photos" id="pj-photos"></div>
+        <input type="file" id="pj-ph-in" accept="image/*" multiple hidden>
+      </fieldset>
+      <p class="help" id="pj-mail-help" style="margin:12px 0 0">Al guardar, el responsable y el jefe de turno que hace el seguimiento reciben un correo con la tarea. Si se cambia alguno de ellos, el nuevo también recibe el correo.</p>
+      <p class="sub" id="pj-meta" hidden style="margin:10px 0 0"></p>
+      <fieldset id="pj-hist-box" hidden style="margin-top:14px"><legend>Historial</legend><ul class="hist" id="pj-hist"></ul></fieldset>
+    </div>
+    <div class="dlg-foot">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-danger" id="pj-del" hidden>Eliminar</button>
+        <button type="button" class="btn btn-ghost" id="pj-reopen" hidden>Reabrir</button>
+        <button type="button" class="btn btn-ghost" id="pj-gomt" hidden>Ver solicitud de origen</button>
+      </div>
+      <div class="r">
+        <button type="button" class="btn btn-close" id="pj-close-b" hidden>Cerrar con evidencia</button>
+        <button type="button" class="btn btn-ghost pjx">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="pj-save">Crear tarea</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-mtp" class="small" aria-labelledby="mtp-title">
+  <form id="mtpfrm">
+    <div class="dlg-head"><h2 id="mtp-title">Enviar a proyecto</h2><button type="button" class="mtpx" aria-label="Cerrar">×</button></div>
+    <div class="body">
+      <p class="sub" id="mtp-what" style="margin:0 0 14px"></p>
+      <div class="stack">
+        <label>Proyecto <span class="req">obligatorio</span><input name="proyecto" list="dl-pj" required autocomplete="off" placeholder="Elija uno o escriba un nombre nuevo"></label>
+        <label>Comentario<textarea name="comentario" placeholder="Opcional: por qué pasa a proyecto"></textarea></label>
+      </div>
+      <p class="help" style="margin:12px 0 0">La solicitud pasa a la pestaña Proyectos con su descripción, fotos, aviso SAP, responsable y jefe de turno, y queda en Mantenimiento como «Enviada a proyecto».</p>
+    </div>
+    <div class="dlg-foot"><div class="r"><button type="button" class="btn btn-ghost mtpx">Cancelar</button><button type="submit" class="btn btn-primary" id="mtp-save">Enviar a proyecto</button></div></div>
+  </form>
+</dialog>
+<datalist id="dl-pj"></datalist>
 <button class="fab" id="fab" hidden><span>📷</span>Hallazgo en terreno</button>
 <div class="viewer" id="viewer" hidden><img alt="Foto ampliada"></div>
 <datalist id="dl-zonas"></datalist>
@@ -1311,9 +1416,9 @@ function fmt(iso){if(!iso)return"";const[y,m,d]=iso.split("-");return`${d}-${m}-
 function fmtDT(iso){if(!iso)return"";const d=new Date(iso);return d.toLocaleDateString("es-CL")+" "+d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"})}
 function dias(iso){if(!iso)return null;return Math.round((new Date(iso+"T00:00:00")-new Date(hoyISO()+"T00:00:00"))/864e5)}
 function alerta(it){if(it.estado==="Cerrado")return"Cerrado";if(!it.fechaCompromiso)return"Sin fecha";const d=dias(it.fechaCompromiso);return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
-const pillCls={"Vencido":"p-venc","Por vencer":"p-porv","En plazo":"p-plazo","Sin fecha":"p-sin","Cerrado":"p-cerr"};
+const pillCls={"Vencido":"p-venc","Por vencer":"p-porv","En plazo":"p-plazo","Sin fecha":"p-sin","Cerrado":"p-cerr","Enviada":"p-sin"};
 const rowCls={"Vencido":"a-venc","Por vencer":"a-porv","Cerrado":"a-cerr"};
-const alertOrder={"Vencido":0,"Por vencer":1,"Sin fecha":2,"En plazo":3,"Cerrado":4};
+const alertOrder={"Vencido":0,"Por vencer":1,"Sin fecha":2,"En plazo":3,"Cerrado":4,"Enviada":5};
 const prioOrder={"Alta":0,"Media":1,"Baja":2};
 const label=t=>t==="Hallazgo"?"hallazgo":"compromiso";
 function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),2600)}
@@ -1321,7 +1426,7 @@ function setSync(on,txt){$("#sync").innerHTML=`<span class="dot ${on?"on":""}"><
 function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`No tiene permiso para ${what}`:`No se pudo ${what}. Revise la conexión`);throw e}
 
 /* ---------- Estado ---------- */
-let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], mjErr=false, mant=[];
+let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], pjt=[], mjErr=false, mant=[];
 const MAX_POR_CORREO=3;
 // Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
 // Empresas que siempre aparecen para elegir, aunque aún no tengan registros ni personas
@@ -1380,7 +1485,7 @@ $("#b-logout").onclick=()=>signOut(auth);
 $("#b-retry").onclick=()=>boot();
 
 async function boot(){
-  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];proyectos=[];mejoras=[];mjErr=false;mant=[];
+  unsubs.forEach(u=>u());unsubs=[];items=[];personas=[];persona=null;isAdmin=false;myAcceso="";synced=false;esJefe=false;tareas=[];proyectos=[];mejoras=[];mjErr=false;mant=[];pjt=[];
   if(!authUser){showGate("g-login");return}
   const bootstrap=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(myEmail());
   let acc=null;
@@ -1394,10 +1499,11 @@ async function boot(){
   myAcceso=acc?acc.acceso:"";
   isAdmin=bootstrap||myAcceso==="Administrador";
   esJefe=jefe;
-  if(!canReadH())tab=location.hash==="#mant"&&verMant()?"mant":"tareas";
+  if(!canReadH())tab=location.hash==="#mant"&&verMant()?"mant":location.hash==="#proyectos"&&verMant()?"pj":"tareas";
   else if(location.hash==="#tareas"&&verTareas())tab="tareas";
   else if(location.hash==="#mejoras")tab="mejoras";
   else if(location.hash==="#mant")tab="mant";
+  else if(location.hash==="#proyectos")tab="pj";
   setSync(false,"Conectando…");
   if(verTareas())unsubs.push(onSnapshot(collection(db,"tareas"),snap=>{tareas=snap.docs.map(d=>({id:d.id,...d.data()}));if(!canReadH())setSync(!snap.metadata.fromCache,snap.metadata.fromCache?"Sin señal":"Sincronizado");render()},
     e=>{console.error(e);toast("No se pudieron cargar las tareas de turno. Revise que las reglas de Firebase estén actualizadas")}));
@@ -1406,6 +1512,8 @@ async function boot(){
     e=>{console.error(e);setSync(false,"Sin conexión a los datos")}));
   if(isAdmin||esJefe)unsubs.push(onSnapshot(collection(db,"mantenimiento"),snap=>{mant=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
     e=>{console.error(e);toast("No se pudieron cargar las solicitudes de mantenimiento. Revise que las reglas de Firebase estén actualizadas")}));
+  if(isAdmin||esJefe)unsubs.push(onSnapshot(collection(db,"proyectoTareas"),snap=>{pjt=snap.docs.map(d=>({id:d.id,...d.data()}));render()},
+    e=>{console.error(e);toast("No se pudieron cargar las tareas de proyectos. Revise que las reglas de Firebase estén actualizadas")}));
   if(canReadH()){
     const mjFail=e=>{console.error(e);mjErr=true;render()};
     unsubs.push(onSnapshot(collection(db,"proyectos"),snap=>{proyectos=snap.docs.map(d=>({id:d.id,...d.data()}));mjErr=false;render()},mjFail));
@@ -1544,20 +1652,23 @@ function render(){
   $("#tab-admin").hidden=!isAdmin;
   $("#tab-tareas").hidden=!verTareas();
   $("#tab-mant").hidden=!verMant();
-  $("#c-mant").textContent=mant.filter(m=>m.estado!=="Cerrada").length;
+  $("#c-mant").textContent=mant.filter(mtAbierta).length;
+  $("#tab-pj").hidden=!verMant();
+  $("#c-pj").textContent=pjt.filter(mtAbierta).length;
   ["#tab-dash","#tab-comp","#tab-hall","#tab-mej"].forEach(s=>$(s).hidden=!canReadH());
   $("#c-mej").textContent=mejoras.filter(m=>m.estado!=="Cerrado").length;
   $("#c-tar").textContent=tareas.filter(t=>t.estado!=="Cerrada").length;
   if(tab==="admin"&&!isAdmin)tab="Compromiso";
   if(tab==="tareas"&&!verTareas())tab="Compromiso";
-  if(tab==="mant"&&!verMant())tab="Compromiso";
-  if(tab!=="tareas"&&tab!=="admin"&&tab!=="mant"&&!canReadH())tab="tareas";
+  if((tab==="mant"||tab==="pj")&&!verMant())tab="Compromiso";
+  if(tab!=="tareas"&&tab!=="admin"&&tab!=="mant"&&tab!=="pj"&&!canReadH())tab="tareas";
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
-  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas"||tab==="mejoras"||tab==="mant";$("#mant").hidden=tab!=="mant";$("#mejoras").hidden=tab!=="mejoras";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
+  $("#list").hidden=tab==="admin"||tab==="dash"||tab==="tareas"||tab==="mejoras"||tab==="mant"||tab==="pj";$("#mant").hidden=tab!=="mant";$("#pj").hidden=tab!=="pj";$("#mejoras").hidden=tab!=="mejoras";$("#admin").hidden=tab!=="admin";$("#dash").hidden=tab!=="dash";$("#tareas").hidden=tab!=="tareas";
   $("#btn-new").hidden=!canWrite();
-  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas"||tab==="mejoras"||tab==="mant";
+  $("#fab").hidden=!canWrite()||tab==="admin"||tab==="tareas"||tab==="mejoras"||tab==="mant"||tab==="pj";
   if(tab==="tareas"){renderTareas();return}
   if(tab==="mant"){renderMant();return}
+  if(tab==="pj"){renderPj();return}
   if(tab==="mejoras"){renderMejoras();return}
   if(tab==="dash"){renderDash();return}
   if(tab==="admin"){renderAdmin();return}
@@ -2263,9 +2374,10 @@ const eqKey=(a,e)=>a+"|"+e;
 const mKey=m=>eqKey(m.area||areaDe(m.equipo),m.equipo);
 const eqDeKey=k=>{const i=k.indexOf("|");return i<0?{area:areaDe(k),equipo:k}:{area:k.slice(0,i),equipo:k.slice(i+1)}};
 const mtNum=m=>m.num?String(m.num).padStart(3,"0"):"";
-const mtAbierta=m=>m.estado!=="Cerrada";
-function mtAlerta(m){if(!mtAbierta(m))return"Cerrado";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
-const mtPlazoTxt=m=>{if(!mtAbierta(m))return m.fechaCierre?`Cerrada el ${fmt(m.fechaCierre)}`:"Cerrada";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";
+const mtEnviada=m=>m.estado==="Enviada a proyecto";
+const mtAbierta=m=>m.estado!=="Cerrada"&&!mtEnviada(m);
+function mtAlerta(m){if(mtEnviada(m))return"Enviada";if(!mtAbierta(m))return"Cerrado";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
+const mtPlazoTxt=m=>{if(mtEnviada(m))return`Enviada a proyecto${m.proyecto?": "+m.proyecto:""}`;if(!mtAbierta(m))return m.fechaCierre?`Cerrada el ${fmt(m.fechaCierre)}`:"Cerrada";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";
   return d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`};
 const esYo=(correo,id)=>String(correo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||id===persona.id);
 const mtSoyResp=m=>esYo(m.responsableCorreo,m.responsableId);
@@ -2273,21 +2385,22 @@ const mtSoySeg=m=>esYo(m.seguidorCorreo,m.seguidorId);
 const mtSoyCreador=m=>esYo(m.creadoPorCorreo,m.creadoPorId);
 const mtPuedeEditar=m=>!m?puedeCrearMt():mtAbierta(m)&&(isAdmin||(esJefe&&(mtSoyResp(m)||mtSoySeg(m)||mtSoyCreador(m))));
 function mtCloseBlock(m){
+  if(mtEnviada(m))return`Se envió al proyecto ${m.proyecto||""}`;
   if(!mtAbierta(m))return"Ya está cerrada";
   if(!(isAdmin||esJefe))return"Solo los jefes de turno pueden cerrarla";
   if(isAdmin||mtSoyResp(m)||mtSoySeg(m))return"";
   return`Solo ${m.responsable||"el responsable"} o ${m.seguidor||"el jefe de turno que la sigue"} pueden cerrarla`;
 }
-function mtStat(arr){const n=arr.length,c=arr.filter(m=>!mtAbierta(m)).length,v=arr.filter(m=>mtAlerta(m)==="Vencido").length,s=arr.filter(m=>mtAbierta(m)&&!String(m.avisoSap||"").trim()).length;
-  return{n,c,a:n-c,v,s,pc:n?Math.round(c/n*100):0}}
+function mtStat(arr){const n=arr.length,e=arr.filter(mtEnviada).length,c=arr.filter(m=>m.estado==="Cerrada").length,v=arr.filter(m=>mtAlerta(m)==="Vencido").length,s=arr.filter(m=>mtAbierta(m)&&!String(m.avisoSap||"").trim()).length;
+  return{n,c,e,a:n-c-e,v,s,pc:n-e?Math.round(c/(n-e)*100):0}}
 const mtEnFiltro=m=>!mtEq||(mtEq.startsWith("area:")?m.area===mtEq.slice(5):mKey(m)===mtEq);
 
 /* Proceso: etapas de cada solicitud */
 const MT_ETAPAS=[{k:"solicitada",n:"Solicitada"},{k:"sap",n:"Aviso SAP"},{k:"ejecucion",n:"En ejecución"},{k:"repuesto",n:"Esperando repuesto"},{k:"cerrada",n:"Cerrada"}];
-const MT_LBL={solicitada:"Solicitada · falta aviso SAP",sap:"Con aviso SAP · por iniciar",ejecucion:"En ejecución",repuesto:"Esperando repuesto",cerrada:"Cerrada"};
+const MT_LBL={enviada:"Enviada a proyecto",solicitada:"Solicitada · falta aviso SAP",sap:"Con aviso SAP · por iniciar",ejecucion:"En ejecución",repuesto:"Esperando repuesto",cerrada:"Cerrada"};
 const fD=iso=>iso?(iso.length===10?fmt(iso):new Date(iso).toLocaleDateString("es-CL")):"";
 const tieneSap=m=>!!String(m.avisoSap||"").trim();
-function mtEtapaActual(m){if(!mtAbierta(m))return"cerrada";if(m.estado==="Esperando repuesto")return"repuesto";if(m.estado==="En proceso")return"ejecucion";return tieneSap(m)?"sap":"solicitada"}
+function mtEtapaActual(m){if(mtEnviada(m))return"enviada";if(!mtAbierta(m))return"cerrada";if(m.estado==="Esperando repuesto")return"repuesto";if(m.estado==="En proceso")return"ejecucion";return tieneSap(m)?"sap":"solicitada"}
 function mtPasos(m){
   const e=m.etapas||{}, cur=mtEtapaActual(m), ci=MT_ETAPAS.findIndex(x=>x.k===cur);
   const fecha={solicitada:e.solicitada||m.creado||"",sap:tieneSap(m)?(e.sap||""):"",ejecucion:e.ejecucion||"",repuesto:e.repuesto||"",cerrada:!mtAbierta(m)?(m.fechaCierre||(m.cierre&&m.cierre.fecha)||""):""};
@@ -2300,13 +2413,13 @@ function mtPasos(m){
 }
 function mtMini(m){const p=mtPasos(m),cur=mtEtapaActual(m);
   return`<div class="mt-mini" title="${esc(MT_LBL[cur])}">${p.map((s,i)=>`${i?`<s class="${s.st==="done"||s.st==="cur"?"done":""}"></s>`:""}<i class="${s.st}"></i>`).join("")}</div><span class="mt-lbl ${cur==="cerrada"?"done":"cur"}">${esc(MT_LBL[cur])}</span>`}
-function renderMtProc(m,interactivo){
+function renderMtProc(m,interactivo,pre="mt"){
   const p=mtPasos(m);
-  $("#mt-proc").innerHTML=p.map((s,i)=>{const clk=interactivo&&s.st!=="cur"&&(s.k!=="cerrada"||!mtCloseBlock(m));
+  $("#"+pre+"-proc").innerHTML=p.map((s,i)=>{const clk=interactivo&&s.st!=="cur"&&(s.k!=="cerrada"||!mtCloseBlock(m));
     const tag=clk?"button":"div";
     return`<${tag} ${clk?`type="button" class="mt-st ${s.st} clk" data-etapa="${s.k}"`:`class="mt-st ${s.st}"`}><i>${s.st==="done"?"✓":i+1}</i><b>${esc(s.n)}</b>${s.extra?`<small>${esc(s.extra)}</small>`:""}${s.fecha&&s.st!=="skip"?`<small>${esc(s.fecha)}</small>`:""}</${tag}>`}).join("");
-  $("#mt-proc-help").textContent=interactivo?"Toque una etapa para avanzar la solicitud y luego Guardar. Para terminarla toque Cerrada: se pide comentario y evidencia objetiva.":"";
-  $("#mt-proc-help").hidden=!interactivo;
+  $("#"+pre+"-proc-help").textContent=interactivo?"Toque una etapa para avanzar y luego Guardar. Para terminarla toque Cerrada: se pide comentario y evidencia objetiva.":"";
+  $("#"+pre+"-proc-help").hidden=!interactivo;
 }
 function mtPreview(){const m=mtEditId?mant.find(x=>x.id===mtEditId):null;if(!m||!mtAbierta(m))return;
   renderMtProc({...m,estado:mtfrm.estado.value,avisoSap:mtfrm.avisoSap.value,etapas:{...(m.etapas||{}),sap:(m.etapas&&m.etapas.sap)||(mtfrm.avisoSap.value.trim()&&!tieneSap(m)?nowISO():"")}},true)}
@@ -2333,14 +2446,18 @@ const enPlazo=m=>!mtAbierta(m)&&m.fechaCompromiso&&m.fechaCierre?m.fechaCierre<=
 function mrGrupo(arr){const cerr=arr.filter(m=>!mtAbierta(m)),t=cerr.map(tCierre).filter(x=>x!=null);
   return{n:arr.length,c:cerr.length,pc:arr.length?Math.round(cerr.length/arr.length*100):0,prom:prom(t),med:mediana(t)}}
 function renderMtRend(){
+  renderRend({src:mant.filter(m=>!mtEnviada(m)),box:$("#mt-rend"),gNombre:"equipo",
+    grupos:MT_AREAS.flatMap(a=>a.equipos.map(e=>({k:e,a:a.nombre,f:m=>mKey(m)===eqKey(a.id,e)})))});
+}
+function renderRend({src,box,grupos,gNombre}){
   const desde=mrPer==="todo"?"":mrPer==="anio"?hoyISO().slice(0,4)+"-01-01":(()=>{const d=new Date();d.setDate(d.getDate()-Number(mrPer));return d.toISOString().slice(0,10)})();
-  const arr=mant.filter(m=>!desde||String(m.creado||"").slice(0,10)>=desde);
+  const arr=src.filter(m=>!desde||String(m.creado||"").slice(0,10)>=desde);
   const G=mrGrupo(arr), cerr=arr.filter(m=>!mtAbierta(m));
   const conFecha=cerr.filter(m=>enPlazo(m)!=null), ok=conFecha.filter(enPlazo).length;
   const abiertas=arr.filter(mtAbierta), edad=prom(abiertas.map(m=>diasEntreISO(m.creado,nowISO())).filter(x=>x!=null));
   const max=v=>Math.max(1,...v.filter(x=>x!=null));
   // Por equipo
-  const eqs=MT_AREAS.flatMap(a=>a.equipos.map(e=>({k:e,a:a.nombre,...mrGrupo(arr.filter(m=>mKey(m)===eqKey(a.id,e)))})));
+  const eqs=grupos.map(g=>({k:g.k,a:g.a||"",...mrGrupo(arr.filter(g.f))}));
   const mxE=max(eqs.map(e=>e.prom));
   const barE=eqs.map(e=>`<div class="mr-bar"><span title="${esc(e.a)}">${esc(e.k)}</span><div class="mr-track">${e.prom!=null?`<i style="width:${Math.max(3,e.prom/mxE*100)}%"></i>`:""}</div><em>${e.c?`<b>${fDias(e.prom)}</b> · ${e.c} cerr.`:'<span class="sub">Sin cierres</span>'}</em></div>`).join("");
   const barC=eqs.map(e=>`<div class="mr-bar"><span>${esc(e.k)}</span><div class="mr-track">${e.n?`<i class="ok" style="width:${e.c/e.n*100}%"></i><i class="o" style="width:${(e.n-e.c)/e.n*100}%"></i>`:""}</div><em>${e.n?`<b>${e.pc}%</b> · ${e.c} de ${e.n}`:'<span class="sub">Sin solicitudes</span>'}</em></div>`).join("");
@@ -2362,12 +2479,12 @@ function renderMtRend(){
   // Por mes de ingreso (últimos 6)
   const meses=[];{const d=new Date();d.setDate(1);for(let i=5;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);meses.push(x.toISOString().slice(0,7))}}
   const nomMes=k=>new Date(k+"-15").toLocaleDateString("es-CL",{month:"short",year:"2-digit"});
-  const porMes=meses.map(k=>({k,...mrGrupo(mant.filter(m=>String(m.creado||"").slice(0,7)===k))}));
+  const porMes=meses.map(k=>({k,...mrGrupo(src.filter(m=>String(m.creado||"").slice(0,7)===k))}));
   const mxM=max(porMes.map(x=>x.n));
-  $("#mt-rend").innerHTML=`
+  box.innerHTML=`
     <div class="mr-top"><p class="sub" style="margin:0">El tiempo de cierre se mide desde que se ingresa la solicitud hasta que se cierra con evidencia.</p>
       <label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600">Período (por fecha de ingreso)
-      <select id="mr-per"><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="anio">Este año</option><option value="todo">Todo</option></select></label></div>
+      <select class="mr-per"><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="anio">Este año</option><option value="todo">Todo</option></select></label></div>
     <div class="mr-kpi">
       <div><b>${G.n}</b><span>Solicitudes ingresadas</span></div>
       <div class="g"><b>${G.pc}<small>%</small></b><span>Cerradas (${G.c} de ${G.n})</span></div>
@@ -2377,18 +2494,18 @@ function renderMtRend(){
       <div class="o"><b>${fDias(edad)}</b><span>Antigüedad promedio de las ${abiertas.length} abiertas</span></div>
     </div>
     <div class="mr-grid">
-      <div class="card"><h3>Tiempo promedio de cierre por equipo</h3><p class="sub">Días desde el ingreso hasta el cierre. Barra más larga = equipo que más demora.</p><div class="mr-bars">${barE}</div></div>
-      <div class="card"><h3>Cumplimiento de cierre por equipo</h3><div class="mr-leg"><span><i style="background:var(--ok)"></i>Cerradas</span><span><i style="background:var(--naranja)"></i>Abiertas</span></div><div class="mr-bars">${barC}</div></div>
+      <div class="card"><h3>Tiempo promedio de cierre por ${gNombre}</h3><p class="sub">Días desde el ingreso hasta el cierre. Barra más larga = ${gNombre} que más demora.</p><div class="mr-bars">${barE}</div></div>
+      <div class="card"><h3>Cumplimiento de cierre por ${gNombre}</h3><div class="mr-leg"><span><i style="background:var(--ok)"></i>Cerradas</span><span><i style="background:var(--naranja)"></i>Abiertas</span></div><div class="mr-bars">${barC}</div></div>
     </div>
     <div class="mr-grid">
       <div class="card"><h3>Tiempo promedio por etapa</h3><p class="sub">Dónde se va el tiempo. Considera las solicitudes con fecha registrada en cada etapa.</p><div class="mr-bars">${tramos.map(([n,v],i)=>`<div class="mr-bar" style="grid-template-columns:minmax(120px,210px) 1fr 80px"><span>${n}</span><div class="mr-track">${v!=null?`<i class="${i===3?"ok":""}" style="width:${Math.max(3,v/mxT*100)}%"></i>`:""}</div><em><b>${fDias(v)}</b></em></div>`).join("")}</div></div>
       <div class="card"><h3>Ingresadas y cerradas por mes</h3><p class="sub">Últimos 6 meses, según el mes en que se ingresó la solicitud.</p><div class="mr-leg"><span><i style="background:var(--ok)"></i>Cerradas</span><span><i style="background:var(--naranja)"></i>Aún abiertas</span></div><div class="mr-bars">${porMes.map(x=>`<div class="mr-bar"><span>${nomMes(x.k)}</span><div class="mr-track">${x.n?`<i class="ok" style="width:${x.c/mxM*100}%"></i><i class="o" style="width:${(x.n-x.c)/mxM*100}%"></i>`:""}</div><em>${x.n?`<b>${x.c}/${x.n}</b> · ${fDias(x.prom)}`:'<span class="sub">—</span>'}</em></div>`).join("")}</div></div>
     </div>
     <div class="mr-grid">${tablaP("responsableId","responsable","Por responsable")}${tablaP("seguidorId","seguidor","Por jefe de turno (seguimiento)")}</div>`;
-  $("#mr-per").value=mrPer;
+  box.querySelector(".mr-per").value=mrPer;
 }
 $("#mt-vista").addEventListener("click",e=>{const b=e.target.closest("button[data-v]");if(!b)return;mtVista=b.dataset.v;renderMant()});
-$("#mt-rend").addEventListener("change",e=>{if(e.target.id==="mr-per"){mrPer=e.target.value;renderMtRend()}});
+$("#mt-rend").addEventListener("change",e=>{if(e.target.matches(".mr-per")){mrPer=e.target.value;renderMtRend()}});
 
 function renderMant(){
   document.querySelectorAll("#mt-vista button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===mtVista)));
@@ -2400,7 +2517,7 @@ function renderMant(){
   const base=mant.filter(m=>mtEnFiltro(m)&&(!mtSeg||m.seguidorId===mtSeg));
   const S=mtStat(base);
   $("#mk-total").textContent=S.n;$("#mk-ab").textContent=S.a;$("#mk-ce").textContent=S.c;$("#mk-ce-l").textContent=`Cerradas (${S.pc}%)`;
-  $("#mk-ve").textContent=S.v;$("#mk-sap").textContent=S.s;
+  $("#mtk-ve").textContent=S.v;$("#mk-sap").textContent=S.s;
   $("#mk-total-l").textContent=mtEq?`Solicitudes de ${mtEq.startsWith("area:")?mtEq.slice(5):(({area,equipo})=>`${equipo} · ${area}`)(eqDeKey(mtEq))}`:"Solicitudes en total";
   document.querySelectorAll("#mt-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mtKpi)));
   // Tarjetas por área y equipo
@@ -2422,12 +2539,12 @@ function renderMant(){
   // Lista
   const q=$("#mt-q").value.trim().toLowerCase();
   const list=base.filter(m=>{const a=mtAlerta(m);
-    if(mtKpi==="abiertas"&&!mtAbierta(m))return false;if(mtKpi==="cerradas"&&mtAbierta(m))return false;
+    if(mtKpi==="abiertas"&&!mtAbierta(m))return false;if(mtKpi==="cerradas"&&m.estado!=="Cerrada")return false;
     if(mtKpi==="vencidas"&&a!=="Vencido")return false;if(mtKpi==="sinsap"&&!(mtAbierta(m)&&!String(m.avisoSap||"").trim()))return false;
     return!q||[m.equipo,m.area,m.descripcion,m.avisoSap,m.responsable,m.seguidor,m.creadoPor,mtNum(m)].join(" ").toLowerCase().includes(q)})
     .sort((a,b)=>(mtAbierta(b)-mtAbierta(a))||((prioOrder[a.prioridad]??9)-(prioOrder[b.prioridad]??9))||(alertOrder[mtAlerta(a)]-alertOrder[mtAlerta(b)])||(b.num||0)-(a.num||0));
   $("#mt-body").innerHTML=list.map(m=>{const a=mtAlerta(m),b=mtCloseBlock(m);
-    const acc=!mtAbierta(m)?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?"":`<button class="btn btn-close btn-sm" data-mtclose="${esc(m.id)}">Cerrar</button>`;
+    const acc=mtEnviada(m)?`<button class="btn btn-ghost btn-sm" data-mtgo="${esc(m.proyectoTareaId||"")}">Ver en Proyectos</button>`:!mtAbierta(m)?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?"":`<button class="btn btn-close btn-sm" data-mtclose="${esc(m.id)}">Cerrar</button>`;
     const sap=String(m.avisoSap||"").trim();
     return`<tr class="row ${rowCls[a]||""}" data-mtid="${esc(m.id)}" tabindex="0">
       <td class="num">${mtNum(m)}</td>
@@ -2448,7 +2565,8 @@ $("#mt-f-eq").addEventListener("change",e=>{mtEq=e.target.value;renderMant()});
 $("#mt-f-seg").addEventListener("change",e=>{mtSeg=e.target.value;renderMant()});
 $("#mt-q").addEventListener("input",renderMant);
 $("#mt-new").onclick=()=>openMant(null);
-$("#mt-body").addEventListener("click",e=>{const c=e.target.closest("[data-mtclose]");if(c){openMtClose(mant.find(m=>m.id===c.dataset.mtclose));return}
+$("#mt-body").addEventListener("click",e=>{const go=e.target.closest("[data-mtgo]");if(go){irAProyecto(go.dataset.mtgo);return}
+  const c=e.target.closest("[data-mtclose]");if(c){openMtClose(mant.find(m=>m.id===c.dataset.mtclose));return}
   const tr=e.target.closest("tr[data-mtid]");if(tr)openMant(mant.find(m=>m.id===tr.dataset.mtid))});
 $("#mt-body").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-mtid]"))openMant(mant.find(m=>m.id===e.target.dataset.mtid))});
 document.querySelectorAll(".mtx").forEach(b=>b.onclick=()=>mtDlg.close());
@@ -2500,13 +2618,16 @@ function openMant(m){
   if(m&&edit)$("#mt-meta").textContent=`Solicitada por ${m.creadoPor||"—"}${m.creado?` el ${fmtDT(m.creado)}`:""}`;
   renderMtPhotos(m,!edit);
   $("#mt-proc-box").hidden=!m;if(m)renderMtProc(m,edit);
-  $("#mt-banner").hidden=!closed;$("#mt-cierre").hidden=!closed;
-  if(closed){$("#mt-banner").textContent=`Cerrada el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}.${isAdmin?" Puede reabrirla si la evidencia no es suficiente.":""}`;if(m.cierre)renderEvid(m.cierre,$("#mt-evid"))}
+  const env=!!m&&mtEnviada(m);
+  $("#mt-banner").hidden=!closed;$("#mt-cierre").hidden=!closed||env;
+  if(env)$("#mt-banner").textContent=`Enviada al proyecto «${m.proyecto||""}»${m.enviada?` el ${fmtDT(m.enviada.fecha)} por ${m.enviada.por}`:""}. El seguimiento continúa en la pestaña Proyectos.`;
+  else if(closed){$("#mt-banner").textContent=`Cerrada el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}.${isAdmin?" Puede reabrirla si la evidencia no es suficiente.":""}`;if(m.cierre)renderEvid(m.cierre,$("#mt-evid"))}
   const hb=$("#mt-hist-box"),h=m&&Array.isArray(m.historial)?m.historial:[];hb.hidden=!h.length;
   $("#mt-hist").innerHTML=h.slice().reverse().map(x=>`<li><b>${fmtDT(x.fecha)}</b> · ${esc(x.por)}: ${esc(x.accion)}</li>`).join("");
   const b=m?mtCloseBlock(m):"x";
   $("#mt-close-b").hidden=!m||!!b;
-  $("#mt-del").hidden=!m||!isAdmin;$("#mt-reopen").hidden=!closed||!isAdmin;
+  $("#mt-del").hidden=!m||!isAdmin;$("#mt-reopen").hidden=!closed||env||!isAdmin;
+  $("#mt-toproj").hidden=!m||!edit;$("#mt-goproj").hidden=!env;
   $("#mt-save").hidden=!edit;$("#mt-save").textContent=m?"Guardar":"Crear solicitud";
   $("#mt-mail-help").hidden=!edit;
   mtDlg.showModal();
@@ -2573,11 +2694,13 @@ $("#mt-reopen").onclick=async()=>{const m=mant.find(x=>x.id===mtEditId);if(!m||!
 $("#mt-close-b").onclick=()=>openMtClose(mant.find(x=>x.id===mtEditId));
 
 /* Cierre con evidencia */
-function openMtClose(m){
+const MT_CTX={col:"mantenimiento",arr:()=>mant,uso:"mantenimiento",nom:"Solicitud",dlg:()=>mtDlg,tit:m=>m.equipo};
+let mtcCtx=MT_CTX;
+function openMtClose(m,ctx=MT_CTX){
   if(!m)return;const b=mtCloseBlock(m);if(b){toast(b);return}
-  mtCloseId=m.id;mtCloseFile=null;mtcfrm.reset();$("#mtc-prev").innerHTML="";$("#mtc-drop-txt").textContent="Toque para adjuntar una foto o un PDF";
-  $("#mtc-what").innerHTML=`<b>Solicitud N° ${mtNum(m)} · ${esc(m.equipo)}:</b> ${esc(m.descripcion)}${m.avisoSap?`<br>Aviso SAP: ${esc(m.avisoSap)}`:""}`;
-  if(mtDlg.open)mtDlg.close();mtcDlg.showModal();setTimeout(()=>mtcfrm.comentario.focus(),30);
+  mtcCtx=ctx;mtCloseId=m.id;mtCloseFile=null;mtcfrm.reset();$("#mtc-prev").innerHTML="";$("#mtc-drop-txt").textContent="Toque para adjuntar una foto o un PDF";
+  $("#mtc-what").innerHTML=`<b>${ctx.nom} N° ${mtNum(m)} · ${esc(ctx.tit(m))}:</b> ${esc(m.descripcion)}${m.avisoSap?`<br>Aviso SAP: ${esc(m.avisoSap)}`:""}`;
+  if(ctx.dlg().open)ctx.dlg().close();$("#mtc-title").textContent=`Cerrar ${ctx.nom.toLowerCase()} con evidencia`;mtcDlg.showModal();setTimeout(()=>mtcfrm.comentario.focus(),30);
 }
 function mtcPick(f){
   if(!f)return;
@@ -2592,7 +2715,7 @@ $("#mtc-file").addEventListener("change",e=>mtcPick(e.target.files[0]));
   d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");mtcPick(e.dataTransfer.files[0])})}
 mtcfrm.addEventListener("submit",async e=>{
   e.preventDefault();
-  const m=mant.find(x=>x.id===mtCloseId);if(!m)return;
+  const C=mtcCtx,m=C.arr().find(x=>x.id===mtCloseId);if(!m)return;
   const b=mtCloseBlock(m);if(b){toast(b);return}
   const comentario=mtcfrm.comentario.value.trim();
   if(!comentario){toast("Escriba el comentario de cierre");return}
@@ -2604,12 +2727,12 @@ mtcfrm.addEventListener("submit",async e=>{
     if(!data||data.length>MAX_DATAURL)throw{code:"too_large"};
     const nombre=isImg&&!/\.jpe?g$/i.test(mtCloseFile.name)?mtCloseFile.name.replace(/\.[^.]+$/,"")+".jpg":mtCloseFile.name;
     const archivo={nombre,tipo:isImg?"image/jpeg":mtCloseFile.type,kb:Math.round(data.length*.75/1024)};
-    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,mantId:m.id,uso:"mantenimiento-cierre",creadoPor:myEmail(),creado:nowISO()});
+    const ref=await addDoc(collection(db,"evidencias"),{...archivo,data,mantId:m.id,col:C.col,uso:C.uso+"-cierre",creadoPor:myEmail(),creado:nowISO()});
     archivo.evidId=ref.id;
-    await updateDoc(doc(db,"mantenimiento",m.id),{estado:"Cerrada",fechaCierre:hoyISO(),
+    await updateDoc(doc(db,C.col,m.id),{estado:"Cerrada",fechaCierre:hoyISO(),
       cierre:{comentario,archivo,por:myName(),porId:persona?persona.id:"",porCorreo:myEmail(),fecha:nowISO()},
       actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Cerró con evidencia (${nombre}): ${comentario}`)});
-    mtcDlg.close();toast("Solicitud cerrada con evidencia");
+    mtcDlg.close();toast(`${C.nom} cerrada con evidencia`);
   }catch(err){console.error(err);
     toast(err&&err.code==="too_large"?"El archivo es demasiado pesado. Pruebe con otra foto o un PDF más liviano":err&&err.code==="permission-denied"?"No tiene permiso para cerrar esta solicitud":"No se pudo cerrar. Revise la conexión e intente de nuevo");
   }finally{btn.disabled=false;btn.textContent="Cerrar con evidencia"}
@@ -2624,6 +2747,281 @@ $("#mt-csv").onclick=()=>{
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download=`mantenimiento_HTP_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
 };
+
+/* ---------- Proyectos (mismo concepto que Mantenimiento, agrupado por nombre de proyecto) ---------- */
+const pjDlg=$("#dlg-pj"), pjfrm=$("#pjfrm"), mtpDlg=$("#dlg-mtp"), mtpfrm=$("#mtpfrm");
+let pjSel="", pjKpi="", pjSeg="", pjVista="lista", pjEditId=null, pjPhotos=[], mtpId=null, pjNuevoNombre="";
+const PJ_CTX={col:"proyectoTareas",arr:()=>pjt,uso:"proyecto",nom:"Tarea",dlg:()=>pjDlg,tit:m=>m.proyecto||""};
+const PJ_COLS=["#1F3A6E","#2A8FA8","#7A4FA0","#E8804A","#1E6B3A","#A3261B","#4A6FA5","#8A6D1F"];
+const pjNorm=n=>String(n||"").trim().replace(/\s+/g," ");
+const pjNombres=()=>[...new Set(pjt.map(m=>pjNorm(m.proyecto)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+// Si ya existe un proyecto con el mismo nombre (sin importar mayúsculas), se usa ese
+const pjCanon=n=>{n=pjNorm(n);return pjNombres().find(x=>x.toLowerCase()===n.toLowerCase())||n};
+const pjColor=n=>{const i=pjNombres().indexOf(n);return PJ_COLS[(i<0?0:i)%PJ_COLS.length]};
+const pjEqTxt=m=>m.equipo?`${m.equipo}${m.area?" · "+m.area:""}`:"";
+
+function renderPj(){
+  const nombres=pjNombres();
+  if(pjSel&&!nombres.includes(pjSel)&&pjSel!==pjNuevoNombre)pjSel="";
+  $("#dl-pj").innerHTML=nombres.map(n=>`<option value="${esc(n)}">`).join("");
+  // Menú de proyectos
+  const G=mtStat(pjt);
+  $("#pj-newp").hidden=!puedeCrearMt();
+  $("#pj-plist").innerHTML=`<button type="button" data-p="" aria-current="${!pjSel}"><span>Todos los proyectos</span><b>${G.a} ab.</b></button>`+
+    nombres.map(n=>{const s=mtStat(pjt.filter(m=>pjNorm(m.proyecto)===n));
+      return`<button type="button" data-p="${esc(n)}" aria-current="${pjSel===n}" title="${esc(n)}"><i style="width:9px;height:9px;border-radius:50%;flex:none;background:${pjColor(n)}"></i><span>${esc(n)}</span>${s.v?`<i class="mj-dot" title="${s.v} vencida${s.v>1?"s":""}">${s.v}</i>`:""}<b>${s.a} ab. · ${s.pc}%</b></button>`}).join("")+
+    (nombres.length?"":`<p class="sub" style="padding:8px 6px;margin:0">${puedeCrearMt()?"Aún no hay proyectos. Use <b>+ Nuevo</b> o envíe una solicitud desde Mantenimiento.":"Aún no hay proyectos."}</p>`);
+  $("#pj-h").textContent=pjSel||"Proyectos";
+  $("#pj-hsub").textContent=pjSel?"Tareas del proyecto, con aviso SAP, responsable y jefe de turno que las sigue":"Tareas agrupadas por proyecto. Elija un proyecto en el menú para ver solo sus tareas.";
+  document.querySelectorAll("#pj-vista button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===pjVista)));
+  $("#pj-lista").hidden=pjVista!=="lista";$("#pj-rend").hidden=pjVista!=="rend";
+  $("#pj-fecha").textContent="Actualizado al "+fmt(hoyISO());
+  const enProy=pjt.filter(m=>!pjSel||pjNorm(m.proyecto)===pjSel);
+  if(pjVista==="rend"){
+    const grupos=pjSel
+      ?[...new Set(enProy.map(m=>m.equipo||""))].map(e=>({k:e||"Sin equipo",f:m=>(m.equipo||"")===e}))
+      :nombres.map(n=>({k:n,f:m=>pjNorm(m.proyecto)===n}));
+    renderRend({src:enProy,box:$("#pj-rend"),grupos,gNombre:pjSel?"equipo":"proyecto"});return}
+  $("#pj-new").hidden=!puedeCrearMt();
+  if(pjSeg&&!pjt.some(m=>m.seguidorId===pjSeg))pjSeg="";
+  const base=enProy.filter(m=>!pjSeg||m.seguidorId===pjSeg);
+  const S=mtStat(base);
+  $("#pk-total").textContent=S.n;$("#pk-ab").textContent=S.a;$("#pk-ce").textContent=S.c;$("#pk-ce-l").textContent=`Cerradas (${S.pc}%)`;
+  $("#pk-ve").textContent=S.v;$("#pk-sap").textContent=S.s;
+  $("#pk-total-l").textContent=pjSel?`Tareas de ${pjSel}`:"Tareas en total";
+  document.querySelectorAll("#pj-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===pjKpi)));
+  const segs=[...new Map(pjt.filter(m=>m.seguidorId).map(m=>[m.seguidorId,m.seguidor||"(sin nombre)"])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"es"));
+  $("#pj-f-seg").innerHTML='<option value="">Todos los jefes de turno</option>'+segs.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");
+  $("#pj-f-seg").value=pjSeg;
+  $("#pj-th1").textContent=pjSel?"Equipo":"Proyecto";
+  const q=$("#pj-q").value.trim().toLowerCase();
+  const list=base.filter(m=>{const a=mtAlerta(m);
+    if(pjKpi==="abiertas"&&!mtAbierta(m))return false;if(pjKpi==="cerradas"&&mtAbierta(m))return false;
+    if(pjKpi==="vencidas"&&a!=="Vencido")return false;if(pjKpi==="sinsap"&&!(mtAbierta(m)&&!String(m.avisoSap||"").trim()))return false;
+    return!q||[m.proyecto,m.equipo,m.area,m.descripcion,m.avisoSap,m.responsable,m.seguidor,m.creadoPor,mtNum(m)].join(" ").toLowerCase().includes(q)})
+    .sort((a,b)=>(mtAbierta(b)-mtAbierta(a))||((prioOrder[a.prioridad]??9)-(prioOrder[b.prioridad]??9))||(alertOrder[mtAlerta(a)]-alertOrder[mtAlerta(b)])||(b.num||0)-(a.num||0));
+  $("#pj-body").innerHTML=list.map(m=>{const a=mtAlerta(m),b=mtCloseBlock(m),pn=pjNorm(m.proyecto);
+    const acc=!mtAbierta(m)?`<span class="sub">${esc(m.cierre&&m.cierre.por||"")}</span>`:b?"":`<button class="btn btn-close btn-sm" data-pjclose="${esc(m.id)}">Cerrar</button>`;
+    const sap=String(m.avisoSap||"").trim();
+    const c1=pjSel?`<b>${esc(m.equipo||"—")}</b>${m.area?`<div class="sub">${esc(m.area)}</div>`:""}`
+      :`<b style="border-left:4px solid ${pjColor(pn)};padding-left:6px">${esc(pn)}</b>${m.equipo?`<div class="sub">${esc(pjEqTxt(m))}</div>`:""}`;
+    return`<tr class="row ${rowCls[a]||""}" data-pjid="${esc(m.id)}" tabindex="0">
+      <td class="num">${mtNum(m)}</td>
+      <td data-l="${pjSel?"Equipo":"Proyecto"}">${c1}</td>
+      <td><span class="desc">${esc(m.descripcion&&m.descripcion.length>120?m.descripcion.slice(0,120)+"…":m.descripcion)}</span>${m.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${m.fotos&&m.fotos.length?`<span class="camicon">📷 ${m.fotos.length}</span>`:""}${m.origen?`<div class="sub">Desde Mantenimiento N° ${esc(String(m.origen.num||"").padStart(3,"0"))}</div>`:""}</td>
+      <td data-l="Aviso SAP" style="white-space:nowrap">${sap?esc(sap):'<span class="pill p-porv" style="display:inline-block">Sin aviso</span>'}</td>
+      <td data-l="Responsable">${esc(m.responsable||"")}</td>
+      <td data-l="Seguimiento">${esc(m.seguidor||"")}</td>
+      <td data-l="Fecha comprometida" style="white-space:nowrap">${fmt(m.fechaCompromiso)||'<span class="sub">—</span>'}${m.fechaCompromiso||!mtAbierta(m)?`<div><span class="pill ${pillCls[a]}" style="display:inline-block;font-size:11px">${esc(mtPlazoTxt(m))}</span></div>`:""}</td>
+      <td data-l="Proceso">${mtMini(m)}</td>
+      <td>${acc}</td></tr>`}).join("");
+  const em=$("#pj-empty");em.hidden=list.length>0;
+  em.textContent=enProy.length?"Ninguna tarea coincide con el filtro.":pjSel?"Este proyecto aún no tiene tareas. Use Nueva tarea para agregar la primera.":puedeCrearMt()?"Aún no hay tareas de proyectos. Use Nueva tarea, o Enviar a proyecto desde una solicitud de Mantenimiento.":"Aún no hay tareas de proyectos.";
+}
+$("#pj-plist").addEventListener("click",e=>{const b=e.target.closest("button[data-p]");if(!b)return;pjSel=b.dataset.p;pjNuevoNombre="";pjKpi="";renderPj()});
+$("#pj-vista").addEventListener("click",e=>{const b=e.target.closest("button[data-v]");if(!b)return;pjVista=b.dataset.v;renderPj()});
+$("#pj-rend").addEventListener("change",e=>{if(e.target.matches(".mr-per")){mrPer=e.target.value;renderPj()}});
+$("#pj-kpi").addEventListener("click",e=>{const b=e.target.closest("button[data-k]");if(!b)return;pjKpi=pjKpi===b.dataset.k?"":b.dataset.k;renderPj()});
+$("#pj-f-seg").addEventListener("change",e=>{pjSeg=e.target.value;renderPj()});
+$("#pj-q").addEventListener("input",renderPj);
+$("#pj-new").onclick=()=>openPj(null);
+$("#pj-newp").onclick=()=>{const n=prompt("Nombre del nuevo proyecto:");if(!n||!pjNorm(n))return;
+  const c=pjCanon(n);if(pjNombres().includes(c)){pjSel=c;renderPj();toast(`El proyecto «${c}» ya existe`);return}
+  pjSel=c;pjNuevoNombre=c;renderPj();openPj(null)};
+$("#pj-body").addEventListener("click",e=>{const c=e.target.closest("[data-pjclose]");if(c){openMtClose(pjt.find(m=>m.id===c.dataset.pjclose),PJ_CTX);return}
+  const tr=e.target.closest("tr[data-pjid]");if(tr)openPj(pjt.find(m=>m.id===tr.dataset.pjid))});
+$("#pj-body").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-pjid]"))openPj(pjt.find(m=>m.id===e.target.dataset.pjid))});
+document.querySelectorAll(".pjx").forEach(b=>b.onclick=()=>pjDlg.close());
+function irAProyecto(id){tab="pj";pjSel="";pjKpi="";pjVista="lista";if(mtDlg.open)mtDlg.close();render();const m=pjt.find(x=>x.id===id);if(m)openPj(m);else if(id)toast("La tarea del proyecto aún se está cargando")}
+
+/* Proceso de la tarea */
+function pjPreview(){const m=pjEditId?pjt.find(x=>x.id===pjEditId):null;if(!m||!mtAbierta(m))return;
+  renderMtProc({...m,estado:pjfrm.estado.value,avisoSap:pjfrm.avisoSap.value,etapas:{...(m.etapas||{}),sap:(m.etapas&&m.etapas.sap)||(pjfrm.avisoSap.value.trim()&&!tieneSap(m)?nowISO():"")}},true,"pj")}
+$("#pj-proc").addEventListener("click",e=>{const b=e.target.closest("[data-etapa]");if(!b)return;const k=b.dataset.etapa;
+  const m=pjt.find(x=>x.id===pjEditId);if(!m)return;
+  if(k==="cerrada"){openMtClose(m,PJ_CTX);return}
+  if(k==="sap"){pjfrm.avisoSap.focus();if(!pjfrm.avisoSap.value.trim()){toast("Escriba el N° de aviso SAP y toque Guardar");return}pjfrm.estado.value="Pendiente"}
+  if(k==="solicitada")pjfrm.estado.value="Pendiente";
+  if(k==="ejecucion")pjfrm.estado.value="En proceso";
+  if(k==="repuesto")pjfrm.estado.value="Esperando repuesto";
+  pjPreview();
+});
+pjfrm.estado.addEventListener("change",pjPreview);
+pjfrm.avisoSap.addEventListener("input",pjPreview);
+
+/* Fotos */
+function renderPjPhotos(m,lock){
+  const box=$("#pj-photos"), saved=(m&&m.fotos)||[];
+  box.innerHTML="";
+  saved.forEach(f=>{const d=document.createElement("div");d.className="ph";d.innerHTML='<div class="ld">Cargando…</div>';box.appendChild(d);
+    evidData(f.evidId).then(src=>{if(!src){d.innerHTML='<div class="ld">No disponible</div>';return}d.innerHTML="";const im=new Image();im.src=src;im.alt="Foto";im.onclick=()=>openViewer(src);d.appendChild(im)}).catch(()=>{d.innerHTML='<div class="ld">Error</div>'})});
+  pjPhotos.forEach((p,k)=>{const d=document.createElement("div");d.className="ph";const im=new Image();im.src=p.url;im.alt="Foto nueva";im.onclick=()=>openViewer(p.url);
+    const x=document.createElement("button");x.type="button";x.textContent="×";x.setAttribute("aria-label","Quitar foto");x.onclick=()=>{pjPhotos.splice(k,1);renderPjPhotos(m,lock)};d.append(im,x);box.appendChild(d)});
+  if(!lock&&saved.length+pjPhotos.length<3){const b=document.createElement("button");b.type="button";b.className="ph-add";b.innerHTML="<span>📷</span>Agregar foto";b.onclick=()=>$("#pj-ph-in").click();box.appendChild(b)}
+  if(lock&&!saved.length)box.innerHTML='<span class="sub">Sin fotos</span>';
+  renderPjPhotos._m=m;renderPjPhotos._lock=lock;
+}
+$("#pj-ph-in").addEventListener("change",e=>{
+  const files=[...e.target.files];e.target.value="";
+  for(const f of files){const m=renderPjPhotos._m,tot=((m&&m.fotos)||[]).length+pjPhotos.length;
+    if(tot>=3){toast("Máximo 3 fotos");break}
+    if(!f.type.startsWith("image/")){toast("Solo se aceptan fotos");continue}
+    pjPhotos.push({file:f,url:URL.createObjectURL(f)})}
+  renderPjPhotos(renderPjPhotos._m,renderPjPhotos._lock);
+});
+
+function openPj(m){
+  if(!m&&!puedeCrearMt())return;
+  pjEditId=m?m.id:null;pjfrm.reset();pjPhotos=[];
+  const closed=!!m&&!mtAbierta(m), edit=mtPuedeEditar(m);
+  $("#pj-title").textContent=m?`Tarea N° ${mtNum(m)} · ${pjNorm(m.proyecto)}`:"Nueva tarea de proyecto";
+  $("#dl-pj").innerHTML=pjNombres().map(n=>`<option value="${esc(n)}">`).join("");
+  pjfrm.equipo.innerHTML='<option value="">Sin equipo</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}">${a.equipos.map(e=>`<option value="${esc(eqKey(a.id,e))}">${esc(e)}</option>`).join("")}</optgroup>`).join("");
+  fillPersonSelect(pjfrm.responsableId,responsables(),m?m.responsableId:"",m?m.responsable:"","Elija el responsable");
+  fillPersonSelect(pjfrm.seguidorId,jefesTurno(),m?m.seguidorId:(persona&&persona.jefeTurno?persona.id:""),m?m.seguidor:"","Elija un jefe de turno");
+  if(m){for(const k of["descripcion","avisoSap","prioridad","fechaCompromiso"])pjfrm[k].value=m[k]||"";
+    pjfrm.proyecto.value=pjNorm(m.proyecto);pjfrm.equipo.value=m.equipo?mKey(m):"";
+    pjfrm.estado.value=MT_ABIERTOS.includes(m.estado)?m.estado:"Pendiente"}
+  else pjfrm.proyecto.value=pjSel||"";
+  $("#pj-edit").hidden=!edit;
+  [...$("#pj-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
+  $("#pj-estado-box").hidden=!(m&&edit);pjfrm.estado.disabled=!(m&&edit);
+  const ro=$("#pj-ro");ro.hidden=edit||!m;
+  if(m&&!edit)ro.innerHTML=`<div><span>Proyecto</span><b>${esc(pjNorm(m.proyecto))}</b></div><div><span>Equipo</span>${esc(pjEqTxt(m)||"Sin equipo")}</div>
+    <div class="full"><span>Descripción de la tarea</span><p>${esc(m.descripcion)}</p></div>
+    <div><span>Aviso SAP</span>${esc(m.avisoSap||"Sin aviso SAP")}</div><div><span>Prioridad</span>${esc(m.prioridad||"")}</div>
+    <div><span>Responsable</span>${esc(m.responsable||"")}</div><div><span>Seguimiento (jefe de turno)</span>${esc(m.seguidor||"")}</div>
+    <div><span>Fecha comprometida</span>${fmt(m.fechaCompromiso)||"Sin fecha"}${m.fechaCompromiso?` · <span class="pill ${pillCls[mtAlerta(m)]}" style="display:inline-block;font-size:11px">${esc(mtPlazoTxt(m))}</span>`:""}</div>
+    <div><span>Estado</span>${esc(closed?"Cerrada":m.estado||"Pendiente")}</div><div class="full"><span>Ingresada por</span>${esc(m.creadoPor||"")}${m.creado?` el ${fmtDT(m.creado)}`:""}</div>`;
+  $("#pj-meta").hidden=!(m&&edit);
+  if(m&&edit)$("#pj-meta").textContent=`Ingresada por ${m.creadoPor||"—"}${m.creado?` el ${fmtDT(m.creado)}`:""}`;
+  const og=$("#pj-origen");og.hidden=!(m&&m.origen);
+  if(m&&m.origen)og.innerHTML=`Viene de la solicitud de Mantenimiento <b>N° ${esc(String(m.origen.num||"").padStart(3,"0"))}</b>${m.origen.creadoPor?`, ingresada por ${esc(m.origen.creadoPor)}`:""}${m.origen.enviadaPor?`. La envió a proyecto ${esc(m.origen.enviadaPor)}`:""}.`;
+  $("#pj-gomt").hidden=!(m&&m.origen&&m.origen.id);
+  renderPjPhotos(m,!edit);
+  $("#pj-proc-box").hidden=!m;if(m)renderMtProc(m,edit,"pj");
+  $("#pj-banner").hidden=!closed;$("#pj-cierre").hidden=!closed;
+  if(closed){$("#pj-banner").textContent=`Cerrada el ${fmt(m.fechaCierre)} por ${m.cierre?m.cierre.por:""}.${isAdmin?" Puede reabrirla si la evidencia no es suficiente.":""}`;if(m.cierre)renderEvid(m.cierre,$("#pj-evid"))}
+  const hb=$("#pj-hist-box"),h=m&&Array.isArray(m.historial)?m.historial:[];hb.hidden=!h.length;
+  $("#pj-hist").innerHTML=h.slice().reverse().map(x=>`<li><b>${fmtDT(x.fecha)}</b> · ${esc(x.por)}: ${esc(x.accion)}</li>`).join("");
+  const b=m?mtCloseBlock(m):"x";
+  $("#pj-close-b").hidden=!m||!!b;
+  $("#pj-del").hidden=!m||!isAdmin;$("#pj-reopen").hidden=!closed||!isAdmin;
+  $("#pj-save").hidden=!edit;$("#pj-save").textContent=m?"Guardar":"Crear tarea";
+  $("#pj-mail-help").hidden=!edit;
+  pjDlg.showModal();
+}
+pjfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=pjEditId?pjt.find(x=>x.id===pjEditId):null;
+  if(!mtPuedeEditar(m))return;
+  const g=k=>pjfrm[k].value.trim();
+  const proyecto=pjCanon(g("proyecto")),ek=g("equipo"),{equipo,area}=ek?eqDeKey(ek):{equipo:"",area:""};
+  const descripcion=g("descripcion"),rid=pjfrm.responsableId.value,sid=pjfrm.seguidorId.value,fc=g("fechaCompromiso");
+  if(!proyecto||!descripcion||!rid||!sid){toast("Complete proyecto, descripción, responsable y jefe de turno");return}
+  const rp=pById(rid),sp=pById(sid);
+  const data={proyecto,equipo,area,descripcion,avisoSap:g("avisoSap"),prioridad:g("prioridad")||"Media",fechaCompromiso:fc,
+    responsableId:rid,responsable:rp?rp.nombre:(m?m.responsable:""),responsableCorreo:rp?pCorreo(rp):(m?m.responsableCorreo:""),
+    seguidorId:sid,seguidor:sp?sp.nombre:(m?m.seguidor:""),seguidorCorreo:sp?pCorreo(sp):(m?m.seguidorCorreo:""),
+    actualizado:nowISO(),actualizadoPor:myName()};
+  const id=m?m.id:doc(collection(db,"proyectoTareas")).id;
+  const btn=$("#pj-save");btn.disabled=true;btn.textContent=pjPhotos.length?"Subiendo fotos…":"Guardando…";
+  try{
+    const fotos=[...(m&&m.fotos||[])];
+    for(const ph of pjPhotos){
+      const d=await compressImage(ph.file);if(!d)throw{code:"too_large"};
+      const meta={nombre:(ph.file.name||"foto").replace(/\.[^.]+$/,"")+".jpg",tipo:"image/jpeg",kb:Math.round(d.length*.75/1024)};
+      const ref=await addDoc(collection(db,"evidencias"),{...meta,data:d,uso:"proyecto",mantId:id,col:"proyectoTareas",creadoPor:myEmail(),creado:nowISO()});
+      fotos.push({...meta,evidId:ref.id});
+    }
+    if(!m){
+      const num=pjt.reduce((x,y)=>Math.max(x,y.num||0),0)+1;
+      Object.assign(data,{num,estado:"Pendiente",fotos,etapas:{solicitada:nowISO(),sap:data.avisoSap?nowISO():""},creado:nowISO(),creadoPor:myName(),creadoPorId:persona?persona.id:"",creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+        historial:[{fecha:nowISO(),por:myName(),accion:`Creó la tarea en el proyecto ${proyecto}. Responsable: ${data.responsable}. Seguimiento: ${data.seguidor}`}]});
+      await setDoc(doc(db,"proyectoTareas",id),data);
+      pjSel=proyecto;pjNuevoNombre="";
+      pjDlg.close();toast(`Tarea N° ${String(num).padStart(3,"0")} creada en ${proyecto}. ${data.responsable} y ${data.seguidor} recibirán un correo en los próximos minutos`);
+    }else{
+      const ch=[];
+      if(pjNorm(m.proyecto)!==proyecto)ch.push(`movió al proyecto ${proyecto}`);
+      if(m.responsableId!==rid)ch.push(`reasignó responsable a ${data.responsable}`);
+      if(m.seguidorId!==sid)ch.push(`cambió seguimiento a ${data.seguidor}`);
+      if((m.avisoSap||"")!==data.avisoSap)ch.push(data.avisoSap?`registró aviso SAP ${data.avisoSap}`:"quitó el aviso SAP");
+      if((m.fechaCompromiso||"")!==fc)ch.push(`fecha comprometida ${fmt(fc)||"sin fecha"}`);
+      if((m.equipo||"")!==equipo||(m.area||"")!==area)ch.push(equipo?`cambió equipo a ${equipo} (${area})`:"quitó el equipo");
+      if(m.descripcion!==descripcion||m.prioridad!==data.prioridad)ch.push("editó la tarea");
+      const est=MT_ABIERTOS.includes(pjfrm.estado.value)?pjfrm.estado.value:"Pendiente";if(est!==(m.estado||"Pendiente"))ch.push(`cambió estado a ${est}`);
+      data.estado=est;
+      {const et={...(m.etapas||{})};if(!et.solicitada)et.solicitada=m.creado||nowISO();
+        if(data.avisoSap&&!tieneSap(m))et.sap=nowISO();if(!data.avisoSap)et.sap="";
+        if(est==="En proceso"&&m.estado!=="En proceso"&&!et.ejecucion)et.ejecucion=nowISO();
+        if(est==="Esperando repuesto"&&m.estado!=="Esperando repuesto")et.repuesto=nowISO();
+        data.etapas=et}
+      if(pjPhotos.length){data.fotos=fotos;ch.push(`agregó ${pjPhotos.length} foto${pjPhotos.length>1?"s":""}`)}
+      if(ch.length)data.historial=addHistT(m,ch.join(", ").replace(/^./,c=>c.toUpperCase()));
+      await updateDoc(doc(db,"proyectoTareas",m.id),data);
+      pjDlg.close();toast(m.responsableId!==rid||m.seguidorId!==sid?"Tarea reasignada. Se avisará por correo":"Tarea actualizada");
+    }
+  }catch(err){console.error(err);toast(err&&err.code==="too_large"?"Una foto es demasiado pesada. Pruebe con otra":err&&err.code==="permission-denied"?"No tiene permiso para guardar esta tarea":"No se pudo guardar. Revise la conexión e intente de nuevo")}
+  finally{btn.disabled=false;btn.textContent=m?"Guardar":"Crear tarea"}
+});
+$("#pj-del").onclick=async()=>{const m=pjt.find(x=>x.id===pjEditId);if(!m||!isAdmin)return;
+  if(!confirm(`¿Eliminar la tarea N° ${mtNum(m)} del proyecto ${pjNorm(m.proyecto)}? No se puede deshacer.`))return;
+  try{await deleteDoc(doc(db,"proyectoTareas",m.id));
+    // Las fotos de una tarea que vino de Mantenimiento siguen siendo de esa solicitud
+    if(!m.origen)for(const f of m.fotos||[])deleteDoc(doc(db,"evidencias",f.evidId)).catch(()=>{});
+    pjDlg.close();toast("Tarea eliminada")}catch(err){fbErr(err,"eliminar la tarea")}};
+$("#pj-reopen").onclick=async()=>{const m=pjt.find(x=>x.id===pjEditId);if(!m||!isAdmin)return;
+  const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
+  try{await updateDoc(doc(db,"proyectoTareas",m.id),{estado:"En proceso",fechaCierre:"",cierre:null,"notif.cierre":null,cierresAnteriores:[...(m.cierresAnteriores||[]),m.cierre].filter(Boolean).slice(-5),
+    actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,`Reabrió: ${motivo.trim()}`)});pjDlg.close();toast("Tarea reabierta")}catch(err){fbErr(err,"reabrir la tarea")}};
+$("#pj-close-b").onclick=()=>openMtClose(pjt.find(x=>x.id===pjEditId),PJ_CTX);
+$("#pj-gomt").onclick=()=>{const m=pjt.find(x=>x.id===pjEditId);if(!m||!m.origen)return;const o=mant.find(x=>x.id===m.origen.id);
+  if(!o){toast("La solicitud de origen ya no existe");return}pjDlg.close();tab="mant";render();openMant(o)};
+$("#pj-csv").onclick=()=>{
+  const cols=[["num","N°"],["proyecto","Proyecto"],["area","Área"],["equipo","Equipo"],["descripcion","Descripción de la tarea"],["avisoSap","Aviso SAP"],["prioridad","Prioridad"],["responsable","Responsable"],["seguidor","Seguimiento (jefe de turno)"],
+    ["fechaCompromiso","Fecha comprometida"],["etapa","Etapa del proceso"],["plazo","Plazo"],["origenTxt","Origen"],["creadoPor","Ingresada por"],["creadoF","Fecha ingreso"],["fechaCierre","Fecha cierre"],["cierreComentario","Comentario de cierre"],["cierrePor","Cerrada por"]];
+  const rows=pjt.filter(m=>!pjSel||pjNorm(m.proyecto)===pjSel).sort((a,b)=>pjNorm(a.proyecto).localeCompare(pjNorm(b.proyecto),"es")||(a.num||0)-(b.num||0)).map(m=>({...m,proyecto:pjNorm(m.proyecto),etapa:MT_LBL[mtEtapaActual(m)],plazo:mtPlazoTxt(m),fechaCompromiso:fmt(m.fechaCompromiso),fechaCierre:fmt(m.fechaCierre),creadoF:m.creado?fmtDT(m.creado):"",
+    origenTxt:m.origen?`Mantenimiento N° ${String(m.origen.num||"").padStart(3,"0")}`:"",cierreComentario:m.cierre?m.cierre.comentario:"",cierrePor:m.cierre?m.cierre.por:""}));
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="﻿"+[cols.map(c=>q(c[1])).join(";"),...rows.map(r=>cols.map(c=>q(r[c[0]])).join(";"))].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`proyectos_HTP${pjSel?"_"+pjSel.replace(/[^\wáéíóúñÁÉÍÓÚÑ-]+/g,"_"):""}_${hoyISO()}.csv`;document.body.appendChild(a);a.click();a.remove();
+};
+
+/* Enviar una solicitud de Mantenimiento a Proyectos */
+$("#mt-toproj").onclick=()=>{const m=mant.find(x=>x.id===mtEditId);if(!m||!mtPuedeEditar(m))return;
+  mtpId=m.id;mtpfrm.reset();
+  $("#dl-pj").innerHTML=pjNombres().map(n=>`<option value="${esc(n)}">`).join("");
+  $("#mtp-what").innerHTML=`<b>Solicitud N° ${mtNum(m)} · ${esc(m.equipo)} (${esc(m.area||"")}):</b> ${esc(m.descripcion)}`;
+  mtDlg.close();mtpDlg.showModal();setTimeout(()=>mtpfrm.proyecto.focus(),30)};
+$("#mt-goproj").onclick=()=>{const m=mant.find(x=>x.id===mtEditId);if(m)irAProyecto(m.proyectoTareaId||"")};
+document.querySelectorAll(".mtpx").forEach(b=>b.onclick=()=>mtpDlg.close());
+mtpfrm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const m=mant.find(x=>x.id===mtpId);if(!m||!mtPuedeEditar(m)){toast("La solicitud ya no se puede enviar");return}
+  const proyecto=pjCanon(mtpfrm.proyecto.value),com=mtpfrm.comentario.value.trim();
+  if(!proyecto){toast("Escriba el nombre del proyecto");return}
+  const btn=$("#mtp-save");btn.disabled=true;btn.textContent="Enviando…";
+  try{
+    const ref=doc(collection(db,"proyectoTareas"));
+    const num=pjt.reduce((x,y)=>Math.max(x,y.num||0),0)+1;
+    const accion=`Enviada desde Mantenimiento N° ${mtNum(m)} al proyecto ${proyecto}${com?`: ${com}`:""}`;
+    const data={proyecto,equipo:m.equipo||"",area:m.area||"",descripcion:m.descripcion||"",avisoSap:m.avisoSap||"",prioridad:m.prioridad||"Media",fechaCompromiso:m.fechaCompromiso||"",
+      responsableId:m.responsableId||"",responsable:m.responsable||"",responsableCorreo:m.responsableCorreo||"",
+      seguidorId:m.seguidorId||"",seguidor:m.seguidor||"",seguidorCorreo:m.seguidorCorreo||"",
+      num,estado:MT_ABIERTOS.includes(m.estado)?m.estado:"Pendiente",fotos:m.fotos||[],etapas:{...(m.etapas||{}),solicitada:(m.etapas&&m.etapas.solicitada)||m.creado||nowISO()},
+      creado:m.creado||nowISO(),creadoPor:myName(),creadoPorId:persona?persona.id:"",creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
+      origen:{col:"mantenimiento",id:m.id,num:m.num||0,creadoPor:m.creadoPor||"",enviadaPor:myName(),fecha:nowISO()},
+      historial:[...(Array.isArray(m.historial)?m.historial.slice(-28):[]),{fecha:nowISO(),por:myName(),accion}],
+      actualizado:nowISO(),actualizadoPor:myName()};
+    await setDoc(ref,data);
+    await updateDoc(doc(db,"mantenimiento",m.id),{estado:"Enviada a proyecto",proyecto,proyectoTareaId:ref.id,enviada:{fecha:nowISO(),por:myName(),comentario:com},
+      actualizado:nowISO(),actualizadoPor:myName(),historial:addHistT(m,accion)});
+    mtpDlg.close();toast(`Enviada al proyecto ${proyecto} como tarea N° ${String(num).padStart(3,"0")}`);
+  }catch(err){console.error(err);toast(err&&err.code==="permission-denied"?"No tiene permiso para enviar esta solicitud a proyecto":"No se pudo enviar. Revise la conexión e intente de nuevo")}
+  finally{btn.disabled=false;btn.textContent="Enviar a proyecto"}
+});
 
 /* ---------- Seguimiento de mejoras ---------- */
 const prDlg=$("#dlg-pr"), prfrm=$("#prfrm"), mDlg=$("#dlg-m"), mfrm=$("#mfrm"), mcDlg=$("#dlg-mc"), mcfrm=$("#mcfrm");

@@ -95,3 +95,13 @@ Pestaña visible solo para el administrador y las personas marcadas como **Jefe 
 - Quien la creó, el responsable y el jefe de turno pueden editarla (aviso SAP, fecha, estado: Pendiente / En proceso / Esperando repuesto). El responsable o el jefe de turno la cierran con comentario y evidencia; se avisa por correo al jefe de turno y a quien la solicitó.
 
 Datos en Firestore: colección `mantenimiento`. Requiere publicar el `firestore.rules` actualizado.
+
+## Proyectos
+
+Pestaña con el mismo funcionamiento que Mantenimiento (administrador y jefes de turno), pero las tareas se agrupan por **nombre de proyecto**.
+- **Menú de proyectos** a la izquierda: "Todos los proyectos" y cada proyecto con sus tareas abiertas y % de cierre. Tocando uno se ven solo sus tareas. **+ Nuevo** crea un proyecto y abre su primera tarea.
+- **Nueva tarea**: proyecto (se elige uno existente o se escribe uno nuevo), equipo (opcional), descripción, aviso SAP, prioridad, fecha comprometida, responsable, jefe de turno que sigue y fotos (opcional). Mismo proceso por etapas, cierre con evidencia, rendimiento de cierre y exportación CSV.
+- **Enviar a proyecto** (desde una solicitud de Mantenimiento abierta): se crea una tarea en el proyecto elegido con la descripción, fotos, aviso SAP, responsable y jefe de turno. La solicitud queda en Mantenimiento como "Enviada a proyecto" (ya no cuenta como abierta) con un botón para ir a la tarea.
+- Correos: los mismos que Mantenimiento (asignación al responsable y al jefe de turno, y aviso de cierre).
+
+Datos en Firestore: colección `proyectoTareas`.
