@@ -56,6 +56,7 @@ td input{padding:4px 6px}
 td input.name{min-width:140px;font-family:var(--f-ui);text-align:left}
 td input[type=number]{width:96px}
 td input.sm{width:68px}
+td input.wide{width:110px}
 tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none}
 button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:2px}
 button.pri{background:var(--steel);border-color:var(--steel);color:var(--panel)}
@@ -152,6 +153,21 @@ tfoot td.stk{background:var(--panel)}
   #informe .pie{margin-top:18px;font-size:8pt;color:#444}
   #informe tr.tot td{font-weight:700;border-top:2px solid #000}
 }
+dialog#dlgTar{width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+dialog#dlgTar::backdrop{background:rgba(10,20,28,.55)}
+.dlg-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:3px solid var(--ink)}
+.dlg-h h2{margin:0;font-size:18px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);padding:0 16px}
+.tab{border:none;border-bottom:3px solid transparent;background:none;padding:10px 14px;font-weight:600;color:var(--muted)}
+.tab.on{color:var(--ink);border-bottom-color:var(--signal)}
+.dlg-b{padding:14px 16px}
+.dlg-b td select{max-width:340px}
+#toast2{padding:0 16px 12px}
+.relinfo{font-size:13px;color:var(--muted);margin-bottom:10px;display:flex;flex-wrap:wrap;gap:4px 16px}
+.relinfo b{color:var(--ink)}
+tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+#relAdd{max-width:420px}
+.linked{font-size:11px;color:var(--good)}
 .saved{margin-top:12px}
 .saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .saved ul{list-style:none;margin:0;padding:0}
@@ -171,6 +187,7 @@ tfoot td.stk{background:var(--panel)}
       <h1>Costeo de Naves<span>HTP</span></h1>
     </div>
     <div class="scen">
+      <button type="button" id="btnTar">Tarifas y costos por cargo</button>
       <label class="btnfile" for="xlsIn">Cargar Excel</label>
       <input id="xlsIn" type="file" accept=".xlsx,.xls,.xlsm" hidden>
       <button type="button" id="btnPdf">Descargar cotización (PDF)</button>
@@ -207,7 +224,7 @@ tfoot td.stk{background:var(--panel)}
       </section>
 
       <section class="card">
-        <h2><span class="code">1</span>Personal muellaje (Reloncaví)<span class="sub" id="s_pers"></span></h2>
+        <h2><span class="code">1</span>Personal muellaje (Reloncaví)<label class="chk"><input type="checkbox" id="inc_pers">Incluir en total</label><span class="sub" id="s_pers"></span></h2>
         <div class="body">
           <div class="turnos" id="turnosBox"></div>
           <div class="tbl"><table>
@@ -259,6 +276,22 @@ tfoot td.stk{background:var(--panel)}
           <p class="note">Turnos por camión vacío = turnos totales de la faena.</p>
         </div>
       </section>
+
+      <section class="card">
+        <h2><span class="code">5</span>Servicios contrato Reloncaví<label class="chk"><input type="checkbox" id="inc_rel">Incluir en total</label><span class="sub" id="s_rel"></span></h2>
+        <div class="body">
+          <div class="relinfo" id="relInfo"></div>
+          <div class="tbl"><table>
+            <thead><tr><th>Ítem</th><th>Unidad</th><th class="n">Tarifa CLP</th><th class="n">Personas / equipos</th><th class="n">Cantidad</th><th class="n">Total CLP</th><th class="n">USD</th><th></th></tr></thead>
+            <tbody id="t_rel"></tbody>
+          </table></div>
+          <div class="actions">
+            <select id="relAdd" aria-label="Agregar ítem del contrato"></select>
+            <button type="button" id="relSug">Sugerir según carga y sitio</button>
+          </div>
+          <p class="note">Cantidad vacía = automática según la unidad: $/ton → toneladas; $/turno y $/hombre turno → turnos de la faena; HM y $/Hr → horas de la faena; GL → 1. Total = tarifa × personas/equipos × cantidad.</p>
+        </div>
+      </section>
     </main>
 
     <aside class="side">
@@ -307,6 +340,39 @@ tfoot td.stk{background:var(--panel)}
 
 <div id="informe" aria-hidden="true"></div>
 
+<dialog id="dlgTar" aria-labelledby="dlgTarT">
+  <div class="dlg-h"><h2 id="dlgTarT">Tarifas y costos por cargo</h2><button type="button" class="x" id="dlgClose" aria-label="Cerrar">×</button></div>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab on" data-tab="cargos">Costos por cargo</button>
+    <button type="button" role="tab" class="tab" data-tab="rel">Tarifas Reloncaví</button>
+  </div>
+  <div class="dlg-b" id="tab_cargos">
+    <p class="note">Valor por turno de cada cargo. Se usan en cada costeo nuevo. Si vincula un cargo a un ítem del contrato Reloncaví, su valor se actualiza solo al cargar una nueva tabla de reajuste.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Cargo</th><th class="n">CLP / turno</th><th>Vinculado a ítem Reloncaví</th><th></th></tr></thead>
+      <tbody id="t_cc"></tbody>
+    </table></div>
+    <div class="actions">
+      <button type="button" id="ccAdd">+ Agregar cargo</button>
+      <button type="button" class="pri" id="ccSave">Guardar costos por cargo</button>
+      <button type="button" id="ccApply">Aplicar al costeo actual</button>
+    </div>
+    <div class="cstate" id="ccState"></div>
+  </div>
+  <div class="dlg-b" id="tab_rel" hidden>
+    <div class="actions">
+      <label class="btnfile" for="relIn">Cargar tabla de reajuste Reloncaví (Excel)</label>
+      <input id="relIn" type="file" accept=".xlsx,.xls,.xlsm" hidden>
+    </div>
+    <div class="relinfo" id="relInfo2"></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Ítem</th><th>Descripción</th><th>Unidad</th><th class="n">Tarifa</th><th class="n">Tarifa reajustada</th></tr></thead>
+      <tbody id="t_relcat"></tbody>
+    </table></div>
+  </div>
+  <div class="toast" id="toast2" role="status"></div>
+</dialog>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const BASE = {
@@ -324,7 +390,9 @@ const BASE = {
     ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",1.212,"UF",0]
   ],
   porteo:{cam:8,turnos:"",vturno:180000,km:0,tciclo:30,lkm:0},
-  incPorteo:false
+  incPorteo:false,
+  incPers:true,
+  rel:[], incRel:true
 };
 const KEY="costeo-naves-htp-v1";
 let S=clone(BASE);
@@ -337,6 +405,12 @@ const fN=(n,d=0)=>n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFract
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 const MAXT=60;
+function normU(u){return String(u||"").toLowerCase().replace(/\s/g,"")}
+function relAuto(u,r,p){const x=normU(u);
+  if(x.includes("ton"))return p.ton;
+  if(x.includes("turno"))return r.turnos;
+  if(x==="hm"||x.includes("hr")||x.includes("hora"))return r.horas;
+  return 1;}
 function dot(d1,dn,ov,k){return ov&&ov[k]!==undefined?num(ov[k]):(k===0?num(d1):num(dn))}
 function calc(S){
   const p=S.p, r={};
@@ -368,8 +442,11 @@ function calc(S){
   r.litros=r.km*num(q.lkm);
   r.portPetCLP=r.litros*p.diesel;
   r.portUSD=(r.portTurnoCLP+r.portPetCLP)/p.usd;
+  r.rel=(S.rel||[]).map(x=>{const q=(x.cant===""||x.cant==null)?relAuto(x.unidad,r,p):num(x.cant);const clp=num(x.tarifa)*num(x.mult)*q;return{q,clp,usd:clp/p.usd}});
+  r.relUSD=r.rel.reduce((a,x)=>a+x.usd,0);
   r.parts=[
-    {k:"Personal",usd:r.persUSD,c:"var(--steel)"},
+    {k:"Personal",usd:S.incPers===false?0:r.persUSD,c:"var(--steel)"},
+    {k:"Servicios Reloncaví",usd:S.incRel===false?0:r.relUSD,c:"#7a5cc2"},
     {k:"Otros servicios",usd:S.incOtros?r.otrosUSD:0,c:"var(--muted)"},
     {k:"Arriendo equipos",usd:r.eqArr,c:"var(--signal)"},
     {k:"Petróleo equipos",usd:r.eqPet,c:"var(--warn)"},
@@ -406,6 +483,13 @@ function buildTables(){
   for(let k=0;k<T;k++)f+=`<td class="n tk${Math.floor(k/td)%2?" alt":""}" id="ft${k}"></td>`;
   $("f_persRow").innerHTML=f+`<td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr>`;
   $("persWarn").hidden=r0.turnos<=MAXT;
+  $("t_rel").innerHTML=(S.rel||[]).length?S.rel.map((x,i)=>`<tr>
+    <td>${esc(x.desc)}${x.grupo?`<br><span class="linked">${esc(x.grupo)}</span>`:""}</td><td>${esc(x.unidad)}</td>
+    <td class="n"><input type="number" min="0" step="1" id="rl${i}_t" data-rel="${i}" data-f="tarifa" value="${esc(x.tarifa)}" aria-label="Tarifa"></td>
+    <td class="n"><input type="number" min="0" step="1" class="sm" id="rl${i}_m" data-rel="${i}" data-f="mult" value="${esc(x.mult)}" aria-label="Personas o equipos"></td>
+    <td class="n"><input type="number" min="0" step="0.5" class="wide" id="rl${i}_c" data-rel="${i}" data-f="cant" value="${esc(x.cant)}" placeholder="auto" aria-label="Cantidad"></td>
+    <td class="n" id="rlc${i}"></td><td class="n" id="rlu${i}"></td>
+    <td><button class="x" type="button" data-delrel="${i}" aria-label="Quitar">×</button></td></tr>`).join(""):`<tr><td colspan="8" class="note">Sin ítems. Agregue uno desde la lista de abajo.</td></tr>`;
   $("t_otros").innerHTML=S.otros.map((x,i)=>`<tr>
     <td>${cell(x[0],"name",`type="text" id="ot${i}_0" data-t="otros" data-i="${i}" data-j="0" aria-label="Servicio"`)}</td>
     <td class="n">${cell(x[1],"sm",`type="number" step="1" min="0" id="ot${i}_1" data-t="otros" data-i="${i}" data-j="1" aria-label="N° servicios"`)}</td>
@@ -427,6 +511,7 @@ function fillParams(){
   const m={cam:"q_cam",turnos:"q_turnos",vturno:"q_vturno",km:"q_km",tciclo:"q_tciclo",lkm:"q_lkm"};
   for(const k in m) $(m[k]).value=S.porteo[k];
   $("inc_otros").checked=S.incOtros; $("inc_porteo").checked=S.incPorteo;
+  $("inc_pers").checked=S.incPers!==false; $("inc_rel").checked=S.incRel!==false;
 }
 function render(){
   const r=calc(S), p=S.p;
@@ -447,6 +532,8 @@ function render(){
   $("s_pers").textContent=fUSD(r.persUSD)+" · "+fUSD(p.ton?r.persUSD/p.ton:0,3)+"/t";
   r.otros.forEach((x,i)=>{$("oc"+i).textContent=fCLP(x.clp);$("ou"+i).textContent=fUSD(x.usd)});
   $("s_otros").textContent=fUSD(r.otrosUSD);
+  r.rel.forEach((x,i)=>{const c=$("rlc"+i);if(c){c.textContent=fCLP(x.clp);$("rlu"+i).textContent=fUSD(x.usd);$("rl"+i+"_c").placeholder=fN(x.q)}});
+  $("s_rel").textContent=fUSD(r.relUSD);
   r.eq.forEach((x,i)=>{$("ea"+i).textContent=fUSD(x.arr);$("ep"+i).textContent=fUSD(x.pet)});
   $("s_eq").textContent=fUSD(r.eqArr+r.eqPet);
   $("s_port").textContent=fUSD(r.portUSD);
@@ -479,6 +566,10 @@ document.addEventListener("input",e=>{
   else if(el.id.startsWith("q_")){const m={q_cam:"cam",q_turnos:"turnos",q_vturno:"vturno",q_km:"km",q_tciclo:"tciclo",q_lkm:"lkm"};S.porteo[m[el.id]]=(el.id==="q_turnos"&&el.value==="")?"":num(el.value);}
   else if(el.id==="inc_otros") S.incOtros=el.checked;
   else if(el.id==="inc_porteo") S.incPorteo=el.checked;
+  else if(el.id==="inc_pers") S.incPers=el.checked;
+  else if(el.id==="inc_rel") S.incRel=el.checked;
+  else if(el.dataset.rel!==undefined){const x=S.rel[+el.dataset.rel],f=el.dataset.f;x[f]=(f==="cant"&&el.value==="")?"":num(el.value);}
+  else if(el.closest&&el.closest("dialog")) return;
   render(); persist();
   if(window.CN&&CN.onChange&&!el.closest(".cloud")) CN.onChange();
 });
@@ -493,7 +584,7 @@ document.addEventListener("click",e=>{
 window.CN={
   get:()=>clone(S), calc:()=>calc(S),
   set:d=>{S=Object.assign(clone(BASE),clone(d));S.p=Object.assign(clone(BASE.p),clone(d.p||{}));fillParams();buildTables();render();persist();pintarInd();},
-  base:()=>clone(BASE), onChange:null, toast:m=>toast(m)
+  base:()=>window.TARIFAS?TARIFAS.base():clone(BASE), onChange:null, toast:m=>toast(m)
 };
 $("btnClearOv").onclick=()=>{S.pers.forEach(x=>{x[4]={}});render();persist();if(window.CN&&CN.onChange)CN.onChange();toast("Ajustes por turno quitados")};
 document.addEventListener("focusout",e=>{if(e.target.dataset&&e.target.dataset.g!==undefined)render()});
@@ -618,6 +709,8 @@ function armarInforme(){
   <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th></tr>
     ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
     <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
+  ${(S.incRel!==false&&(S.rel||[]).length)?`<h2>Servicios contrato Reloncaví</h2><table><tr><th>Ítem</th><th>Unidad</th><th class="n">Tarifa CLP</th><th class="n">Pers./equipos</th><th class="n">Cantidad</th><th class="n">Total CLP</th></tr>
+    ${S.rel.map((x,i)=>`<tr><td>${esc(x.desc)} <small>${esc(x.grupo||"")}</small></td><td>${esc(x.unidad)}</td><td class="n">${fCLP(num(x.tarifa))}</td><td class="n">${fN(num(x.mult))}</td><td class="n">${fN(r.rel[i].q)}</td><td class="n">${fCLP(r.rel[i].clp)}</td></tr>`).join("")}</table>`:""}
   ${eqs.length?`<h2>Equipos</h2><table><tr><th>Equipo</th><th class="n">N°</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th></tr>
     ${eqs.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fN(x.h,1)}</td><td class="n">${fN(num(x.t),3)} ${x.u}/h</td><td class="n">${fUSD(x.a)}</td><td class="n">${fUSD(x.pe)}</td></tr>`).join("")}</table>`:""}
   ${ots.length?`<h2>Otros servicios</h2><table><tr><th>Servicio</th><th class="n">N°</th><th class="n">CLP / servicio</th><th class="n">USD</th></tr>
@@ -645,10 +738,123 @@ $("btnXls").onclick=()=>{
   const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tp,Math.round(r.pers[i].clp)])];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pers),"Personal");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"],...S.eq.map((x,i)=>[x[0],num(x[1]),+r.eq[i].hrs.toFixed(2),num(x[3]),x[4],num(x[5]),+r.eq[i].arr.toFixed(2),+r.eq[i].pet.toFixed(2)])]),"Equipos");
+  if((S.rel||[]).length) XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Ítem","Grupo","Unidad","Tarifa CLP","Personas/equipos","Cantidad","Total CLP"],...S.rel.map((x,i)=>[x.desc,x.grupo||"",x.unidad,num(x.tarifa),num(x.mult),r.rel[i].q,Math.round(r.rel[i].clp)])]),"Reloncavi");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[JSON.stringify(S)]]),"datos_costeo");
   const nom=("Cotizacion_"+(p.nave||"nave")+"_"+hoyISO()).replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g,"_");
   XLSX.writeFile(wb,nom+".xlsx");
 };
+
+
+/* ---------- Costos por cargo (maestro) y tarifas Reloncaví ---------- */
+const TKEY="costeo-naves-htp-tarifas";
+const normT=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+let TAR=(()=>{try{return JSON.parse(localStorage.getItem(TKEY))||{}}catch(e){return{}}})();
+if(!TAR.cargos) TAR.cargos=BASE.pers.map(x=>({cargo:x[0],clp:x[1],rel:""}));
+function guardarTARlocal(){try{localStorage.setItem(TKEY,JSON.stringify(TAR))}catch(e){}}
+function relItems(){return (TAR.rel&&TAR.rel.items)||[]}
+function relByKey(k){return relItems().find(i=>i.key===k)}
+function aplicarVinculos(){let n=0;TAR.cargos.forEach(c=>{const it=c.rel&&relByKey(c.rel);if(it&&it.tarifa!==c.clp){c.clp=it.tarifa;n++}});return n}
+function baseConMaestro(){const D=clone(BASE);D.pers.forEach(x=>{const m=TAR.cargos.find(c=>normT(c.cargo)===normT(x[0]));if(m)x[1]=m.clp});
+  TAR.cargos.forEach(c=>{if(!D.pers.find(x=>normT(x[0])===normT(c.cargo)))D.pers.push([c.cargo,c.clp,0,0,{}])});return D}
+function aplicarCostosAlCosteo(){let n=0;S.pers.forEach(x=>{const m=TAR.cargos.find(c=>normT(c.cargo)===normT(x[0]));if(m&&num(x[1])!==num(m.clp)){x[1]=m.clp;n++}});buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange();return n}
+
+function relInfoHTML(){const R=TAR.rel;if(!R)return `Aún no se ha cargado la tabla de reajuste Reloncaví. Cárguela en <b>Tarifas y costos por cargo → Tarifas Reloncaví</b>.`;
+  return `<span>Contrato <b>${esc(R.contrato||"—")}</b></span><span>Período <b>${esc(R.periodo||"—")}</b></span><span>Reajuste <b>${fN((R.reajuste||0)*100,2)}%</b></span><span>Archivo <b>${esc(R.archivo||"")}</b></span><span>Cargado ${esc(R.cargadoEl||"")}${R.cargadoPor?" por "+esc(R.cargadoPor):""}</span>`}
+function pintarRel(){
+  $("relInfo").innerHTML=relInfoHTML(); $("relInfo2").innerHTML=relInfoHTML();
+  const its=relItems();
+  let g="",cat="";its.forEach(i=>{if(i.grupo!==g){g=i.grupo;cat+=`<tr class="grp"><td colspan="5">${esc(g)}</td></tr>`}
+    cat+=`<tr><td>${esc(i.item)}</td><td>${esc(i.desc)}</td><td>${esc(i.unidad)}</td><td class="n">${fCLP(i.base)}</td><td class="n"><b>${fCLP(i.tarifa)}</b></td></tr>`});
+  $("t_relcat").innerHTML=cat||`<tr><td colspan="5" class="note">Sin tabla cargada.</td></tr>`;
+  let og="",opts=`<option value="">+ Agregar ítem del contrato…</option>`;
+  its.forEach((i,k)=>{if(i.grupo!==og){if(og)opts+="</optgroup>";og=i.grupo;opts+=`<optgroup label="${esc(og)}">`}opts+=`<option value="${k}">${esc(i.item)} ${esc(i.desc)} · ${fCLP(i.tarifa)} ${esc(i.unidad)}</option>`});
+  if(og)opts+="</optgroup>";
+  $("relAdd").innerHTML=opts; $("relAdd").disabled=!its.length; $("relSug").disabled=!its.length;
+}
+function pintarCC(){
+  const its=relItems();
+  const sel=v=>`<option value="">— Sin vínculo (valor manual)</option>`+its.filter(i=>/hombre|turno/i.test(i.unidad)).map(i=>`<option value="${esc(i.key)}"${i.key===v?" selected":""}>${esc(i.desc)} · ${fCLP(i.tarifa)} ${esc(i.unidad)}</option>`).join("")+(v&&!relByKey(v)?`<option value="${esc(v)}" selected>${esc(v)} (no está en la tabla actual)</option>`:"");
+  $("t_cc").innerHTML=TAR.cargos.map((c,i)=>`<tr>
+    <td><input type="text" class="name" id="cc${i}_n" data-cc="${i}" data-f="cargo" value="${esc(c.cargo)}" aria-label="Cargo"></td>
+    <td class="n"><input type="number" min="0" step="1" id="cc${i}_v" data-cc="${i}" data-f="clp" value="${esc(c.clp)}" aria-label="CLP por turno"${c.rel&&relByKey(c.rel)?" readonly title=\"Valor tomado del contrato Reloncaví\"":""}></td>
+    <td><select id="cc${i}_r" data-cc="${i}" data-f="rel" aria-label="Vínculo Reloncaví">${sel(c.rel)}</select></td>
+    <td><button class="x" type="button" data-ccdel="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
+  $("ccState").innerHTML=TAR.cargosEl?`Última actualización ${esc(TAR.cargosEl)}${TAR.cargosPor?" por "+esc(TAR.cargosPor):""}`:"Valores base de la planilla. Guarde para dejarlos en línea.";
+}
+$("t_cc").addEventListener("input",e=>{const el=e.target,i=+el.dataset.cc,f=el.dataset.f;if(isNaN(i))return;
+  TAR.cargos[i][f]=f==="clp"?num(el.value):el.value;
+  if(f==="rel"){const it=relByKey(el.value);if(it)TAR.cargos[i].clp=it.tarifa;pintarCC()}
+  guardarTARlocal();});
+$("t_cc").addEventListener("change",e=>{if(e.target.tagName==="SELECT")e.target.dispatchEvent(new Event("input",{bubbles:true}))});
+$("t_cc").addEventListener("click",e=>{const b=e.target.closest("[data-ccdel]");if(!b)return;TAR.cargos.splice(+b.dataset.ccdel,1);guardarTARlocal();pintarCC()});
+$("ccAdd").onclick=()=>{TAR.cargos.push({cargo:"Nuevo cargo",clp:0,rel:""});pintarCC()};
+$("ccApply").onclick=()=>{const n=aplicarCostosAlCosteo();toast2(n?`${n} cargo(s) del costeo actualizados`:"El costeo ya tenía estos valores")};
+$("ccSave").onclick=async()=>{guardarTARlocal();
+  if(window.CN&&CN.saveCargos){const ok=await CN.saveCargos(TAR.cargos);toast2(ok?"Costos por cargo guardados en línea":"Guardado solo en este navegador (ingrese con su cuenta para guardarlos en línea)")}
+  else toast2("Guardado en este navegador");};
+function toast2(m){$("toast2").textContent=m;clearTimeout(toast2.t);toast2.t=setTimeout(()=>$("toast2").textContent="",3500)}
+$("btnTar").onclick=()=>{pintarCC();pintarRel();$("dlgTar").showModal()};
+$("dlgClose").onclick=()=>$("dlgTar").close();
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
+  $("tab_cargos").hidden=t.dataset.tab!=="cargos";$("tab_rel").hidden=t.dataset.tab!=="rel"});
+
+// Lectura de la tabla de reajuste Reloncaví (formato "Calculo IPC <contrato>")
+function leerReloncavi(wb,archivo){
+  let ws=null,hr=0,cols=null;
+  for(const nm of wb.SheetNames){const sh=wb.Sheets[nm];const rg=XLSX.utils.decode_range(sh["!ref"]||"A1");
+    for(let r=rg.s.r;r<=Math.min(rg.e.r,200)&&!ws;r++)for(let c=rg.s.c;c<=rg.e.c;c++){const cl=sh[XLSX.utils.encode_cell({r,c})];
+      if(cl&&typeof cl.v==="string"&&/tarifa\s*reajustada/i.test(cl.v)){ws=sh;hr=r;cols={tr:c};
+        for(let c2=rg.s.c;c2<=rg.e.c;c2++){const h=sh[XLSX.utils.encode_cell({r,c:c2})];const t=h&&typeof h.v==="string"?normT(h.v):"";
+          if(t==="item")cols.it=c2;else if(t.startsWith("descripcion"))cols.de=c2;else if(t==="unidad")cols.un=c2;else if(t==="tarifa")cols.ta=c2;}
+        break}}
+    if(ws)break}
+  if(!ws||cols.de===undefined||cols.un===undefined) throw new Error("No se encontró la tabla con columnas Ítem, Descripción, Unidad, Tarifa y Tarifa Reajustada");
+  const cv=(r,c)=>{const x=ws[XLSX.utils.encode_cell({r,c})];return x?x.v:undefined};
+  // reajuste, contrato y período
+  let reaj=0,contrato="",periodo="";const rg=XLSX.utils.decode_range(ws["!ref"]);
+  for(let r=0;r<hr;r++)for(let c=0;c<=rg.e.c;c++){const v=cv(r,c);if(typeof v!=="string")continue;
+    if(/reajuste\s*determinado/i.test(v)){for(let c2=c+1;c2<=rg.e.c;c2++){const n=cv(r,c2);if(typeof n==="number"){reaj=n;break}}}
+    if(/^periodo/i.test(v.trim())){for(let c2=c+1;c2<=rg.e.c;c2++){const n=cv(r,c2);if(n!==undefined&&String(n).trim()){periodo=String(n).trim();break}}}}
+  for(let r=0;r<hr;r++)for(let c=0;c<=rg.e.c;c++){const v=cv(r,c);if(typeof v==="number"&&v>1e8&&v<1e11){contrato=String(v);break}}
+  if(!contrato){const m=wb.SheetNames.join(" ").match(/\d{8,}/);if(m)contrato=m[0]}
+  const items=[];let grupo="";
+  for(let r=hr+1;r<=rg.e.r;r++){
+    const de=cv(r,cols.de),un=cv(r,cols.un);
+    if(de===undefined&&un===undefined)continue;
+    if(un===undefined||String(un).trim()===""){grupo=String(de).trim();continue}
+    const base=num(cv(r,cols.ta));let t=cv(r,cols.tr);t=typeof t==="number"?t:Math.round(base*(1+reaj));
+    const item=String(cv(r,cols.it)??"").trim(),desc=String(de).trim(),unidad=String(un).trim();
+    items.push({item,desc,unidad,grupo,base,tarifa:t,key:normT(grupo+" "+desc+" "+unidad)});
+  }
+  if(!items.length) throw new Error("La tabla de tarifas está vacía");
+  return {contrato,periodo,reajuste:reaj,archivo,items,cargadoEl:new Date().toLocaleString("es-CL",{timeZone:"America/Santiago"})};
+}
+$("relIn").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!window.XLSX){toast2("No se pudo cargar el lector de Excel");return}
+  try{const R=leerReloncavi(XLSX.read(await f.arrayBuffer(),{type:"array"}),f.name);
+    setRel(R,true);
+    let ok=false;if(window.CN&&CN.saveRel)ok=await CN.saveRel(R);
+    toast2(`Tabla cargada: ${R.items.length} ítems, reajuste ${fN(R.reajuste*100,2)}%`+(ok?" · guardada en línea":" · guardada en este navegador"));
+  }catch(err){toast2(err.message||"El archivo no tiene el formato de la tabla de reajuste")}
+});
+function setRel(R,local){
+  TAR.rel=R; const n=aplicarVinculos(); guardarTARlocal(); pintarRel(); pintarCC();
+  if(n&&local&&window.CN&&CN.saveCargos) CN.saveCargos(TAR.cargos);
+}
+window.TARIFAS={setRel,setCargos:(c,meta)=>{if(Array.isArray(c)&&c.length){TAR.cargos=c;TAR.cargosEl=meta&&meta.el||"";TAR.cargosPor=meta&&meta.por||"";aplicarVinculos();guardarTARlocal();pintarCC()}},base:baseConMaestro};
+$("relAdd").addEventListener("change",e=>{const it=relItems()[+e.target.value];e.target.value="";if(!it)return;
+  S.rel=S.rel||[];S.rel.push({desc:it.desc,grupo:it.grupo,unidad:it.unidad,tarifa:it.tarifa,mult:1,cant:"",key:it.key});
+  buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange()});
+$("relSug").onclick=()=>{
+  const c=normT(S.p.carga),si=normT(S.p.sitio);
+  const it=relItems().find(i=>/ton/i.test(i.unidad)&&normT(i.desc)===c&&normT(i.grupo).includes("sitio "+si));
+  if(!it){toast(`El contrato no tiene tarifa $/ton para ${S.p.carga} en sitio ${S.p.sitio}`);return}
+  S.rel=S.rel||[];if(S.rel.find(x=>x.key===it.key)){toast("Ese ítem ya está agregado");return}
+  S.rel.push({desc:it.desc,grupo:it.grupo,unidad:it.unidad,tarifa:it.tarifa,mult:1,cant:"",key:it.key});
+  buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange();toast("Agregado: "+it.desc+" · "+it.grupo)};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-delrel]");if(!b)return;S.rel.splice(+b.dataset.delrel,1);buildTables();render();persist();if(window.CN&&CN.onChange)CN.onChange()});
+pintarRel();
 
 /* almacenamiento local: borrador y escenarios */
 function store(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
@@ -663,7 +869,7 @@ function persist(){const o=store();o.draft=S;putStore(o)}
 /* Guardado en línea: colección "costeos" del mismo Firebase de Seguimiento HTP */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAILS } from "../firebase-config.js";
 
 const $=id=>document.getElementById(id);
@@ -674,6 +880,7 @@ const CURKEY="costeo-naves-htp-actual";
 
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 auth.languageCode="es";
+let unsubT=[];
 let user=null, puedeEscribir=false, esAdmin=false, lista=[], cur=null, dirty=false, unsub=null, pendLoad=null, pendDel=null;
 try{cur=JSON.parse(localStorage.getItem(CURKEY))||null}catch(e){}
 try{dirty=!!(cur&&cur.dirty)}catch(e){}
@@ -693,7 +900,7 @@ $("l_forgot").onclick=async()=>{
 };
 
 onAuthStateChanged(auth,async u=>{
-  user=u; if(unsub){unsub();unsub=null} lista=[];
+  user=u; if(unsub){unsub();unsub=null} unsubT.forEach(f=>f());unsubT=[]; lista=[];
   if(!u){$("c_login").hidden=false;$("c_app").hidden=true;$("who").innerHTML="";return}
   const em=u.email.toLowerCase();
   let acc=null; try{const a=await getDoc(doc(db,"accesos",em)); if(a.exists()) acc=a.data()}catch(e){}
@@ -706,6 +913,8 @@ onAuthStateChanged(auth,async u=>{
   $("b_out").onclick=()=>signOut(auth);
   $("c_login").hidden=true;$("c_app").hidden=false;
   if(!puedeLeer){$("c_list").innerHTML=`<li><span>Su correo no tiene acceso. Pida al administrador de Seguimiento HTP que lo agregue como Usuario.</span></li>`;pintarEstado();return}
+  unsubT.push(onSnapshot(doc(db,"costeoConfig","costosCargo"),d=>{if(d.exists()){const x=d.data();window.TARIFAS&&TARIFAS.setCargos(x.cargos,{el:fFecha(x.actualizado),por:x.actualizadoPor})}},()=>{}));
+  unsubT.push(onSnapshot(query(collection(db,"tarifasReloncavi"),orderBy("creado","desc"),limit(1)),q=>{const d=q.docs[0];if(d){const R=d.data();try{R.items=JSON.parse(R.items)}catch(e){R.items=[]}window.TARIFAS&&TARIFAS.setRel(R,false)}},()=>{}));
   unsub=onSnapshot(collection(db,"costeos"),snap=>{
     lista=snap.docs.map(d=>({id:d.id,...d.data()}));
     lista.sort((a,b)=>((b.actualizado?.toMillis?.()??Date.now()+1)-(a.actualizado?.toMillis?.()??Date.now()+1)));
@@ -722,13 +931,18 @@ function pintarEstado(){
   $("c_save").disabled=!puedeEscribir; $("c_saveNew").disabled=!puedeEscribir||!cur;
   $("c_save").textContent=cur?"Guardar cambios":"Guardar";
 }
+function indTxt(x){let p=x;if(x.usd===undefined){try{p=JSON.parse(x.data).p||{}}catch(e){p={}}}
+  const fd=s=>{if(!s)return"";const [y,m,d]=String(s).slice(0,10).split("-");return ` (${d}-${m}-${y})`};
+  return `Dólar $ ${fN(p.usd,2)}${fd(p.usdFecha)} · UF $ ${fN(p.uf,2)}${fd(p.ufFecha)}`}
 function pintarLista(){
   const q=$("c_buscar").value.trim().toLowerCase();
   const xs=lista.filter(x=>!q||[x.nombre,x.nave,x.carga].join(" ").toLowerCase().includes(q));
   $("c_list").innerHTML=xs.length?xs.map(x=>{
     const borrar=esAdmin||(puedeEscribir&&x.creadoPorCorreo===user.email.toLowerCase());
     return `<li class="${cur&&cur.id===x.id?"on":""}"><button class="load" type="button" data-id="${x.id}">${esc(x.nombre)}</button><span class="t">${fN(x.tarifa,2)} USD/t</span>
-      <span class="m">${fN(x.ton)} t · ${esc(x.carga||"")} · ${fFecha(x.actualizado)}${borrar?`<button class="x" type="button" data-del="${x.id}">${pendDel===x.id?"¿Eliminar? Sí":"Eliminar"}</button>`:""}</span></li>`}).join("")
+      <span class="m">${fN(x.ton)} t · ${esc(x.carga||"")} · ${esc(x.sitio||"")}</span>
+      <span class="m">Creado ${fFecha(x.creado)}${x.actualizado&&x.creado&&x.actualizado.toMillis&&x.creado.toMillis&&x.actualizado.toMillis()-x.creado.toMillis()>60000?` · act. ${fFecha(x.actualizado)}`:""}</span>
+      <span class="m">${indTxt(x)}${borrar?`<button class="x" type="button" data-del="${x.id}">${pendDel===x.id?"¿Eliminar? Sí":"Eliminar"}</button>`:""}</span></li>`}).join("")
     :`<li><span>${lista.length?"Ningún costeo coincide con la búsqueda.":"Aún no hay costeos guardados. Complete los datos, póngale nombre y presione Guardar."}</span></li>`;
 }
 $("c_buscar").addEventListener("input",pintarLista);
@@ -758,6 +972,7 @@ function payload(){
   let nombre=$("c_nombre").value.trim();
   if(!nombre){nombre=[p.nave||"Sin nave",p.carga,fN(p.ton)+" t"].filter(Boolean).join(" · ");$("c_nombre").value=nombre}
   return {nombre,nave:p.nave||"",carga:p.carga||"",sitio:p.sitio||"",ton:p.ton,tarifa:r.tarifaT,costoUSD:r.costoUSD,
+    usd:p.usd,uf:p.uf,usdFecha:p.usdFecha||"",ufFecha:p.ufFecha||"",
     data:JSON.stringify(S),actualizado:serverTimestamp(),actualizadoPor:user.displayName||user.email,actualizadoPorCorreo:user.email.toLowerCase()};
 }
 async function guardar(comoNuevo){
@@ -773,6 +988,10 @@ async function guardar(comoNuevo){
     cur.nombre=d.nombre; dirty=false; guardarCur(); pintarLista(); pintarEstado(); CN.toast("Guardado: "+d.nombre);
   }catch(err){CN.toast(err.code==="permission-denied"?"No tiene permiso para guardar. Pida acceso de Usuario":"No se pudo guardar. Revise su conexión")}
 }
+CN.saveCargos=async cargos=>{if(!user||!puedeEscribir)return false;
+  try{await setDoc(doc(db,"costeoConfig","costosCargo"),{cargos,actualizado:serverTimestamp(),actualizadoPor:user.displayName||user.email,actualizadoPorCorreo:user.email.toLowerCase()});return true}catch(e){return false}};
+CN.saveRel=async R=>{if(!user||!puedeEscribir)return false;
+  try{await addDoc(collection(db,"tarifasReloncavi"),{...R,items:JSON.stringify(R.items),cargadoPor:user.displayName||user.email,creadoPorCorreo:user.email.toLowerCase(),creado:serverTimestamp()});return true}catch(e){return false}};
 CN.loaded=nombre=>{cur=null;dirty=true;$("c_nombre").value=nombre||"";guardarCur();pintarLista();pintarEstado()};
 $("c_save").onclick=()=>guardar(false);
 $("c_saveNew").onclick=()=>guardar(true);
