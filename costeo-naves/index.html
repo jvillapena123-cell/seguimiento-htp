@@ -425,6 +425,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script>
 const BASE = {
   p:{nave:"",sitio:"Norte",carga:"Chatarra",ton:25000,rate:4500,manos:2,hturno:8,tdia:3,usd:920,uf:39643.59,diesel:1440,margen:10,usdFecha:"",ufFecha:"",fuenteInd:"Planilla base"},
@@ -777,7 +778,7 @@ function armarInforme(){
   const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
   const ots=S.incOtros?S.otros.map((x,i)=>({n:x[0],c:num(x[1]),v:num(x[2]),usd:r.otros[i].usd})).filter(x=>x.c>0):[];
   $("informe").innerHTML=`
-  <div class="hd"><div><small>Huachipato Terminal Portuario · Operaciones</small><h1>Cotización de servicio de transferencia</h1></div>
+  <div class="hd"><div><img src="logo-htp.png" alt="HTP Huachipato Terminal Portuario" style="height:34px;display:block;margin-bottom:6px"><h1>Cotización de servicio de transferencia</h1></div>
     <div class="meta">Folio ${folio()}<br>Emitida el ${hoy}</div></div>
   <table><tr><th>Nave</th><td>${esc(p.nave||"—")}</td><th>Carga</th><td>${esc(p.carga)}</td></tr>
     <tr><th>Sitio</th><td>${esc(p.sitio)}</td><th>Toneladas</th><td>${fN(p.ton)} t</td></tr>
@@ -810,24 +811,128 @@ function armarInforme(){
 $("btnPdf").onclick=()=>{armarInforme();toast("En la ventana de impresión elija “Guardar como PDF”");setTimeout(()=>window.print(),50)};
 
 /* ---------- Descargar Excel ---------- */
-$("btnXls").onclick=()=>{
-  if(!window.XLSX){toast("No se pudo cargar el generador de Excel. Revise su conexión");return}
-  const r=calc(S),p=S.p,wb=XLSX.utils.book_new();
-  const res=[["Cotización de servicio de transferencia · HTP"],["Folio",folio()],["Emitida",new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"})],[],
-    ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Turnos de resguardo (personal)",r.turnosRes],["Horas totales",r.horas],[],
-    ["Servicio","Costo base USD","Resguardo","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"],...r.parts.map(x=>[x.k,+x.base.toFixed(2),x.desvTxt||"",+x.usd.toFixed(2),x.util,+x.venta.toFixed(2),Math.round(x.venta*p.usd),+(x.venta/p.ton).toFixed(4)]),
-    ["Total",+(r.costoUSD-r.desvUSD).toFixed(2),"",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Turnos de resguardo",r.turnosRes],["Motivo resguardo",(S.p.desv&&S.p.desv.nota)||""],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
-    ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
-  const T=r.turnosPers, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Resguardo","Total turnos-persona","Total CLP"];
-  const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tb,r.pers[i].extra,r.pers[i].tp,Math.round(r.pers[i].clp)])];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pers),"Personal");
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"],...S.eq.map((x,i)=>[x[0],num(x[1]),+r.eq[i].hrs.toFixed(2),num(x[3]),x[4],num(x[5]),+r.eq[i].arr.toFixed(2),+r.eq[i].pet.toFixed(2)])]),"Equipos");
-  if((S.rel||[]).length) XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Ítem","Grupo","Unidad","Tarifa CLP","Personas/equipos","Cantidad","Total CLP"],...S.rel.map((x,i)=>[x.desc,x.grupo||"",x.unidad,num(x.tarifa),num(x.mult),r.rel[i].q,Math.round(r.rel[i].clp)])]),"Reloncavi");
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[JSON.stringify(S)]]),"datos_costeo");
-  const nom=("Cotizacion_"+(p.nave||"nave")+"_"+hoyISO()).replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g,"_");
-  XLSX.writeFile(wb,nom+".xlsx");
+/* ---------- Descargar Excel: informe para gerencia (ExcelJS) ---------- */
+async function logoBase64(){
+  try{const b=await (await fetch("logo-htp.png")).blob();
+    return await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.readAsDataURL(b)});}catch(e){return null}
+}
+$("btnXls").onclick=async()=>{
+  if(!window.ExcelJS){toast("No se pudo cargar el generador de Excel. Revise su conexión");return}
+  toast("Generando informe Excel…");
+  const r=calc(S),p=S.p,emit=new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"}),fol=folio();
+  const NAVY="FF1F3A6E",ORANGE="FFE8804A",GOLD="FFE8A317",LIGHT="FFE8EDF4",RES="FFFCE4D6",GRAY="FF5B6B77",WHITE="FFFFFFFF";
+  const F_USD='"US$" #,##0',F_USD2='"US$" #,##0.00',F_CLP='"$" #,##0',F_N='#,##0',F_N2='#,##0.00',F_N3='#,##0.000',F_PCT='0.0"%"';
+  const thin={style:"thin",color:{argb:"FFC9D2DC"}};
+  const wb=new ExcelJS.Workbook();wb.creator="Costeo de Naves HTP";wb.created=new Date();
+  const logo=await logoBase64();const logoId=logo?wb.addImage({base64:logo,extension:"png"}):null;
+
+  function encabezado(ws,titulo,ultCol){
+    ws.views=[{showGridLines:false}];
+    ws.getRow(1).height=22;ws.getRow(2).height=22;ws.getRow(3).height=8;
+    if(logoId!==null) ws.addImage(logoId,{tl:{col:0.15,row:0.2},ext:{width:235,height:45}});
+    ws.mergeCells(1,4,1,ultCol);const t=ws.getCell(1,4);t.value=titulo;t.font={bold:true,size:16,color:{argb:NAVY}};t.alignment={horizontal:"right",vertical:"middle"};
+    ws.mergeCells(2,4,2,ultCol);const s=ws.getCell(2,4);s.value=`Folio ${fol} · Emitido el ${emit} · ${p.nave||"Nave sin nombre"} · ${p.carga} · Sitio ${p.sitio}`;s.font={size:10,color:{argb:GRAY}};s.alignment={horizontal:"right"};
+    for(let c=1;c<=ultCol;c++){ws.getCell(3,c).border={bottom:{style:"medium",color:{argb:NAVY}}}}
+  }
+  function seccion(ws,row,texto,ultCol){ws.mergeCells(row,1,row,ultCol);const c=ws.getCell(row,1);c.value=texto.toUpperCase();
+    c.font={bold:true,size:11,color:{argb:NAVY}};c.border={bottom:{style:"thin",color:{argb:NAVY}}};ws.getRow(row).height=20;return row+1}
+  function cabecera(ws,row,cols){cols.forEach((h,i)=>{const c=ws.getCell(row,i+1);c.value=h;c.font={bold:true,size:9,color:{argb:WHITE}};
+    c.fill={type:"pattern",pattern:"solid",fgColor:{argb:NAVY}};c.alignment={horizontal:i?"center":"left",vertical:"middle",wrapText:true};c.border={top:thin,bottom:thin,left:thin,right:thin}});ws.getRow(row).height=28;return row+1}
+  function fila(ws,row,vals,fmts,opt={}){vals.forEach((v,i)=>{const c=ws.getCell(row,i+1);c.value=v;if(fmts&&fmts[i])c.numFmt=fmts[i];
+    c.border={bottom:thin,left:thin,right:thin,top:thin};c.font={size:10,bold:!!opt.bold,color:{argb:opt.color||"FF14212B"}};
+    if(opt.fill)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:opt.fill}};if(i)c.alignment={horizontal:"right"}});return row+1}
+
+  /* Hoja 1: Informe */
+  const ws=wb.addWorksheet("Informe",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.4,right:.4,top:.5,bottom:.5,header:.2,footer:.2}}});
+  ws.columns=[{width:30},{width:16},{width:14},{width:16},{width:12},{width:16},{width:18},{width:12}];
+  encabezado(ws,"Cotización de servicio de transferencia",8);
+  let row=5; row=seccion(ws,row,"Datos de la faena",8);
+  const datos=[["Nave",p.nave||"—","Carga",p.carga],["Sitio",p.sitio,"Toneladas",p.ton],["Rate (t/día)",p.rate,"Rate por turno (t)",Math.round(r.ratePorTurno)],
+    ["N° de manos",p.manos,"Días de operación",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2),"Turnos de operación",r.turnos],
+    ["Horas de operación",r.horas,"Turnos de resguardo (personal)",r.turnosRes]];
+  datos.forEach(d=>{[[1,d[0]],[2,d[1]],[4,d[2]],[6,d[3]]].forEach(([c,v],k)=>{const cl=ws.getCell(row,c);cl.value=v;
+      cl.font=k%2?{size:10,bold:true}:{size:9,color:{argb:GRAY}};if(typeof v==="number")cl.numFmt=Number.isInteger(v)?F_N:F_N2;cl.alignment={horizontal:k%2?"left":"left"}});
+    ws.mergeCells(row,2,row,3);ws.mergeCells(row,4,row,5);ws.mergeCells(row,6,row,8);
+    for(let c=1;c<=8;c++)ws.getCell(row,c).border={bottom:thin};row++});
+  row++;
+  // KPIs
+  const kpis=[["Costo total",r.costoUSD,F_USD],["Costo USD/t",r.costoT,F_N3],["Utilidad promedio",r.utilProm,F_PCT],["Tarifa cotizada USD/t",r.tarifaT,F_N2]];
+  kpis.forEach((k,i)=>{const c0=1+i*2;ws.mergeCells(row,c0,row,c0+1);ws.mergeCells(row+1,c0,row+1,c0+1);
+    const a=ws.getCell(row,c0),b=ws.getCell(row+1,c0);a.value=k[0].toUpperCase();b.value=k[1];b.numFmt=k[2];
+    const last=i===3;a.font={size:8,bold:true,color:{argb:last?NAVY:GRAY}};b.font={size:16,bold:true,color:{argb:NAVY}};
+    [a,b].forEach(x=>{x.alignment={horizontal:"center",vertical:"middle"};x.fill={type:"pattern",pattern:"solid",fgColor:{argb:last?GOLD:LIGHT}}})});
+  ws.getRow(row+1).height=28;row+=3;
+  row=seccion(ws,row,"Resumen por servicio",8);
+  row=cabecera(ws,row,["Servicio","Costo base USD","Resguardo","Costo USD","Utilidad %","Venta USD","Venta CLP","USD/t venta"]);
+  r.parts.filter(x=>x.usd>0||x.base>0).forEach(x=>{row=fila(ws,row,[x.k,x.base,x.desvTxt||"—",x.usd,x.util,x.venta,Math.round(x.venta*p.usd),x.venta/p.ton],[null,F_USD,null,F_USD,F_PCT,F_USD,F_CLP,F_N3])});
+  row=fila(ws,row,["Total",r.costoUSD-r.desvUSD,r.desvUSD?r.desvUSD:"—",r.costoUSD,r.utilProm,r.ventaUSD,Math.round(r.ventaUSD*p.usd),r.tarifaT],[null,F_USD,F_USD,F_USD,F_PCT,F_USD,F_CLP,F_N3],{bold:true,fill:LIGHT});
+  row++;
+  row=seccion(ws,row,"Valores de referencia",8);
+  [["Dólar observado (CLP)",p.usd,"del día "+fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día "+fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||"—",""]].forEach(v=>{
+    ws.getCell(row,1).value=v[0];ws.getCell(row,1).font={size:10,color:{argb:GRAY}};
+    const c=ws.getCell(row,2);c.value=v[1];c.font={bold:true,size:10};if(typeof v[1]==="number")c.numFmt=F_N2;c.alignment={horizontal:"left"};
+    if(v[2]){ws.mergeCells(row,3,row,8);ws.getCell(row,3).value=v[2];ws.getCell(row,3).font={size:10,bold:true}}else ws.mergeCells(row,2,row,8);row++});
+  if(r.turnosRes||r.desvEq){ws.mergeCells(row,1,row,8);const c=ws.getCell(row,1);
+    c.value=`Resguardo: ${r.turnosRes} turno(s) adicional(es) de personal sobre ${r.turnosCalc} turnos de operación${r.desvEq?`; equipos +${fN(r.desvEq,1)}% en costo`:""}.${S.p.desv&&S.p.desv.nota?" Motivo: "+S.p.desv.nota:""}`;
+    c.font={size:10,italic:true};c.alignment={wrapText:true};ws.getRow(row).height=30;row++}
+  row++;ws.mergeCells(row,1,row,8);const pie=ws.getCell(row,1);pie.value=`Valores en USD calculados al dólar indicado. Turnos pagados completos de ${p.hturno} h. Cotización referencial sujeta a confirmación de programación de la nave.`;pie.font={size:8,color:{argb:GRAY}};pie.alignment={wrapText:true};ws.getRow(row).height=24;
+
+  /* Hoja 2: Dotación por día y turno */
+  const T=r.turnosPers, td=Math.max(1,p.tdia|0), C0=3, cTP=C0+T, last=cTP+3;
+  const wd=wb.addWorksheet("Dotación por turno",{pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.3,right:.3,top:.5,bottom:.5,header:.2,footer:.2}},views:[{state:"frozen",xSplit:2,ySplit:7,showGridLines:false}]});
+  wd.getColumn(1).width=22;wd.getColumn(2).width=12;for(let k=0;k<T;k++)wd.getColumn(C0+k).width=5.5;
+  [cTP,cTP+1,cTP+2].forEach(c=>wd.getColumn(c).width=11);wd.getColumn(last).width=15;
+  encabezado(wd,"Dotación de personal por día y turno",Math.max(last,8));
+  wd.views=[{state:"frozen",xSplit:2,ySplit:7,showGridLines:false}];
+  wd.mergeCells(4,1,4,last);const nt=wd.getCell(4,1);
+  nt.value=`${fN(p.ton)} t ÷ ${fN(p.rate)} t/día = ${fN(r.dias,2)} días · ${fN(r.turnosExact,2)} turnos calculados → ${r.turnosCalc} turnos de operación${r.turnosRes?` + ${r.turnosRes} de resguardo = ${T} turnos pagados al personal`:""} · ${p.hturno} h por turno`;
+  nt.font={size:10,color:{argb:GRAY}};
+  // cabeceras de día y turno (filas 6 y 7)
+  const hcell=(rr,c,v,fill,color=WHITE)=>{const x=wd.getCell(rr,c);x.value=v;x.font={bold:true,size:9,color:{argb:color}};x.fill={type:"pattern",pattern:"solid",fgColor:{argb:fill}};x.alignment={horizontal:"center",vertical:"middle",wrapText:true};x.border={top:thin,bottom:thin,left:thin,right:thin}};
+  wd.mergeCells(6,1,7,1);hcell(6,1,"Cargo",NAVY);wd.mergeCells(6,2,7,2);hcell(6,2,"CLP / turno",NAVY);
+  for(let d=0;d*td<T;d++){const a=C0+d*td,b=Math.min(C0+T-1,a+td-1);if(b>a)wd.mergeCells(6,a,6,b);hcell(6,a,"Día "+(d+1),d%2?"FF14212B":NAVY)}
+  for(let k=0;k<T;k++){const rg=k>=r.turnosCalc;hcell(7,C0+k,rg?`T${k+1}\nresg.`:`T${k+1}`,rg?ORANGE:"FF3D5F8F")}
+  [["Turnos-persona",cTP],["Resguardo",cTP+1],["Total turnos-persona",cTP+2],["Total CLP",last]].forEach(([h,c])=>{wd.mergeCells(6,c,7,c);hcell(6,c,h,NAVY)});
+  wd.getRow(6).height=18;wd.getRow(7).height=26;
+  let rr=8;const colTot=new Array(T).fill(0);
+  S.pers.forEach((x,i)=>{const pr=r.pers[i];if(pr.tp===0&&num(x[2])===0&&num(x[3])===0)return;
+    const cells=[x[0],num(x[1])];wd.getCell(rr,1).value=x[0];const v=wd.getCell(rr,2);v.value=num(x[1]);v.numFmt=F_CLP;
+    for(let k=0;k<T;k++){const n=dot(x[2],x[3],x[4],k);colTot[k]+=n;const c=wd.getCell(rr,C0+k);c.value=n;c.alignment={horizontal:"center"};
+      if(k>=r.turnosCalc)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:RES}};else if(Math.floor(k/td)%2)c.fill={type:"pattern",pattern:"solid",fgColor:{argb:LIGHT}};
+      if(x[4]&&x[4][k]!==undefined)c.font={bold:true,color:{argb:"FFB5530F"}}}
+    [[cTP,pr.tb,F_N],[cTP+1,pr.extra||0,F_N],[cTP+2,pr.tp,F_N],[last,Math.round(pr.clp),F_CLP]].forEach(([c,val,f])=>{const q=wd.getCell(rr,c);q.value=val;q.numFmt=f;q.alignment={horizontal:"right"}});
+    for(let c=1;c<=last;c++){const q=wd.getCell(rr,c);q.border={top:thin,bottom:thin,left:thin,right:thin};if(!q.font||!q.font.bold)q.font={size:10}}
+    rr++});
+  wd.getCell(rr,1).value="Total personas por turno";
+  for(let k=0;k<T;k++){const c=wd.getCell(rr,C0+k);c.value=colTot[k];c.alignment={horizontal:"center"}}
+  const sum=f=>r.pers.reduce((a,x)=>a+x[f],0);
+  [[cTP,sum("tb"),F_N],[cTP+1,sum("extra"),F_N],[cTP+2,sum("tp"),F_N],[last,Math.round(r.persCLP),F_CLP]].forEach(([c,val,f])=>{const q=wd.getCell(rr,c);q.value=val;q.numFmt=f;q.alignment={horizontal:"right"}});
+  for(let c=1;c<=last;c++){const q=wd.getCell(rr,c);q.font={bold:true,size:10,color:{argb:WHITE}};q.fill={type:"pattern",pattern:"solid",fgColor:{argb:NAVY}};q.border={top:thin,bottom:thin,left:thin,right:thin}}
+  rr+=2;wd.getCell(rr,1).value="Celdas naranjas: turnos de resguardo. Números en negrita: dotación ajustada a mano en ese turno.";wd.getCell(rr,1).font={size:9,italic:true,color:{argb:GRAY}};
+
+  /* Hoja 3: Equipos y servicios */
+  const we=wb.addWorksheet("Equipos y servicios",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  we.columns=[{width:32},{width:12},{width:12},{width:14},{width:10},{width:10},{width:16},{width:16}];
+  encabezado(we,"Equipos y servicios",8);row=5;
+  row=seccion(we,row,"Equipos",8);row=cabecera(we,row,["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"]);
+  S.eq.forEach((x,i)=>{if(!num(x[1]))return;row=fila(we,row,[x[0],num(x[1]),r.eq[i].hrs,num(x[3]),x[4]+"/h",num(x[5]),r.eq[i].arr,r.eq[i].pet],[null,F_N,F_N2,F_N3,null,F_N2,F_USD,F_USD])});
+  row=fila(we,row,["Total equipos","","","","","",r.eqArr,r.eqPet],[null,null,null,null,null,null,F_USD,F_USD],{bold:true,fill:LIGHT});row++;
+  if((S.rel||[]).length){row=seccion(we,row,"Servicios contrato Reloncaví",8);row=cabecera(we,row,["Ítem","Unidad","Tarifa CLP","Pers./equipos","Cantidad","","Total CLP","USD"]);
+    S.rel.forEach((x,i)=>{row=fila(we,row,[x.desc+(x.grupo?" · "+x.grupo:""),x.unidad,num(x.tarifa),num(x.mult),r.rel[i].q,"",Math.round(r.rel[i].clp),r.rel[i].usd],[null,null,F_CLP,F_N,F_N,null,F_CLP,F_USD])});row++}
+  const ots=S.otros.filter(x=>num(x[1])>0);
+  if(ots.length){row=seccion(we,row,"Otros servicios"+(S.incOtros?"":" (no incluidos en el total)"),8);row=cabecera(we,row,["Servicio","N°","CLP / servicio","Total CLP","","","","USD"]);
+    S.otros.forEach((x,i)=>{if(!num(x[1]))return;row=fila(we,row,[x[0],num(x[1]),num(x[2]),r.otros[i].clp,"","","",r.otros[i].usd],[null,F_N,F_CLP,F_CLP,null,null,null,F_USD])})}
+
+  /* Hoja oculta con los datos para volver a cargar el costeo */
+  const wh=wb.addWorksheet("datos_costeo",{state:"veryHidden"});wh.getCell("A1").value=JSON.stringify(S);
+
+  const buf=await wb.xlsx.writeBuffer();
+  const nom=("Cotizacion_"+(p.nave||"nave")+"_"+hoyISO()).replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g,"_")+".xlsx";
+  const url=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+  const a=document.createElement("a");a.href=url;a.download=nom;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+  toast("Informe Excel descargado");
 };
+
 
 
 
