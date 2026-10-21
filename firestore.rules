@@ -194,6 +194,16 @@ service cloud.firestore {
             && exists(/databases/$(database)/documents/evidencias/$(request.resource.data.cierre.archivo.evidId)));
     }
 
+    // Costeo de naves (página /costeo-naves): costeos guardados por nave.
+    // Los ven Lector/Usuario/Administrador; los crean y editan Usuario/Administrador;
+    // los elimina quien los creó o el administrador.
+    match /costeos/{id} {
+      allow read:   if canRead();
+      allow create: if canWrite() && request.resource.data.creadoPorCorreo == email();
+      allow update: if canWrite() && request.resource.data.creadoPorCorreo == resource.data.creadoPorCorreo;
+      allow delete: if isAdmin() || (canWrite() && resource.data.creadoPorCorreo == email());
+    }
+
     // Archivos de evidencia (guardados dentro de Firestore)
     match /evidencias/{id} {
       allow read:   if canRead() || isJefe();

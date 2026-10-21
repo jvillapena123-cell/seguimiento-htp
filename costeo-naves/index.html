@@ -87,6 +87,22 @@ button.x:hover{color:var(--warn)}
 .legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--c)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .toast{font-size:12px;color:var(--good);min-height:16px;margin-top:6px}
+.cloud{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--signal);margin-top:12px;padding:12px 16px}
+.cloud h3{margin:0 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.lf{display:flex;flex-direction:column;gap:8px}
+button.link{border:none;background:none;color:var(--steel);padding:2px 0;text-align:left;font-size:13px}
+.cstate{font-size:12px;color:var(--muted);margin:6px 0 0}
+.cstate b{color:var(--ink);font-weight:600}
+.cstate .dirty{color:var(--warn);font-weight:600}
+#c_buscar{margin-top:12px}
+.clist{list-style:none;margin:8px 0 0;padding:0;max-height:420px;overflow-y:auto}
+.clist li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.clist li.on{background:var(--steel-soft)}
+.clist .load{border:none;background:none;padding:0;text-align:left;color:var(--steel);font-weight:600;cursor:pointer}
+.clist .t{font-family:var(--f-num);text-align:right}
+.clist .m{grid-column:1/-1;font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.clist .m .x{margin-left:auto;font-size:12px;padding:0 4px}
+.who{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
 .saved{margin-top:12px}
 .saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .saved ul{list-style:none;margin:0;padding:0}
@@ -105,9 +121,7 @@ button.x:hover{color:var(--warn)}
       <small>Huachipato Terminal Portuario · Operaciones</small>
       <h1>Costeo de Naves<span>HTP</span></h1>
     </div>
-    <div class="scen">
-      <button id="btnReset" type="button">Restablecer modelo base</button>
-    </div>
+    <div class="scen" id="who"></div>
   </header>
 
   <div class="grid">
@@ -198,14 +212,33 @@ button.x:hover{color:var(--warn)}
         <div class="bar" id="r_bar"></div>
         <div class="legend" id="r_leg"></div>
         <div class="actions">
-          <button class="pri" id="btnCopy" type="button">Copiar resumen</button>
-          <button id="btnSave" type="button">Guardar escenario</button>
+          <button id="btnCopy" type="button">Copiar resumen</button>
+        </div>
+      </div>
+
+      <div class="cloud">
+        <h3>Costeos guardados</h3>
+        <div id="c_login">
+          <p class="note">Ingrese con el mismo correo y contraseña de Seguimiento HTP para guardar y revisar costeos.</p>
+          <form id="f_login" class="lf">
+            <label class="f">Correo<input id="l_email" type="email" autocomplete="username" required></label>
+            <label class="f">Contraseña<input id="l_pass" type="password" autocomplete="current-password" required></label>
+            <button class="pri" type="submit">Ingresar</button>
+            <button class="link" id="l_forgot" type="button">Olvidé mi contraseña</button>
+          </form>
+        </div>
+        <div id="c_app" hidden>
+          <label class="f">Nombre del costeo<input id="c_nombre" type="text" placeholder="Ej: MV Ocean Star · chatarra · oct-2026"></label>
+          <div class="cstate" id="c_state"></div>
+          <div class="actions">
+            <button class="pri" id="c_save" type="button">Guardar</button>
+            <button id="c_saveNew" type="button">Guardar como nuevo</button>
+            <button id="c_new" type="button">Nuevo costeo</button>
+          </div>
+          <input id="c_buscar" type="search" placeholder="Buscar por nombre, nave o carga" aria-label="Buscar costeos">
+          <ul class="clist" id="c_list"></ul>
         </div>
         <div class="toast" id="toast" role="status"></div>
-        <div class="saved" id="savedBox" hidden>
-          <h3>Escenarios guardados en este navegador</h3>
-          <ul id="savedList"></ul>
-        </div>
       </div>
     </aside>
   </div>
@@ -348,14 +381,21 @@ document.addEventListener("input",e=>{
   else if(el.id==="inc_otros") S.incOtros=el.checked;
   else if(el.id==="inc_porteo") S.incPorteo=el.checked;
   render(); persist();
+  if(window.CN&&CN.onChange&&!el.closest(".cloud")) CN.onChange();
 });
 document.addEventListener("change",e=>{if(e.target.tagName==="SELECT"||e.target.type==="checkbox") e.target.dispatchEvent(new Event("input",{bubbles:true}))});
 document.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.add){const t=b.dataset.add;S[t].push(t==="pers"?["Nuevo cargo",0,0,0]:t==="otros"?["Nuevo servicio",0,0]:["Nuevo equipo",0,"",0,"USD",0]);buildTables();render();persist();}
   if(b.dataset.del){S[b.dataset.del].splice(+b.dataset.i,1);buildTables();render();persist();}
+  if((b.dataset.add||b.dataset.del)&&window.CN&&CN.onChange) CN.onChange();
 });
-$("btnReset").onclick=()=>{S=clone(BASE);fillParams();buildTables();render();persist();toast("Modelo base restablecido")};
+/* puente para el guardado en línea (script de módulo más abajo) */
+window.CN={
+  get:()=>clone(S), calc:()=>calc(S),
+  set:d=>{S=Object.assign(clone(BASE),clone(d));fillParams();buildTables();render();persist();},
+  base:()=>clone(BASE), onChange:null, toast:m=>toast(m)
+};
 $("btnCopy").onclick=()=>{
   const r=calc(S),p=S.p;
   const txt=[`Costeo ${p.nave||"nave"} · ${p.carga} · Sitio ${p.sitio}`,`${fN(p.ton)} t a ${fN(p.rate)} t/día · ${fN(r.dias,2)} días · ${r.turnos} turnos`,
@@ -369,26 +409,131 @@ function toast(m){$("toast").textContent=m;clearTimeout(toast.t);toast.t=setTime
 function store(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
 function putStore(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
 function persist(){const o=store();o.draft=S;putStore(o)}
-function listSaved(){
-  const o=store(), list=o.saved||[];
-  $("savedBox").hidden=!list.length;
-  $("savedList").innerHTML=list.map((x,i)=>`<li><button class="load" type="button" data-load="${i}">${esc(x.name)}</button><span>${fN(x.tarifa,2)} USD/t</span><button class="x" type="button" data-rm="${i}" aria-label="Eliminar">×</button></li>`).join("");
-}
-$("btnSave").onclick=()=>{
-  const r=calc(S),o=store();o.saved=o.saved||[];
-  const name=`${S.p.nave||"Sin nombre"} · ${S.p.carga} · ${fN(S.p.ton)} t`;
-  o.saved.unshift({name,tarifa:r.tarifaT,data:clone(S)});o.saved=o.saved.slice(0,20);putStore(o);listSaved();toast("Escenario guardado");
-};
-$("savedList").addEventListener("click",e=>{
-  const b=e.target.closest("button");if(!b)return;const o=store();
-  if(b.dataset.load!==undefined){S=clone(o.saved[+b.dataset.load].data);fillParams();buildTables();render();persist();toast("Escenario cargado");}
-  if(b.dataset.rm!==undefined){
-    const li=b.parentElement;
-    if(!li.querySelector(".confirm")){const c=document.createElement("span");c.className="confirm";c.innerHTML=`¿Eliminar? <button type="button" data-yes="${b.dataset.rm}">Sí</button>`;li.appendChild(c);return;}
-  }
-  if(b.dataset.yes!==undefined){o.saved.splice(+b.dataset.yes,1);putStore(o);listSaved();}
+(function init(){const d=store().draft;if(d&&d.p&&d.pers)S=Object.assign(clone(BASE),d);fillParams();buildTables();render();})();
+</script>
+
+<script type="module">
+/* Guardado en línea: colección "costeos" del mismo Firebase de Seguimiento HTP */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig, ADMIN_EMAILS } from "../firebase-config.js";
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fN=(n,d=0)=>(+n||0).toLocaleString("es-CL",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fFecha=t=>{const d=t&&t.toDate?t.toDate():null;return d?d.toLocaleDateString("es-CL",{day:"2-digit",month:"2-digit",year:"2-digit"})+" "+d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}):"guardando…"};
+const CURKEY="costeo-naves-htp-actual";
+
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+auth.languageCode="es";
+let user=null, puedeEscribir=false, esAdmin=false, lista=[], cur=null, dirty=false, unsub=null, pendLoad=null, pendDel=null;
+try{cur=JSON.parse(localStorage.getItem(CURKEY))||null}catch(e){}
+try{dirty=!!(cur&&cur.dirty)}catch(e){}
+const guardarCur=()=>{try{localStorage.setItem(CURKEY,JSON.stringify(cur?{...cur,dirty}:null))}catch(e){}};
+
+CN.onChange=()=>{if(!dirty){dirty=true;guardarCur();pintarEstado()}};
+$("c_nombre").addEventListener("input",()=>{if(cur){dirty=true;guardarCur()}pintarEstado()});
+
+$("f_login").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{await signInWithEmailAndPassword(auth,$("l_email").value.trim(),$("l_pass").value)}
+  catch(err){CN.toast(err.code==="auth/too-many-requests"?"Demasiados intentos. Espere unos minutos":"Correo o contraseña incorrectos")}
 });
-(function init(){const d=store().draft;if(d&&d.p&&d.pers)S=Object.assign(clone(BASE),d);fillParams();buildTables();render();listSaved();})();
+$("l_forgot").onclick=async()=>{
+  const em=$("l_email").value.trim(); if(!em){CN.toast("Escriba su correo primero");return}
+  try{await sendPasswordResetEmail(auth,em);CN.toast("Enviamos un enlace a "+em)}catch(e){CN.toast("No se pudo enviar el enlace")}
+};
+
+onAuthStateChanged(auth,async u=>{
+  user=u; if(unsub){unsub();unsub=null} lista=[];
+  if(!u){$("c_login").hidden=false;$("c_app").hidden=true;$("who").innerHTML="";return}
+  const em=u.email.toLowerCase();
+  let acc=null; try{const a=await getDoc(doc(db,"accesos",em)); if(a.exists()) acc=a.data()}catch(e){}
+  const boot=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(em);
+  const activo=acc&&acc.activo!==false;
+  esAdmin=boot||(activo&&acc.acceso==="Administrador");
+  puedeEscribir=esAdmin||(activo&&acc.acceso==="Usuario");
+  const puedeLeer=puedeEscribir||(activo&&acc.acceso==="Lector");
+  $("who").innerHTML=`<span class="who">${esc(u.email)} <button type="button" id="b_out">Salir</button></span>`;
+  $("b_out").onclick=()=>signOut(auth);
+  $("c_login").hidden=true;$("c_app").hidden=false;
+  if(!puedeLeer){$("c_list").innerHTML=`<li><span>Su correo no tiene acceso. Pida al administrador de Seguimiento HTP que lo agregue como Usuario.</span></li>`;pintarEstado();return}
+  unsub=onSnapshot(collection(db,"costeos"),snap=>{
+    lista=snap.docs.map(d=>({id:d.id,...d.data()}));
+    lista.sort((a,b)=>((b.actualizado?.toMillis?.()??Date.now()+1)-(a.actualizado?.toMillis?.()??Date.now()+1)));
+    if(cur&&!lista.find(x=>x.id===cur.id)&&!snap.metadata.hasPendingWrites){cur=null;dirty=false;guardarCur()}
+    pintarLista();pintarEstado();
+  },err=>{$("c_list").innerHTML=`<li><span>No se pudieron leer los costeos (${esc(err.code)}).</span></li>`});
+  pintarEstado();
+});
+
+function pintarEstado(){
+  const c=cur&&lista.find(x=>x.id===cur.id);
+  $("c_state").innerHTML=!cur?`<b>Costeo nuevo</b> · aún no guardado`
+    :`Editando <b>${esc(cur.nombre)}</b>${c?` · guardado ${fFecha(c.actualizado)} por ${esc(c.actualizadoPor||c.actualizadoPorCorreo||"")}`:""}${dirty?` · <span class="dirty">cambios sin guardar</span>`:""}`;
+  $("c_save").disabled=!puedeEscribir; $("c_saveNew").disabled=!puedeEscribir||!cur;
+  $("c_save").textContent=cur?"Guardar cambios":"Guardar";
+}
+function pintarLista(){
+  const q=$("c_buscar").value.trim().toLowerCase();
+  const xs=lista.filter(x=>!q||[x.nombre,x.nave,x.carga].join(" ").toLowerCase().includes(q));
+  $("c_list").innerHTML=xs.length?xs.map(x=>{
+    const borrar=esAdmin||(puedeEscribir&&x.creadoPorCorreo===user.email.toLowerCase());
+    return `<li class="${cur&&cur.id===x.id?"on":""}"><button class="load" type="button" data-id="${x.id}">${esc(x.nombre)}</button><span class="t">${fN(x.tarifa,2)} USD/t</span>
+      <span class="m">${fN(x.ton)} t · ${esc(x.carga||"")} · ${fFecha(x.actualizado)}${borrar?`<button class="x" type="button" data-del="${x.id}">${pendDel===x.id?"¿Eliminar? Sí":"Eliminar"}</button>`:""}</span></li>`}).join("")
+    :`<li><span>${lista.length?"Ningún costeo coincide con la búsqueda.":"Aún no hay costeos guardados. Complete los datos, póngale nombre y presione Guardar."}</span></li>`;
+}
+$("c_buscar").addEventListener("input",pintarLista);
+
+$("c_list").addEventListener("click",async e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.id){
+    const id=b.dataset.id;
+    if(dirty&&pendLoad!==id){pendLoad=id;CN.toast("Hay cambios sin guardar. Haga clic de nuevo para abrir igual");return}
+    pendLoad=null;
+    const x=lista.find(y=>y.id===id); if(!x) return;
+    try{CN.set(JSON.parse(x.data))}catch(err){CN.toast("Ese costeo no se pudo abrir");return}
+    cur={id:x.id,nombre:x.nombre}; dirty=false; $("c_nombre").value=x.nombre; guardarCur(); pintarLista(); pintarEstado();
+    CN.toast("Costeo abierto: "+x.nombre); window.scrollTo({top:0,behavior:"smooth"});
+  }
+  if(b.dataset.del){
+    const id=b.dataset.del;
+    if(pendDel!==id){pendDel=id;pintarLista();return}
+    pendDel=null;
+    try{await deleteDoc(doc(db,"costeos",id)); if(cur&&cur.id===id){cur=null;dirty=false;guardarCur()} CN.toast("Costeo eliminado")}
+    catch(err){CN.toast("No tiene permiso para eliminar ese costeo")}
+  }
+});
+
+function payload(){
+  const S=CN.get(), r=CN.calc(), p=S.p;
+  let nombre=$("c_nombre").value.trim();
+  if(!nombre){nombre=[p.nave||"Sin nave",p.carga,fN(p.ton)+" t"].filter(Boolean).join(" · ");$("c_nombre").value=nombre}
+  return {nombre,nave:p.nave||"",carga:p.carga||"",sitio:p.sitio||"",ton:p.ton,tarifa:r.tarifaT,costoUSD:r.costoUSD,
+    data:JSON.stringify(S),actualizado:serverTimestamp(),actualizadoPor:user.displayName||user.email,actualizadoPorCorreo:user.email.toLowerCase()};
+}
+async function guardar(comoNuevo){
+  if(!user||!puedeEscribir){CN.toast("Su acceso es solo de lectura");return}
+  const d=payload();
+  try{
+    if(cur&&!comoNuevo){await updateDoc(doc(db,"costeos",cur.id),d)}
+    else{
+      if(comoNuevo&&cur&&d.nombre===cur.nombre){d.nombre+=" (copia)";$("c_nombre").value=d.nombre}
+      const ref=await addDoc(collection(db,"costeos"),{...d,creado:serverTimestamp(),creadoPor:d.actualizadoPor,creadoPorCorreo:d.actualizadoPorCorreo});
+      cur={id:ref.id};
+    }
+    cur.nombre=d.nombre; dirty=false; guardarCur(); pintarLista(); pintarEstado(); CN.toast("Guardado: "+d.nombre);
+  }catch(err){CN.toast(err.code==="permission-denied"?"No tiene permiso para guardar. Pida acceso de Usuario":"No se pudo guardar. Revise su conexión")}
+}
+$("c_save").onclick=()=>guardar(false);
+$("c_saveNew").onclick=()=>guardar(true);
+$("c_new").onclick=()=>{
+  if(dirty&&pendLoad!=="__new"){pendLoad="__new";CN.toast("Hay cambios sin guardar. Presione de nuevo para empezar uno nuevo");return}
+  pendLoad=null; CN.set(CN.base()); cur=null; dirty=false; $("c_nombre").value=""; guardarCur(); pintarLista(); pintarEstado(); CN.toast("Costeo nuevo con el modelo base");
+};
+if(cur) $("c_nombre").value=cur.nombre||"";
+pintarEstado();
 </script>
 
 </body>
