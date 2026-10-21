@@ -161,6 +161,8 @@ tfoot td.stk{background:var(--panel)}
 }
 dialog#dlgDesv{width:min(560px,calc(100vw - 32px));padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 dialog#dlgDesv::backdrop{background:rgba(10,20,28,.55)}
+.turnos .dvt b{color:var(--warn)}
+td.dvc{color:var(--warn);font-weight:600}
 .dv-chip{display:inline-block;margin-left:6px;background:var(--warn);color:var(--panel);font-size:11px;font-weight:600;padding:1px 6px}
 #btnDesv.on{border-color:var(--warn);color:var(--warn);font-weight:600}
 dialog#dlgTar{width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
@@ -354,10 +356,10 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
 <dialog id="dlgDesv" class="dlg" aria-labelledby="dlgDesvT">
   <div class="dlg-h"><h2 id="dlgDesvT">Porcentaje de desviación</h2><button type="button" class="x" id="desvClose" aria-label="Cerrar">×</button></div>
   <div class="dlg-b">
-    <p class="note">Se suma al costo antes de aplicar la utilidad, como resguardo por imprevistos (más dotación, horas extra, demoras de equipos).</p>
+    <p class="note">Personal: aumenta la cantidad de turnos-persona de cada cargo en ese porcentaje, redondeado hacia arriba a personas enteras. Equipos: aumenta su costo. Ambos se aplican antes de la utilidad.</p>
     <div class="params">
-      <label class="f">Desviación personal %<input id="dv_pers" type="number" min="0" step="0.5"></label>
-      <label class="f">Desviación equipos %<input id="dv_eq" type="number" min="0" step="0.5"></label>
+      <label class="f">Desviación personal % (cantidad de personas)<input id="dv_pers" type="number" min="0" step="0.5"></label>
+      <label class="f">Desviación equipos % (costo)<input id="dv_eq" type="number" min="0" step="0.5"></label>
     </div>
     <label class="f" style="margin-top:12px">Motivo u observación<input id="dv_nota" type="text" placeholder="Ej: historial de demoras en descarga de chatarra"></label>
     <div class="derived" id="dv_prev"></div>
@@ -450,8 +452,12 @@ function calc(S){
   r.turnos=Math.ceil(r.turnosExact-1e-6);  // cualquier fracción sube al turno siguiente (9,1 → 10)
   r.horasExact=r.turnosExact*p.hturno;
   r.horas=r.turnos*p.hturno;              // horas de turnos completos
-  r.pers=S.pers.map(([n,v,d1,dn,ov])=>{let tp=0;for(let k=0;k<r.turnos;k++)tp+=dot(d1,dn,ov,k);return{tp,clp:tp*num(v)}});
+  const dPers=num((p.desv||{}).pers);
+  r.pers=S.pers.map(([n,v,d1,dn,ov])=>{let tb=0;for(let k=0;k<r.turnos;k++)tb+=dot(d1,dn,ov,k);
+    const tp=dPers>0&&tb>0?Math.ceil(tb*(1+dPers/100)-1e-9):tb;   // desviación: más personas, en turnos-persona enteros
+    return{tb,extra:tp-tb,tp,clp:tp*num(v),clpBase:tb*num(v)}});
   r.persCLP=r.pers.reduce((a,x)=>a+x.clp,0);
+  r.persBaseCLP=r.pers.reduce((a,x)=>a+x.clpBase,0);
   r.persUSD=r.persCLP/p.usd;
   r.otros=S.otros.map(([n,c,v])=>{const clp=num(c)*num(v);return{clp,usd:clp/p.usd}});
   r.otrosUSD=r.otros.reduce((a,x)=>a+x.usd,0);
@@ -483,7 +489,8 @@ function calc(S){
     {id:"port",k:"Porteo",usd:S.incPorteo?r.portUSD:0,c:"var(--good)"}
   ];
   const dv=p.desv||{};r.desvPers=num(dv.pers);r.desvEq=num(dv.eq);
-  r.parts.forEach(x=>{x.base=x.usd;x.desv=x.id==="pers"?r.desvPers:(x.id==="eqArr"||x.id==="eqPet")?r.desvEq:0;x.usd=x.base*(1+x.desv/100);x.desvUSD=x.usd-x.base});
+  r.parts.forEach(x=>{if(x.id==="pers"){x.desv=r.desvPers;x.base=S.incPers===false?0:r.persBaseCLP/p.usd;x.desvUSD=x.usd-x.base;return}
+    x.base=x.usd;x.desv=(x.id==="eqArr"||x.id==="eqPet")?r.desvEq:0;x.usd=x.base*(1+x.desv/100);x.desvUSD=x.usd-x.base});
   r.desvUSD=r.parts.reduce((a,x)=>a+x.desvUSD,0);
   r.parts.forEach(x=>{x.util=util(p,x.id);x.venta=x.usd*(1+x.util/100);x.utilUSD=x.venta-x.usd});
   r.costoUSD=r.parts.reduce((a,x)=>a+x.usd,0);
@@ -503,7 +510,7 @@ function buildTables(){
   const dias=Math.ceil(T/td);
   let h1=`<tr><th rowspan="2" class="stk">Cargo</th><th rowspan="2" class="n">CLP / turno</th><th colspan="2" class="n grp">Dotación base</th>`;
   for(let d=0;d<dias;d++){const c=Math.min(td,T-d*td);h1+=`<th colspan="${c}" class="day${d%2?" alt":""}">Día ${d+1}</th>`}
-  h1+=`<th rowspan="2" class="n">Turnos-persona</th><th rowspan="2" class="n">Total CLP</th><th rowspan="2"></th></tr><tr><th class="n">Base T1</th><th class="n">Base sig.</th>`;
+  h1+=`<th rowspan="2" class="n">Turnos-persona</th><th rowspan="2" class="n">Desviación</th><th rowspan="2" class="n">Total CLP</th><th rowspan="2"></th></tr><tr><th class="n">Base T1</th><th class="n">Base sig.</th>`;
   for(let k=0;k<T;k++)h1+=`<th class="n tk${Math.floor(k/td)%2?" alt":""}">T${k+1}</th>`;
   $("h_pers").innerHTML=h1+"</tr>";
   $("t_pers").innerHTML=S.pers.map((x,i)=>{
@@ -513,11 +520,11 @@ function buildTables(){
     <td class="n">${cell(x[1],"",`type="number" step="1" min="0" id="pe${i}_1" data-t="pers" data-i="${i}" data-j="1" aria-label="CLP por turno"`)}</td>
     <td class="n">${cell(x[2],"sm",`type="number" step="1" min="0" id="pe${i}_2" data-t="pers" data-i="${i}" data-j="2" aria-label="Dotación base turno 1"`)}</td>
     <td class="n">${cell(x[3],"sm",`type="number" step="1" min="0" id="pe${i}_3" data-t="pers" data-i="${i}" data-j="3" aria-label="Dotación base turnos siguientes"`)}</td>
-    ${g}<td class="n" id="pt${i}"></td><td class="n" id="pc${i}"></td>
+    ${g}<td class="n" id="pt${i}"></td><td class="n dvc" id="px${i}"></td><td class="n" id="pc${i}"></td>
     <td><button class="x" type="button" data-del="pers" data-i="${i}" aria-label="Quitar">×</button></td></tr>`}).join("");
   let f=`<tr><td class="stk">Total personas</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td>`;
   for(let k=0;k<T;k++)f+=`<td class="n tk${Math.floor(k/td)%2?" alt":""}" id="ft${k}"></td>`;
-  $("f_persRow").innerHTML=f+`<td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr>`;
+  $("f_persRow").innerHTML=f+`<td class="n" id="f_tp"></td><td class="n dvc" id="f_px"></td><td class="n" id="f_pers"></td><td></td></tr>`;
   $("persWarn").hidden=r0.turnos<=MAXT;
   $("t_rel").innerHTML=(S.rel||[]).length?S.rel.map((x,i)=>`<tr>
     <td>${esc(x.desc)}${x.grupo?`<br><span class="linked">${esc(x.grupo)}</span>`:""}</td><td>${esc(x.unidad)}</td>
@@ -555,16 +562,17 @@ function render(){
   $("turnosBox").innerHTML=`<div><small>Toneladas ÷ rate</small><b>${fN(p.ton)} ÷ ${fN(p.rate)}</b><span>= ${fN(r.dias,2)} días</span></div>
     <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
     <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${Math.abs(r.turnos-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto"}</span></div>
-    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`;
+    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`+(r.desvPers?`<div class="dvt"><small>Desviación personal</small><b>+${fN(r.pers.reduce((a,x)=>a+x.extra,0))}</b><span>turnos-persona (${fN(r.desvPers,1)}%)</span></div>`:"");
   if(Math.min(r.turnos,MAXT)!==builtT||Math.max(1,p.tdia|0)!==builtTd) buildTables();
   let d1=0,dn=0,tp=0; const colT=new Array(builtT).fill(0);
-  r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tp);$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp;
+  let ext=0;
+  r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tb);$("px"+i).textContent=x.extra?"+"+fN(x.extra):"";ext+=x.extra;$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp;
     const [,,b1,bn,ov]=S.pers[i];
     for(let k=0;k<builtT;k++){const v=dot(b1,bn,ov,k);colT[k]+=v;const el=$(`g${i}_${k}`);if(!el)continue;
       const isOv=!!(ov&&ov[k]!==undefined);el.classList.toggle("ov",isOv);if(document.activeElement!==el)el.value=v;}
   });
   colT.forEach((v,k)=>{$("ft"+k).textContent=fN(v)});
-  $("f_d1").textContent=fN(d1);$("f_dn").textContent=fN(dn);$("f_tp").textContent=fN(tp);$("f_pers").textContent=fCLP(r.persCLP);
+  $("f_d1").textContent=fN(d1);$("f_dn").textContent=fN(dn);$("f_tp").textContent=fN(r.pers.reduce((a,x)=>a+x.tb,0));$("f_px").textContent=ext?`+${fN(ext)} (${fN(r.desvPers,1)}%)`:"";$("f_pers").textContent=fCLP(r.persCLP);
   $("s_pers").textContent=fUSD(r.persUSD)+" · "+fUSD(p.ton?r.persUSD/p.ton:0,3)+"/t";
   r.otros.forEach((x,i)=>{$("oc"+i).textContent=fCLP(x.clp);$("ou"+i).textContent=fUSD(x.usd)});
   $("s_otros").textContent=fUSD(r.otrosUSD);
@@ -736,7 +744,7 @@ function leerExcel(wb,nombre){
 function folio(){const d=new Date();const z=n=>String(n).padStart(2,"0");return `HTP-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`}
 function armarInforme(){
   const r=calc(S),p=S.p,hoy=new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"});
-  const filas=S.pers.map((x,i)=>({n:x[0],v:num(x[1]),tp:r.pers[i].tp,clp:r.pers[i].clp})).filter(x=>x.tp>0);
+  const filas=S.pers.map((x,i)=>({n:x[0],v:num(x[1]),tp:r.pers[i].tp,tb:r.pers[i].tb,ex:r.pers[i].extra,clp:r.pers[i].clp})).filter(x=>x.tp>0);
   const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
   const ots=S.incOtros?S.otros.map((x,i)=>({n:x[0],c:num(x[1]),v:num(x[2]),usd:r.otros[i].usd})).filter(x=>x.c>0):[];
   $("informe").innerHTML=`
@@ -752,11 +760,11 @@ function armarInforme(){
   <table><tr><th>Servicio</th><th class="n">Costo USD</th><th class="n">Desv. %</th><th class="n">Utilidad %</th><th class="n">Venta USD</th><th class="n">Venta CLP</th><th class="n">USD/t</th></tr>
     ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${x.desv?fN(x.desv,1)+"%":"—"}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
     <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td></td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
-  ${r.desvUSD?`<p><b>Desviación incluida en el costo:</b> personal ${fN(r.desvPers,1)}%, equipos ${fN(r.desvEq,1)}% (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
+  ${r.desvUSD?`<p><b>Desviación incluida:</b> personal ${fN(r.desvPers,1)}% en cantidad de personas, equipos ${fN(r.desvEq,1)}% en costo (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
   <h2>Personal de muellaje</h2>
-  <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th></tr>
-    ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
-    <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
+  <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Desviación</th><th class="n">Total turnos-persona</th><th class="n">Total CLP</th></tr>
+    ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tb)}</td><td class="n">${x.ex?"+"+fN(x.ex):"—"}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
+    <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tb,0))}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.ex,0))||"—"}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
   ${(S.incRel!==false&&(S.rel||[]).length)?`<h2>Servicios contrato Reloncaví</h2><table><tr><th>Ítem</th><th>Unidad</th><th class="n">Tarifa CLP</th><th class="n">Pers./equipos</th><th class="n">Cantidad</th><th class="n">Total CLP</th></tr>
     ${S.rel.map((x,i)=>`<tr><td>${esc(x.desc)} <small>${esc(x.grupo||"")}</small></td><td>${esc(x.unidad)}</td><td class="n">${fCLP(num(x.tarifa))}</td><td class="n">${fN(num(x.mult))}</td><td class="n">${fN(r.rel[i].q)}</td><td class="n">${fCLP(r.rel[i].clp)}</td></tr>`).join("")}</table>`:""}
   ${eqs.length?`<h2>Equipos</h2><table><tr><th>Equipo</th><th class="n">N°</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th></tr>
@@ -782,8 +790,8 @@ $("btnXls").onclick=()=>{
     ["Total",+(r.costoUSD-r.desvUSD).toFixed(2),"",+r.costoUSD.toFixed(2),+r.utilProm.toFixed(2),+r.ventaUSD.toFixed(2),Math.round(r.ventaUSD*p.usd),+r.tarifaT.toFixed(4)],["Costo USD/t",+r.costoT.toFixed(4)],["Motivo desviación",(S.p.desv&&S.p.desv.nota)||""],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
     ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
-  const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Total CLP"];
-  const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tp,Math.round(r.pers[i].clp)])];
+  const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Desviación","Total turnos-persona","Total CLP"];
+  const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tb,r.pers[i].extra,r.pers[i].tp,Math.round(r.pers[i].clp)])];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pers),"Personal");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"],...S.eq.map((x,i)=>[x[0],num(x[1]),+r.eq[i].hrs.toFixed(2),num(x[3]),x[4],num(x[5]),+r.eq[i].arr.toFixed(2),+r.eq[i].pet.toFixed(2)])]),"Equipos");
   if((S.rel||[]).length) XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Ítem","Grupo","Unidad","Tarifa CLP","Personas/equipos","Cantidad","Total CLP"],...S.rel.map((x,i)=>[x.desc,x.grupo||"",x.unidad,num(x.tarifa),num(x.mult),r.rel[i].q,Math.round(r.rel[i].clp)])]),"Reloncavi");
@@ -796,7 +804,7 @@ $("btnXls").onclick=()=>{
 
 /* ---------- Desviación % ---------- */
 function dvPrev(){const pp=num($("dv_pers").value),pe=num($("dv_eq").value);const T=clone(S);T.p.desv={pers:pp,eq:pe};const a=calc(S),b=calc(T);
-  $("dv_prev").innerHTML=`<span>Costo extra <b>${fUSD(b.desvUSD)}</b></span><span>Tarifa <b>${fN(a.tarifaT,2)} → ${fN(b.tarifaT,2)} USD/t</b></span>`}
+  $("dv_prev").innerHTML=`<span>Turnos-persona <b>${fN(a.pers.reduce((s,x)=>s+x.tb,0))} → ${fN(b.pers.reduce((s,x)=>s+x.tp,0))}</b></span><span>Costo extra <b>${fUSD(b.desvUSD)}</b></span><span>Tarifa <b>${fN(a.tarifaT,2)} → ${fN(b.tarifaT,2)} USD/t</b></span>`}
 $("btnDesv").onclick=()=>{const d=S.p.desv||{};$("dv_pers").value=d.pers||0;$("dv_eq").value=d.eq||0;$("dv_nota").value=d.nota||"";dvPrev();$("dlgDesv").showModal()};
 $("dv_pers").addEventListener("input",dvPrev);$("dv_eq").addEventListener("input",dvPrev);
 $("desvClose").onclick=()=>$("dlgDesv").close();
