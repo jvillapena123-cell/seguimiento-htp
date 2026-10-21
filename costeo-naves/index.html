@@ -120,6 +120,38 @@ td.tk.alt,th.tk.alt{background:var(--steel-soft)}
 .stk{position:sticky;left:0;z-index:1;background:var(--panel)}
 th.stk{background:var(--steel-soft);z-index:2}
 tfoot td.stk{background:var(--panel)}
+.btnfile{font:inherit;cursor:pointer;border:1px solid var(--steel);background:var(--steel);color:var(--panel);padding:6px 12px;border-radius:2px}
+.btnfile:focus-within,.btnfile:hover{filter:brightness(1.1)}
+#who{display:inline-flex}
+.ind{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:14px;padding:8px 10px;background:var(--steel-soft);font-size:13px}
+.ind b{font-family:var(--f-num);font-weight:500}
+.ind .ok{color:var(--good);font-weight:600}
+.ind .bad{color:var(--warn);font-weight:600}
+.ind button{margin-left:auto;padding:4px 10px;font-size:13px}
+#informe{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff!important;color:#000!important}
+  .wrap{display:none!important}
+  #informe{display:block!important;font-family:var(--f-ui);color:#000;font-size:11pt}
+  #informe h1{font-size:20pt;margin:0}
+  #informe .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #000;padding-bottom:6px;margin-bottom:12px}
+  #informe .hd small{display:block;font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:#444}
+  #informe .meta{text-align:right;font-size:9pt}
+  #informe h2{font-size:11pt;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:1px solid #999;padding-bottom:3px}
+  #informe table{width:100%;border-collapse:collapse;font-size:9.5pt}
+  #informe td,#informe th{border-bottom:1px solid #ccc;padding:3px 5px;text-align:left;white-space:normal}
+  #informe th{background:#e8edf1!important;color:#000;font-size:8pt;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #informe .n{text-align:right;font-family:var(--f-num)}
+  #informe .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  #informe .kpi div{border:1px solid #999;padding:6px 8px}
+  #informe .kpi small{display:block;font-size:7.5pt;text-transform:uppercase;color:#444}
+  #informe .kpi b{font-family:var(--f-num);font-size:13pt}
+  #informe .tar{background:#e8a317!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-color:#e8a317!important}
+  #informe .ref{margin-top:14px;padding:8px 10px;border:1.5px solid #000;font-size:9.5pt}
+  #informe .pie{margin-top:18px;font-size:8pt;color:#444}
+  #informe tr.tot td{font-weight:700;border-top:2px solid #000}
+}
 .saved{margin-top:12px}
 .saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .saved ul{list-style:none;margin:0;padding:0}
@@ -138,7 +170,13 @@ tfoot td.stk{background:var(--panel)}
       <small>Huachipato Terminal Portuario · Operaciones</small>
       <h1>Costeo de Naves<span>HTP</span></h1>
     </div>
-    <div class="scen" id="who"></div>
+    <div class="scen">
+      <label class="btnfile" for="xlsIn">Cargar Excel</label>
+      <input id="xlsIn" type="file" accept=".xlsx,.xls,.xlsm" hidden>
+      <button type="button" id="btnPdf">Descargar cotización (PDF)</button>
+      <button type="button" id="btnXls">Descargar Excel</button>
+      <span id="who"></span>
+    </div>
   </header>
 
   <div class="grid">
@@ -159,6 +197,10 @@ tfoot td.stk{background:var(--panel)}
             <label class="f">Valor UF (CLP)<input id="p_uf" type="number" min="1" step="0.01"></label>
             <label class="f">Petróleo (CLP/L)<input id="p_diesel" type="number" min="0" step="1"></label>
             <label class="f">Margen rentabilidad %<input id="p_margen" type="number" min="0" step="1"></label>
+          </div>
+          <div class="ind" id="indBox">
+            <span id="indTxt">Buscando dólar y UF del día…</span>
+            <button type="button" id="btnInd">Actualizar dólar y UF</button>
           </div>
           <div class="derived" id="derived"></div>
         </div>
@@ -263,9 +305,12 @@ tfoot td.stk{background:var(--panel)}
   </div>
 </div>
 
+<div id="informe" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const BASE = {
-  p:{nave:"",sitio:"Norte",carga:"Chatarra",ton:25000,rate:4500,manos:2,hturno:8,tdia:3,usd:920,uf:39643.59,diesel:1440,margen:10},
+  p:{nave:"",sitio:"Norte",carga:"Chatarra",ton:25000,rate:4500,manos:2,hturno:8,tdia:3,usd:920,uf:39643.59,diesel:1440,margen:10,usdFecha:"",ufFecha:"",fuenteInd:"Planilla base"},
   pers:[
     ["Supervisor",139467,0,0],["Jefe cubierta",139467,1,1],["Jefe molo",139467,1,1],["Capataz",131156,3,6],
     ["Oficinista",131156,0,0],["Tarjador",127338,2,5],["Winchero",127338,2,4],["Portaloneros",127338,3,4],
@@ -428,7 +473,9 @@ document.addEventListener("input",e=>{
     if(el.value===""||num(el.value)===def)delete row[4][k];else row[4][k]=num(el.value);
   }
   else if(el.dataset.t){const v=el.type==="number"?(el.value===""&&el.dataset.j==="2"&&el.dataset.t==="eq"?"":num(el.value)):el.value;S[el.dataset.t][+el.dataset.i][+el.dataset.j]=v;}
-  else if(el.id.startsWith("p_")){const k=el.id.slice(2);S.p[k]=el.type==="number"?num(el.value):el.value;}
+  else if(el.id.startsWith("p_")){const k=el.id.slice(2);S.p[k]=el.type==="number"?num(el.value):el.value;
+    if(k==="usd"){S.p.usdFecha=hoyISO();S.p.fuenteInd="Ingresado manualmente";pintarInd()}
+    if(k==="uf"){S.p.ufFecha=hoyISO();S.p.fuenteInd="Ingresado manualmente";pintarInd()}}
   else if(el.id.startsWith("q_")){const m={q_cam:"cam",q_turnos:"turnos",q_vturno:"vturno",q_km:"km",q_tciclo:"tciclo",q_lkm:"lkm"};S.porteo[m[el.id]]=(el.id==="q_turnos"&&el.value==="")?"":num(el.value);}
   else if(el.id==="inc_otros") S.incOtros=el.checked;
   else if(el.id==="inc_porteo") S.incPorteo=el.checked;
@@ -445,7 +492,7 @@ document.addEventListener("click",e=>{
 /* puente para el guardado en línea (script de módulo más abajo) */
 window.CN={
   get:()=>clone(S), calc:()=>calc(S),
-  set:d=>{S=Object.assign(clone(BASE),clone(d));fillParams();buildTables();render();persist();},
+  set:d=>{S=Object.assign(clone(BASE),clone(d));S.p=Object.assign(clone(BASE.p),clone(d.p||{}));fillParams();buildTables();render();persist();pintarInd();},
   base:()=>clone(BASE), onChange:null, toast:m=>toast(m)
 };
 $("btnClearOv").onclick=()=>{S.pers.forEach(x=>{x[4]={}});render();persist();if(window.CN&&CN.onChange)CN.onChange();toast("Ajustes por turno quitados")};
@@ -459,11 +506,157 @@ $("btnCopy").onclick=()=>{
 };
 function toast(m){$("toast").textContent=m;clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").textContent="",2500)}
 
+
+/* ---------- Dólar y UF en línea (mindicador.cl, datos del Banco Central) ---------- */
+function hoyISO(){return new Date().toLocaleDateString("en-CA",{timeZone:"America/Santiago"})}
+function fFechaInd(iso){if(!iso)return "sin fecha";const [y,m,d]=iso.slice(0,10).split("-");return `${d}-${m}-${y}`}
+function pintarInd(estado){
+  const p=S.p;
+  const st=estado==="ok"?`<span class="ok">Actualizado en línea</span>`:estado==="err"?`<span class="bad">No se pudo conectar; se usan los valores ingresados</span>`:estado==="load"?"Consultando…":"";
+  $("indTxt").innerHTML=`Dólar observado <b>$ ${fN(p.usd,2)}</b> del ${fFechaInd(p.usdFecha)} · UF <b>$ ${fN(p.uf,2)}</b> del ${fFechaInd(p.ufFecha)} · <span>${esc(p.fuenteInd||"")}</span> ${st}`;
+}
+async function actualizarInd(){
+  pintarInd("load");
+  try{
+    const res=await fetch("https://mindicador.cl/api",{cache:"no-store"});
+    if(!res.ok) throw new Error(res.status);
+    const j=await res.json();
+    const d=j.dolar, u=j.uf;
+    if(!d||!u) throw new Error("sin datos");
+    const f=x=>new Date(x).toLocaleDateString("en-CA",{timeZone:"America/Santiago"});
+    S.p.usd=Math.round(d.valor*100)/100; S.p.usdFecha=f(d.fecha);
+    S.p.uf=u.valor; S.p.ufFecha=f(u.fecha);
+    S.p.fuenteInd="mindicador.cl (Banco Central de Chile)";
+    $("p_usd").value=S.p.usd; $("p_uf").value=S.p.uf;
+    render(); persist(); if(window.CN&&CN.onChange) CN.onChange();
+    pintarInd("ok"); return true;
+  }catch(e){pintarInd("err");return false}
+}
+$("btnInd").onclick=actualizarInd;
+
+/* ---------- Importar Excel (formato Costeo_Chatarra) ---------- */
+$("xlsIn").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  if(!window.XLSX){toast("No se pudo cargar el lector de Excel. Revise su conexión");return}
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+    const D=leerExcel(wb,f.name);
+    S=D; fillParams(); buildTables(); render(); persist(); pintarInd();
+    if(window.CN&&CN.loaded) CN.loaded(D.p.nave);
+    toast("Excel cargado: "+f.name+". Actualizando dólar y UF del día…");
+    const ok=await actualizarInd();
+    toast(ok?"Excel cargado con dólar y UF de hoy":"Excel cargado; no se pudo actualizar dólar y UF (quedan los del Excel)");
+  }catch(err){toast(err.message||"El archivo no tiene el formato esperado")}
+});
+function leerExcel(wb,nombre){
+  // 1) Excel descargado desde esta página: trae los datos completos
+  const dj=wb.Sheets["datos_costeo"];
+  if(dj&&dj.A1){const D=Object.assign(clone(BASE),JSON.parse(dj.A1.v));return D}
+  // 2) Planilla original "Costos transferencia"
+  const ws=wb.Sheets["Costos transferencia"];
+  if(!ws) throw new Error('El Excel debe tener la hoja "Costos transferencia" (formato Costeo_Chatarra)');
+  const tc=wb.Sheets["Tarifa por cargo"];
+  const val=(sh,a)=>{const c=sh&&sh[a];return c?c.v:undefined};
+  const nv=(sh,a,def)=>{const x=val(sh,a);const n=typeof x==="number"?x:parseFloat(String(x??"").replace(/\./g,"").replace(",","."));return isFinite(n)?n:def};
+  const txt=(a)=>String(val(ws,a)??"").trim();
+  const D=clone(BASE); const p=D.p;
+  p.nave=String(nombre||"").replace(/\.(xlsx|xls|xlsm)$/i,"").replace(/[_-]+/g," ").trim();
+  p.sitio=txt("D3")||p.sitio; p.carga=txt("D4")||p.carga;
+  p.ton=nv(ws,"D5",p.ton); p.rate=nv(ws,"D6",p.rate); p.manos=nv(ws,"D11",p.manos);
+  p.usd=nv(ws,"D12",p.usd); p.hturno=nv(ws,"D13",p.hturno); p.diesel=nv(ws,"D14",p.diesel);
+  D.porteo.vturno=nv(ws,"D15",D.porteo.vturno);
+  p.uf=nv(tc,"D15",p.uf); p.usdFecha=""; p.ufFecha=""; p.fuenteInd="Valores del Excel cargado";
+  const ufHora=nv(tc,"B15",1.212), usdCargador=nv(tc,"D35",121);
+  const COLS="EFGHIJKLMNOPQRSTUVWX".split("");
+  // personal: desde fila 19 hasta la primera fila sin cargo
+  D.pers=[];
+  for(let r=19;r<19+80;r++){
+    const name=txt("C"+r); if(!name||/^total/i.test(name)) break;
+    const t=COLS.map(c=>{const x=val(ws,c+r);return typeof x==="number"?x:undefined});
+    const d1=t[0]??0;
+    const rest=t.slice(1).filter(x=>x!==undefined);
+    const freq={};rest.forEach(x=>freq[x]=(freq[x]||0)+1);
+    const dn=rest.length?+Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0]:0;
+    const ov={};t.forEach((x,k)=>{if(x!==undefined&&k>0&&x!==dn)ov[k]=x});
+    D.pers.push([name,nv(ws,"D"+r,0),d1,dn,ov]);
+  }
+  if(!D.pers.length) throw new Error("No se encontraron cargos desde la fila 19 de “Costos transferencia”");
+  // filas de secciones por título en la columna C
+  const findRow=re=>{for(let r=19;r<200;r++){if(re.test(txt("C"+r)))return r}return 0};
+  const ro=findRow(/^OTROS$/i);
+  if(ro){D.otros=[];for(let r=ro+1;r<ro+30;r++){const name=txt("C"+r);if(!name||/total/i.test(name))break;D.otros.push([name,nv(ws,"D"+r,0),nv(ws,"E"+r,0)])}}
+  const re=findRow(/^EQUIPOS$/i);
+  if(re){D.eq=[];for(let r=re+1;r<re+30;r++){const name=txt("C"+r);if(!name||/^costo/i.test(name))break;if(/petr/i.test(name))continue;
+    const ce=ws["E"+r]; const horas=(!ce||ce.f||typeof ce.v!=="number")?"":ce.v;
+    const esCarg=/cargador/i.test(name);
+    D.eq.push([name,nv(ws,"D"+r,0),horas,esCarg?usdCargador:ufHora,esCarg?"USD":"UF",0])}}
+  return D;
+}
+
+/* ---------- Informe de cotización ---------- */
+function folio(){const d=new Date();const z=n=>String(n).padStart(2,"0");return `HTP-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`}
+function armarInforme(){
+  const r=calc(S),p=S.p,hoy=new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"});
+  const filas=S.pers.map((x,i)=>({n:x[0],v:num(x[1]),tp:r.pers[i].tp,clp:r.pers[i].clp})).filter(x=>x.tp>0);
+  const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
+  const ots=S.incOtros?S.otros.map((x,i)=>({n:x[0],c:num(x[1]),v:num(x[2]),usd:r.otros[i].usd})).filter(x=>x.c>0):[];
+  $("informe").innerHTML=`
+  <div class="hd"><div><small>Huachipato Terminal Portuario · Operaciones</small><h1>Cotización de servicio de transferencia</h1></div>
+    <div class="meta">Folio ${folio()}<br>Emitida el ${hoy}</div></div>
+  <table><tr><th>Nave</th><td>${esc(p.nave||"—")}</td><th>Carga</th><td>${esc(p.carga)}</td></tr>
+    <tr><th>Sitio</th><td>${esc(p.sitio)}</td><th>Toneladas</th><td>${fN(p.ton)} t</td></tr>
+    <tr><th>Rate</th><td>${fN(p.rate)} t/día · ${fN(r.ratePorTurno)} t/turno</td><th>N° de manos</th><td>${fN(p.manos)}</td></tr>
+    <tr><th>Duración</th><td>${fN(r.dias,2)} días</td><th>Turnos / horas</th><td>${r.turnos} turnos (${fN(r.turnosExact,2)} calculados) · ${fN(r.horas)} h</td></tr></table>
+  <div class="kpi"><div><small>Costo total USD</small><b>${fUSD(r.costoUSD)}</b></div><div><small>Costo USD/t</small><b>${fN(r.costoT,3)}</b></div>
+    <div><small>Margen</small><b>${fN(p.margen)}%</b></div><div class="tar"><small>Tarifa cotizada</small><b>${fN(r.tarifaT,2)} USD/t</b></div></div>
+  <h2>Resumen de costos</h2>
+  <table><tr><th>Concepto</th><th class="n">USD</th><th class="n">CLP</th><th class="n">USD/t</th></tr>
+    ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${fCLP(x.usd*p.usd)}</td><td class="n">${fN(x.usd/p.ton,3)}</td></tr>`).join("")}
+    <tr class="tot"><td>Costo total</td><td class="n">${fUSD(r.costoUSD)}</td><td class="n">${fCLP(r.costoUSD*p.usd)}</td><td class="n">${fN(r.costoT,3)}</td></tr>
+    <tr class="tot"><td>Valor venta (con ${fN(p.margen)}% margen)</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
+  <h2>Personal de muellaje</h2>
+  <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th></tr>
+    ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
+    <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
+  ${eqs.length?`<h2>Equipos</h2><table><tr><th>Equipo</th><th class="n">N°</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th></tr>
+    ${eqs.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fN(x.h,1)}</td><td class="n">${fN(num(x.t),3)} ${x.u}/h</td><td class="n">${fUSD(x.a)}</td><td class="n">${fUSD(x.pe)}</td></tr>`).join("")}</table>`:""}
+  ${ots.length?`<h2>Otros servicios</h2><table><tr><th>Servicio</th><th class="n">N°</th><th class="n">CLP / servicio</th><th class="n">USD</th></tr>
+    ${ots.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fUSD(x.usd)}</td></tr>`).join("")}</table>`:""}
+  ${S.incPorteo?`<h2>Porteo</h2><table><tr><td>${fN(num(S.porteo.cam))} camiones · ${fN(r.camTurnos)} turnos · petróleo ${fN(r.litros)} L</td><td class="n">${fUSD(r.portUSD)}</td></tr></table>`:""}
+  <div class="ref"><b>Valores de referencia utilizados</b><br>
+    Dólar observado: <b>$ ${fN(p.usd,2)}</b> del día <b>${fFechaInd(p.usdFecha)}</b><br>
+    UF: <b>$ ${fN(p.uf,2)}</b> del día <b>${fFechaInd(p.ufFecha)}</b><br>
+    Fuente: ${esc(p.fuenteInd||"—")}</div>
+  <div class="pie">Valores en USD calculados al dólar indicado. Turnos pagados completos de ${p.hturno} h. Cotización referencial sujeta a confirmación de programación de la nave.</div>`;
+}
+$("btnPdf").onclick=()=>{armarInforme();toast("En la ventana de impresión elija “Guardar como PDF”");setTimeout(()=>window.print(),50)};
+
+/* ---------- Descargar Excel ---------- */
+$("btnXls").onclick=()=>{
+  if(!window.XLSX){toast("No se pudo cargar el generador de Excel. Revise su conexión");return}
+  const r=calc(S),p=S.p,wb=XLSX.utils.book_new();
+  const res=[["Cotización de servicio de transferencia · HTP"],["Folio",folio()],["Emitida",new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"})],[],
+    ["Nave",p.nave],["Carga",p.carga],["Sitio",p.sitio],["Toneladas",p.ton],["Rate t/día",p.rate],["Días",+r.dias.toFixed(2)],["Turnos calculados",+r.turnosExact.toFixed(2)],["Turnos a pagar",r.turnos],["Horas totales",r.horas],[],
+    ["Concepto","USD","CLP","USD/t"],...r.parts.map(x=>[x.k,+x.usd.toFixed(2),Math.round(x.usd*p.usd),+(x.usd/p.ton).toFixed(4)]),
+    ["Costo total",+r.costoUSD.toFixed(2),Math.round(r.costoUSD*p.usd),+r.costoT.toFixed(4)],["Margen %",p.margen],["Tarifa cotizada USD/t",+r.tarifaT.toFixed(4)],["Valor venta USD",+r.ventaUSD.toFixed(2)],[],
+    ["Dólar observado (CLP)",p.usd,"del día",fFechaInd(p.usdFecha)],["UF (CLP)",p.uf,"del día",fFechaInd(p.ufFecha)],["Fuente",p.fuenteInd||""]];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),"Cotización");
+  const T=r.turnos, hdr=["Cargo","CLP/turno",...Array.from({length:T},(_,k)=>"T"+(k+1)),"Turnos-persona","Total CLP"];
+  const pers=[hdr,...S.pers.map((x,i)=>[x[0],num(x[1]),...Array.from({length:T},(_,k)=>dot(x[2],x[3],x[4],k)),r.pers[i].tp,Math.round(r.pers[i].clp)])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pers),"Personal");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"],...S.eq.map((x,i)=>[x[0],num(x[1]),+r.eq[i].hrs.toFixed(2),num(x[3]),x[4],num(x[5]),+r.eq[i].arr.toFixed(2),+r.eq[i].pet.toFixed(2)])]),"Equipos");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[JSON.stringify(S)]]),"datos_costeo");
+  const nom=("Cotizacion_"+(p.nave||"nave")+"_"+hoyISO()).replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g,"_");
+  XLSX.writeFile(wb,nom+".xlsx");
+};
+
 /* almacenamiento local: borrador y escenarios */
 function store(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
 function putStore(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
 function persist(){const o=store();o.draft=S;putStore(o)}
-(function init(){const d=store().draft;if(d&&d.p&&d.pers)S=Object.assign(clone(BASE),d);fillParams();buildTables();render();})();
+(function init(){const d=store().draft;if(d&&d.p&&d.pers){S=Object.assign(clone(BASE),d);S.p=Object.assign(clone(BASE.p),d.p)}fillParams();buildTables();render();pintarInd();
+  let abierto=false;try{abierto=!!JSON.parse(localStorage.getItem("costeo-naves-htp-actual"))}catch(e){}
+  if(!abierto) actualizarInd();})();
 </script>
 
 <script type="module">
@@ -580,6 +773,7 @@ async function guardar(comoNuevo){
     cur.nombre=d.nombre; dirty=false; guardarCur(); pintarLista(); pintarEstado(); CN.toast("Guardado: "+d.nombre);
   }catch(err){CN.toast(err.code==="permission-denied"?"No tiene permiso para guardar. Pida acceso de Usuario":"No se pudo guardar. Revise su conexión")}
 }
+CN.loaded=nombre=>{cur=null;dirty=true;$("c_nombre").value=nombre||"";guardarCur();pintarLista();pintarEstado()};
 $("c_save").onclick=()=>guardar(false);
 $("c_saveNew").onclick=()=>guardar(true);
 $("c_new").onclick=()=>{
