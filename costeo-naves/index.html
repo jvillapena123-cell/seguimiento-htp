@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Costeo de Naves HTP</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: hoja de trabajo a la izquierda (parámetros + secciones de costo), resumen fijo a la derecha; en teléfono el resumen sube arriba */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --ink:#14212b; --muted:#5b6b77; --line:#d3dbe1;
+  --steel:#1f4e6b; --steel-soft:#e1ebf2; --signal:#e8a317; --signal-ink:#3a2a00;
+  --good:#1d7a4f; --warn:#b5530f; --input:#f7f9fa;
+  --f-ui:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e161c; --panel:#16222b; --ink:#e3eaef; --muted:#93a4b1; --line:#2a3a46;
+  --steel:#7fb6d9; --steel-soft:#1c2f3c; --signal:#f0b43a; --signal-ink:#2a1e00;
+  --good:#5cc391; --warn:#f0965a; --input:#101b22; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e161c; --panel:#16222b; --ink:#e3eaef; --muted:#93a4b1; --line:#2a3a46;
+  --steel:#7fb6d9; --steel-soft:#1c2f3c; --signal:#f0b43a; --signal-ink:#2a1e00;
+  --good:#5cc391; --warn:#f0965a; --input:#101b22; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.4}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:18px}
+.brand small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.brand h1{margin:2px 0 0;font-size:30px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.brand h1 span{background:var(--signal);color:var(--signal-ink);padding:0 6px;margin-left:4px}
+.scen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}.side{order:-1}}
+section.card{background:var(--panel);border:1px solid var(--line);margin-bottom:16px}
+.card>h2{margin:0;display:flex;gap:10px;align-items:baseline;font-size:16px;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.card>h2 .code{font-family:var(--f-num);font-size:12px;color:var(--steel);letter-spacing:0}
+.card>h2 .sub{margin-left:auto;font-family:var(--f-num);font-size:13px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.body{padding:14px}
+.params{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px 14px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+input,select{font:inherit;color:var(--ink);background:var(--input);border:1px solid var(--line);padding:6px 8px;border-radius:2px;width:100%;min-width:0}
+input[type=number]{font-family:var(--f-num);font-size:14px;text-align:right}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.derived{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:13px;color:var(--muted)}
+.derived b{font-family:var(--f-num);font-weight:500;color:var(--ink)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--steel-soft)}
+td.n,th.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td input{padding:4px 6px}
+td input.name{min-width:140px;font-family:var(--f-ui);text-align:left}
+td input[type=number]{width:96px}
+td input.sm{width:68px}
+tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:none}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:2px}
+button.pri{background:var(--steel);border-color:var(--steel);color:var(--panel)}
+button.x{border:none;background:none;color:var(--muted);padding:2px 6px;font-size:16px}
+button.x:hover{color:var(--warn)}
+.addrow{margin-top:10px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:12px;text-transform:none;letter-spacing:0;color:var(--muted);margin-left:auto}
+.chk input{width:auto}
+.card>h2 .chk + .sub{margin-left:12px}
+/* resumen */
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:980px){.side{position:static}}
+.sum{background:var(--ink);color:var(--bg);padding:16px}
+.sum small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.sum .big{font-family:var(--f-num);font-size:44px;font-weight:500;line-height:1.05;margin:4px 0 2px}
+.sum .big em{font-style:normal;font-size:16px;opacity:.75;margin-left:4px}
+.sum .vessel{font-size:14px;margin-bottom:12px;opacity:.9}
+.pill{display:inline-block;background:var(--signal);color:var(--signal-ink);font-size:12px;font-weight:600;padding:2px 8px;letter-spacing:.04em}
+.brk{background:var(--panel);border:1px solid var(--line);border-top:none;padding:12px 16px}
+.row{display:grid;grid-template-columns:1fr auto auto;gap:4px 12px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:none}
+.row .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.row .p{font-family:var(--f-num);font-size:12px;color:var(--muted);min-width:40px;text-align:right}
+.row.tot{font-weight:600;border-top:2px solid var(--ink);border-bottom:none;margin-top:4px}
+.bar{height:6px;background:var(--steel-soft);display:flex;margin:10px 0 4px}
+.bar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--c)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.toast{font-size:12px;color:var(--good);min-height:16px;margin-top:6px}
+.saved{margin-top:12px}
+.saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.saved ul{list-style:none;margin:0;padding:0}
+.saved li{display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line);font-size:13px}
+.saved li button.load{flex:1;text-align:left;border:none;padding:2px 0;background:none;color:var(--steel)}
+.saved li span{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.confirm{display:flex;gap:6px;align-items:center;font-size:12px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <small>Huachipato Terminal Portuario · Operaciones</small>
+      <h1>Costeo de Naves<span>HTP</span></h1>
+    </div>
+    <div class="scen">
+      <button id="btnReset" type="button">Restablecer modelo base</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <main>
+      <section class="card">
+        <h2><span class="code">0</span>Parámetros de la faena</h2>
+        <div class="body">
+          <div class="params">
+            <label class="f">Nave<input id="p_nave" type="text"></label>
+            <label class="f">Sitio<select id="p_sitio"><option>Norte</option><option>Sur</option></select></label>
+            <label class="f">Tipo de carga<input id="p_carga" type="text"></label>
+            <label class="f">Toneladas<input id="p_ton" type="number" min="0" step="100"></label>
+            <label class="f">Rate (t/día)<input id="p_rate" type="number" min="1" step="100"></label>
+            <label class="f">N° de manos<input id="p_manos" type="number" min="1" step="1"></label>
+            <label class="f">Horas por turno<input id="p_hturno" type="number" min="1" step="1"></label>
+            <label class="f">Turnos por día<input id="p_tdia" type="number" min="1" max="4" step="1"></label>
+            <label class="f">Dólar (CLP)<input id="p_usd" type="number" min="1" step="1"></label>
+            <label class="f">Valor UF (CLP)<input id="p_uf" type="number" min="1" step="0.01"></label>
+            <label class="f">Petróleo (CLP/L)<input id="p_diesel" type="number" min="0" step="1"></label>
+            <label class="f">Margen rentabilidad %<input id="p_margen" type="number" min="0" step="1"></label>
+          </div>
+          <div class="derived" id="derived"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="code">1</span>Personal muellaje (Reloncaví)<span class="sub" id="s_pers"></span></h2>
+        <div class="body">
+          <div class="tbl"><table>
+            <thead><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Dot. turno 1</th><th class="n">Dot. turnos sig.</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th><th></th></tr></thead>
+            <tbody id="t_pers"></tbody>
+            <tfoot><tr><td>Total</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td><td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr></tfoot>
+          </table></div>
+          <button class="addrow" type="button" data-add="pers">+ Agregar cargo</button>
+          <p class="note">El turno 1 suele llevar dotación distinta (p. ej. movilizadores en muelle). Los turnos se pagan completos: turnos totales = días × turnos/día, redondeado hacia arriba.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="code">2</span>Otros servicios<label class="chk"><input type="checkbox" id="inc_otros">Incluir en total</label><span class="sub" id="s_otros"></span></h2>
+        <div class="body">
+          <div class="tbl"><table>
+            <thead><tr><th>Servicio</th><th class="n">N° servicios</th><th class="n">CLP / servicio</th><th class="n">Total CLP</th><th class="n">USD</th><th></th></tr></thead>
+            <tbody id="t_otros"></tbody>
+          </table></div>
+          <button class="addrow" type="button" data-add="otros">+ Agregar servicio</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="code">3</span>Equipos<span class="sub" id="s_eq"></span></h2>
+        <div class="body">
+          <div class="tbl"><table>
+            <thead><tr><th>Equipo</th><th class="n">N° equipos</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th>Unidad</th><th class="n">L/hora</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th><th></th></tr></thead>
+            <tbody id="t_eq"></tbody>
+          </table></div>
+          <button class="addrow" type="button" data-add="eq">+ Agregar equipo</button>
+          <p class="note">Horas c/u vacío = horas totales de la faena. Tarifa en USD/h o UF/h (se convierte con el valor UF y el dólar). L/hora se usa solo si el combustible no viene incluido en la tarifa.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="code">4</span>Porteo<label class="chk"><input type="checkbox" id="inc_porteo">Incluir en total</label><span class="sub" id="s_port"></span></h2>
+        <div class="body">
+          <div class="params">
+            <label class="f">N° camiones<input id="q_cam" type="number" min="0" step="1"></label>
+            <label class="f">Turnos por camión<input id="q_turnos" type="number" min="0" step="1" placeholder="auto"></label>
+            <label class="f">Valor turno camión (CLP)<input id="q_vturno" type="number" min="0" step="1000"></label>
+            <label class="f">Km por ciclo<input id="q_km" type="number" min="0" step="0.1"></label>
+            <label class="f">Toneladas por ciclo<input id="q_tciclo" type="number" min="1" step="1"></label>
+            <label class="f">Rendimiento (L/km)<input id="q_lkm" type="number" min="0" step="0.01"></label>
+          </div>
+          <div class="derived" id="d_port"></div>
+          <p class="note">Turnos por camión vacío = turnos totales de la faena.</p>
+        </div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <div class="sum">
+        <small>Tarifa a cotizar</small>
+        <div class="big" id="r_tarifa">–</div>
+        <div class="vessel" id="r_vessel"></div>
+        <span class="pill" id="r_margen"></span>
+      </div>
+      <div class="brk">
+        <div id="r_rows"></div>
+        <div class="bar" id="r_bar"></div>
+        <div class="legend" id="r_leg"></div>
+        <div class="actions">
+          <button class="pri" id="btnCopy" type="button">Copiar resumen</button>
+          <button id="btnSave" type="button">Guardar escenario</button>
+        </div>
+        <div class="toast" id="toast" role="status"></div>
+        <div class="saved" id="savedBox" hidden>
+          <h3>Escenarios guardados en este navegador</h3>
+          <ul id="savedList"></ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const BASE = {
+  p:{nave:"",sitio:"Norte",carga:"Chatarra",ton:25000,rate:4500,manos:2,hturno:8,tdia:3,usd:920,uf:39643.59,diesel:1440,margen:10},
+  pers:[
+    ["Supervisor",139467,0,0],["Jefe cubierta",139467,1,1],["Jefe molo",139467,1,1],["Capataz",131156,3,6],
+    ["Oficinista",131156,0,0],["Tarjador",127338,2,5],["Winchero",127338,2,4],["Portaloneros",127338,3,4],
+    ["Bombero",0,0,0],["Mov. a bordo",118022,0,15],["Mov. muelle",118022,11,0],["Cuidador nave",118022,0,0],
+    ["Aseo oficina",118022,0,0],["Pañolero",127338,1,1],["Operador",127338,2,2],["Amarrador",126441,0,0]
+  ],
+  otros:[["Turno retiro de madera",0,0],["Destrinca × bodega",0,1280733],["Amarra",0,1086800],["Desamarra",0,1086800],["Traslado equipo",3,350000]],
+  incOtros:true,
+  eq:[
+    ["Cargador frontal",2,"",121,"USD",0],["Horquilla 4,5 t",0,"",1.212,"UF",0],["Horquilla 16 t",0,"",1.212,"UF",0],
+    ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",1.212,"UF",0]
+  ],
+  porteo:{cam:8,turnos:"",vturno:180000,km:0,tciclo:30,lkm:0},
+  incPorteo:false
+};
+const KEY="costeo-naves-htp-v1";
+let S=clone(BASE);
+function clone(o){return JSON.parse(JSON.stringify(o))}
+const $=id=>document.getElementById(id);
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const fCLP=n=>"$ "+Math.round(n).toLocaleString("es-CL");
+const fUSD=(n,d=0)=>"US$ "+n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fN=(n,d=0)=>n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function calc(S){
+  const p=S.p, r={};
+  r.ratePorTurno=p.rate/p.tdia;
+  r.dias=p.rate>0?p.ton/p.rate:0;
+  r.turnosExact=r.dias*p.tdia;
+  r.turnos=Math.ceil(r.turnosExact-1e-9);
+  r.horas=r.turnosExact*p.hturno;
+  r.pers=S.pers.map(([n,v,d1,dn])=>{const tp=r.turnos>0?num(d1)+num(dn)*(r.turnos-1):0;return{tp,clp:tp*num(v)}});
+  r.persCLP=r.pers.reduce((a,x)=>a+x.clp,0);
+  r.persUSD=r.persCLP/p.usd;
+  r.otros=S.otros.map(([n,c,v])=>{const clp=num(c)*num(v);return{clp,usd:clp/p.usd}});
+  r.otrosUSD=r.otros.reduce((a,x)=>a+x.usd,0);
+  r.eq=S.eq.map(([n,c,h,t,u,l])=>{
+    const hrs=(h===""||h===null)?r.horas:num(h);
+    const tarifaUSD=u==="UF"?num(t)*p.uf/p.usd:num(t);
+    const arr=num(c)*hrs*tarifaUSD;
+    const pet=num(c)*hrs*num(l)*p.diesel/p.usd;
+    return{hrs,arr,pet};
+  });
+  r.eqArr=r.eq.reduce((a,x)=>a+x.arr,0);
+  r.eqPet=r.eq.reduce((a,x)=>a+x.pet,0);
+  const q=S.porteo;
+  r.camTurnos=(q.turnos===""||q.turnos===null)?r.turnos:num(q.turnos);
+  r.portTurnoCLP=num(q.cam)*r.camTurnos*num(q.vturno);
+  r.ciclos=num(q.tciclo)>0?Math.ceil(p.ton/num(q.tciclo)):0;
+  r.km=r.ciclos*num(q.km);
+  r.litros=r.km*num(q.lkm);
+  r.portPetCLP=r.litros*p.diesel;
+  r.portUSD=(r.portTurnoCLP+r.portPetCLP)/p.usd;
+  r.parts=[
+    {k:"Personal",usd:r.persUSD,c:"var(--steel)"},
+    {k:"Otros servicios",usd:S.incOtros?r.otrosUSD:0,c:"var(--muted)"},
+    {k:"Arriendo equipos",usd:r.eqArr,c:"var(--signal)"},
+    {k:"Petróleo equipos",usd:r.eqPet,c:"var(--warn)"},
+    {k:"Porteo",usd:S.incPorteo?r.portUSD:0,c:"var(--good)"}
+  ];
+  r.costoUSD=r.parts.reduce((a,x)=>a+x.usd,0);
+  r.costoT=p.ton>0?r.costoUSD/p.ton:0;
+  r.tarifaT=r.costoT*(1+p.margen/100);
+  r.ventaUSD=r.tarifaT*p.ton;
+  return r;
+}
+
+function cell(v,cls,attrs){return `<input ${attrs} class="${cls||""}" value="${esc(v)}">`}
+function buildTables(){
+  $("t_pers").innerHTML=S.pers.map((x,i)=>`<tr>
+    <td>${cell(x[0],"name",`type="text" id="pe${i}_0" data-t="pers" data-i="${i}" data-j="0" aria-label="Cargo"`)}</td>
+    <td class="n">${cell(x[1],"",`type="number" step="1" min="0" id="pe${i}_1" data-t="pers" data-i="${i}" data-j="1" aria-label="CLP por turno"`)}</td>
+    <td class="n">${cell(x[2],"sm",`type="number" step="1" min="0" id="pe${i}_2" data-t="pers" data-i="${i}" data-j="2" aria-label="Dotación turno 1"`)}</td>
+    <td class="n">${cell(x[3],"sm",`type="number" step="1" min="0" id="pe${i}_3" data-t="pers" data-i="${i}" data-j="3" aria-label="Dotación turnos siguientes"`)}</td>
+    <td class="n" id="pt${i}"></td><td class="n" id="pc${i}"></td>
+    <td><button class="x" type="button" data-del="pers" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
+  $("t_otros").innerHTML=S.otros.map((x,i)=>`<tr>
+    <td>${cell(x[0],"name",`type="text" id="ot${i}_0" data-t="otros" data-i="${i}" data-j="0" aria-label="Servicio"`)}</td>
+    <td class="n">${cell(x[1],"sm",`type="number" step="1" min="0" id="ot${i}_1" data-t="otros" data-i="${i}" data-j="1" aria-label="N° servicios"`)}</td>
+    <td class="n">${cell(x[2],"",`type="number" step="1000" min="0" id="ot${i}_2" data-t="otros" data-i="${i}" data-j="2" aria-label="CLP por servicio"`)}</td>
+    <td class="n" id="oc${i}"></td><td class="n" id="ou${i}"></td>
+    <td><button class="x" type="button" data-del="otros" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
+  $("t_eq").innerHTML=S.eq.map((x,i)=>`<tr>
+    <td>${cell(x[0],"name",`type="text" id="eq${i}_0" data-t="eq" data-i="${i}" data-j="0" aria-label="Equipo"`)}</td>
+    <td class="n">${cell(x[1],"sm",`type="number" step="1" min="0" id="eq${i}_1" data-t="eq" data-i="${i}" data-j="1" aria-label="N° equipos"`)}</td>
+    <td class="n">${cell(x[2],"sm",`type="number" step="0.5" min="0" placeholder="auto" id="eq${i}_2" data-t="eq" data-i="${i}" data-j="2" aria-label="Horas por equipo"`)}</td>
+    <td class="n">${cell(x[3],"sm",`type="number" step="0.001" min="0" id="eq${i}_3" data-t="eq" data-i="${i}" data-j="3" aria-label="Tarifa"`)}</td>
+    <td><select id="eq${i}_4" data-t="eq" data-i="${i}" data-j="4" aria-label="Unidad tarifa"><option value="USD"${x[4]==="USD"?" selected":""}>USD/h</option><option value="UF"${x[4]==="UF"?" selected":""}>UF/h</option></select></td>
+    <td class="n">${cell(x[5],"sm",`type="number" step="0.1" min="0" id="eq${i}_5" data-t="eq" data-i="${i}" data-j="5" aria-label="Litros por hora"`)}</td>
+    <td class="n" id="ea${i}"></td><td class="n" id="ep${i}"></td>
+    <td><button class="x" type="button" data-del="eq" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
+}
+function fillParams(){
+  for(const k in S.p){const el=$("p_"+k); if(el) el.value=S.p[k];}
+  const m={cam:"q_cam",turnos:"q_turnos",vturno:"q_vturno",km:"q_km",tciclo:"q_tciclo",lkm:"q_lkm"};
+  for(const k in m) $(m[k]).value=S.porteo[k];
+  $("inc_otros").checked=S.incOtros; $("inc_porteo").checked=S.incPorteo;
+}
+function render(){
+  const r=calc(S), p=S.p;
+  $("derived").innerHTML=`<span>Rate/turno <b>${fN(r.ratePorTurno)} t</b></span><span>Días de operación <b>${fN(r.dias,2)}</b></span><span>Turnos <b>${fN(r.turnosExact,2)}</b> → pagados <b>${r.turnos}</b></span><span>Horas totales <b>${fN(r.horas,1)}</b></span><span>Rate/mano/turno <b>${fN(p.manos>0?r.ratePorTurno/p.manos:0)} t</b></span>`;
+  let d1=0,dn=0,tp=0;
+  r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tp);$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp});
+  $("f_d1").textContent=fN(d1);$("f_dn").textContent=fN(dn);$("f_tp").textContent=fN(tp);$("f_pers").textContent=fCLP(r.persCLP);
+  $("s_pers").textContent=fUSD(r.persUSD)+" · "+fUSD(p.ton?r.persUSD/p.ton:0,3)+"/t";
+  r.otros.forEach((x,i)=>{$("oc"+i).textContent=fCLP(x.clp);$("ou"+i).textContent=fUSD(x.usd)});
+  $("s_otros").textContent=fUSD(r.otrosUSD);
+  r.eq.forEach((x,i)=>{$("ea"+i).textContent=fUSD(x.arr);$("ep"+i).textContent=fUSD(x.pet)});
+  $("s_eq").textContent=fUSD(r.eqArr+r.eqPet);
+  $("s_port").textContent=fUSD(r.portUSD);
+  $("d_port").innerHTML=`<span>Turnos camión <b>${fN(num(S.porteo.cam)*r.camTurnos)}</b> → <b>${fCLP(r.portTurnoCLP)}</b></span><span>Ciclos <b>${fN(r.ciclos)}</b></span><span>Km <b>${fN(r.km)}</b></span><span>Litros <b>${fN(r.litros)}</b> → <b>${fCLP(r.portPetCLP)}</b></span>`;
+  $("r_tarifa").innerHTML=`${fN(r.tarifaT,2)}<em>USD/t</em>`;
+  $("r_vessel").textContent=[p.nave||"Nave sin nombre",p.carga,"Sitio "+p.sitio,fN(p.ton)+" t"].filter(Boolean).join(" · ");
+  $("r_margen").textContent=`Costo ${fN(r.costoT,3)} USD/t + ${fN(p.margen)}% margen`;
+  const tot=r.costoUSD||1;
+  $("r_rows").innerHTML=r.parts.map(x=>`<div class="row"><span>${x.k}</span><span class="v">${fUSD(x.usd)}</span><span class="p">${fN(x.usd/tot*100,0)}%</span></div>`).join("")+
+    `<div class="row tot"><span>Costo total</span><span class="v">${fUSD(r.costoUSD)}</span><span class="p"></span></div>
+     <div class="row"><span>Costo total CLP</span><span class="v">${fCLP(r.costoUSD*p.usd)}</span><span class="p"></span></div>
+     <div class="row"><span>Costo USD/t</span><span class="v">${fN(r.costoT,3)}</span><span class="p"></span></div>
+     <div class="row tot"><span>Venta con margen</span><span class="v">${fUSD(r.ventaUSD)}</span><span class="p"></span></div>`;
+  $("r_bar").innerHTML=r.parts.map(x=>`<i style="width:${x.usd/tot*100}%;background:${x.c}"></i>`).join("");
+  $("r_leg").innerHTML=r.parts.filter(x=>x.usd>0).map(x=>`<span style="--c:${x.c}">${x.k}</span>`).join("");
+  return r;
+}
+
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(el.dataset.t){const v=el.type==="number"?(el.value===""&&el.dataset.j==="2"&&el.dataset.t==="eq"?"":num(el.value)):el.value;S[el.dataset.t][+el.dataset.i][+el.dataset.j]=v;}
+  else if(el.id.startsWith("p_")){const k=el.id.slice(2);S.p[k]=el.type==="number"?num(el.value):el.value;}
+  else if(el.id.startsWith("q_")){const m={q_cam:"cam",q_turnos:"turnos",q_vturno:"vturno",q_km:"km",q_tciclo:"tciclo",q_lkm:"lkm"};S.porteo[m[el.id]]=(el.id==="q_turnos"&&el.value==="")?"":num(el.value);}
+  else if(el.id==="inc_otros") S.incOtros=el.checked;
+  else if(el.id==="inc_porteo") S.incPorteo=el.checked;
+  render(); persist();
+});
+document.addEventListener("change",e=>{if(e.target.tagName==="SELECT"||e.target.type==="checkbox") e.target.dispatchEvent(new Event("input",{bubbles:true}))});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.add){const t=b.dataset.add;S[t].push(t==="pers"?["Nuevo cargo",0,0,0]:t==="otros"?["Nuevo servicio",0,0]:["Nuevo equipo",0,"",0,"USD",0]);buildTables();render();persist();}
+  if(b.dataset.del){S[b.dataset.del].splice(+b.dataset.i,1);buildTables();render();persist();}
+});
+$("btnReset").onclick=()=>{S=clone(BASE);fillParams();buildTables();render();persist();toast("Modelo base restablecido")};
+$("btnCopy").onclick=()=>{
+  const r=calc(S),p=S.p;
+  const txt=[`Costeo ${p.nave||"nave"} · ${p.carga} · Sitio ${p.sitio}`,`${fN(p.ton)} t a ${fN(p.rate)} t/día · ${fN(r.dias,2)} días · ${r.turnos} turnos`,
+    ...r.parts.filter(x=>x.usd>0).map(x=>`${x.k}: ${fUSD(x.usd)}`),
+    `Costo total: ${fUSD(r.costoUSD)} (${fCLP(r.costoUSD*p.usd)})`,`Costo: ${fN(r.costoT,3)} USD/t`,`Tarifa con ${p.margen}% margen: ${fN(r.tarifaT,2)} USD/t`].join("\n");
+  navigator.clipboard.writeText(txt).then(()=>toast("Resumen copiado")).catch(()=>toast("No se pudo copiar en esta vista"));
+};
+function toast(m){$("toast").textContent=m;clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").textContent="",2500)}
+
+/* almacenamiento local: borrador y escenarios */
+function store(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+function putStore(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+function persist(){const o=store();o.draft=S;putStore(o)}
+function listSaved(){
+  const o=store(), list=o.saved||[];
+  $("savedBox").hidden=!list.length;
+  $("savedList").innerHTML=list.map((x,i)=>`<li><button class="load" type="button" data-load="${i}">${esc(x.name)}</button><span>${fN(x.tarifa,2)} USD/t</span><button class="x" type="button" data-rm="${i}" aria-label="Eliminar">×</button></li>`).join("");
+}
+$("btnSave").onclick=()=>{
+  const r=calc(S),o=store();o.saved=o.saved||[];
+  const name=`${S.p.nave||"Sin nombre"} · ${S.p.carga} · ${fN(S.p.ton)} t`;
+  o.saved.unshift({name,tarifa:r.tarifaT,data:clone(S)});o.saved=o.saved.slice(0,20);putStore(o);listSaved();toast("Escenario guardado");
+};
+$("savedList").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;const o=store();
+  if(b.dataset.load!==undefined){S=clone(o.saved[+b.dataset.load].data);fillParams();buildTables();render();persist();toast("Escenario cargado");}
+  if(b.dataset.rm!==undefined){
+    const li=b.parentElement;
+    if(!li.querySelector(".confirm")){const c=document.createElement("span");c.className="confirm";c.innerHTML=`¿Eliminar? <button type="button" data-yes="${b.dataset.rm}">Sí</button>`;li.appendChild(c);return;}
+  }
+  if(b.dataset.yes!==undefined){o.saved.splice(+b.dataset.yes,1);putStore(o);listSaved();}
+});
+(function init(){const d=store().draft;if(d&&d.p&&d.pers)S=Object.assign(clone(BASE),d);fillParams();buildTables();render();listSaved();})();
+</script>
+
+</body>
+</html>
