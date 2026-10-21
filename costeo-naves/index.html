@@ -487,7 +487,7 @@ function calc(S){
   r.eq=S.eq.map(([n,c,h,t,u,l])=>{
     const auto=(h===""||h===null);
     const hrs=auto?r.horas:num(h), hrsB=auto?r.turnosCalc*p.hturno:num(h);
-    const tarifaUSD=u==="UF"?num(t)*p.uf/p.usd:num(t);
+    const tarifaUSD=u==="UF"?num(t)*p.uf/p.usd:u==="CLP"?num(t)/p.usd:num(t);
     const arr=num(c)*hrs*tarifaUSD, arrB=num(c)*hrsB*tarifaUSD;
     const pet=num(c)*hrs*num(l)*p.diesel/p.usd, petB=num(c)*hrsB*num(l)*p.diesel/p.usd;
     return{hrs,arr,pet,arrB,petB};
@@ -573,7 +573,7 @@ function buildTables(){
     <td class="n">${cell(x[1],"sm",`type="number" step="1" min="0" id="eq${i}_1" data-t="eq" data-i="${i}" data-j="1" aria-label="N° equipos"`)}</td>
     <td class="n">${cell(x[2],"sm",`type="number" step="0.5" min="0" placeholder="auto" id="eq${i}_2" data-t="eq" data-i="${i}" data-j="2" aria-label="Horas por equipo"`)}</td>
     <td class="n">${cell(x[3],"sm",`type="number" step="0.001" min="0" id="eq${i}_3" data-t="eq" data-i="${i}" data-j="3" aria-label="Tarifa"`)}</td>
-    <td><select id="eq${i}_4" data-t="eq" data-i="${i}" data-j="4" aria-label="Unidad tarifa"><option value="USD"${x[4]==="USD"?" selected":""}>USD/h</option><option value="UF"${x[4]==="UF"?" selected":""}>UF/h</option></select></td>
+    <td><select id="eq${i}_4" data-t="eq" data-i="${i}" data-j="4" aria-label="Unidad tarifa"><option value="USD"${x[4]==="USD"?" selected":""}>USD/h</option><option value="UF"${x[4]==="UF"?" selected":""}>UF/h</option><option value="CLP"${x[4]==="CLP"?" selected":""}>CLP/h</option></select></td>
     <td class="n">${cell(x[5],"sm",`type="number" step="0.1" min="0" id="eq${i}_5" data-t="eq" data-i="${i}" data-j="5" aria-label="Litros por hora"`)}</td>
     <td class="n" id="ea${i}"></td><td class="n" id="ep${i}"></td>
     <td><button class="x" type="button" data-del="eq" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
@@ -728,45 +728,86 @@ $("xlsIn").addEventListener("change",async e=>{
 function leerExcel(wb,nombre){
   // 1) Excel descargado desde esta página: trae los datos completos
   const dj=wb.Sheets["datos_costeo"];
-  if(dj&&dj.A1){const D=Object.assign(clone(BASE),JSON.parse(dj.A1.v));return D}
-  // 2) Planilla original "Costos transferencia"
-  const ws=wb.Sheets["Costos transferencia"];
-  if(!ws) throw new Error('El Excel debe tener la hoja "Costos transferencia" (formato Costeo_Chatarra)');
-  const tc=wb.Sheets["Tarifa por cargo"];
-  const val=(sh,a)=>{const c=sh&&sh[a];return c?c.v:undefined};
-  const nv=(sh,a,def)=>{const x=val(sh,a);const n=typeof x==="number"?x:parseFloat(String(x??"").replace(/\./g,"").replace(",","."));return isFinite(n)?n:def};
-  const txt=(a)=>String(val(ws,a)??"").trim();
-  const D=clone(BASE); const p=D.p;
+  if(dj&&dj.A1){const D=Object.assign(clone(BASE),JSON.parse(dj.A1.v));D.p=Object.assign(clone(BASE.p),D.p||{});return D}
+  // 2) Planilla de costeo (cualquier nombre de hoja): se reconoce por la tabla "CARGO | VALORES"
+  const enc=XLSX.utils.encode_cell, N=t=>normT(t);
+  const cv=(sh,r,c)=>{const x=sh[enc({r,c})];return x?x.v:undefined};
+  const cf=(sh,r,c)=>{const x=sh[enc({r,c})];return x&&x.f?String(x.f):""};
+  const isNum=v=>typeof v==="number"&&isFinite(v);
+  let ws=null,hr=-1,cC=-1,rg=null;
+  const orden=[...wb.SheetNames].sort((a,b)=>(/costo/i.test(b)?1:0)-(/costo/i.test(a)?1:0));
+  for(const nm of orden){const sh=wb.Sheets[nm];if(!sh||!sh["!ref"])continue;const g=XLSX.utils.decode_range(sh["!ref"]);
+    for(let r=g.s.r;r<=Math.min(g.e.r,120)&&!ws;r++)for(let c=g.s.c;c<=Math.min(g.e.c,10);c++){
+      if(N(cv(sh,r,c))==="cargo"&&/valor|clp|tarifa/i.test(String(cv(sh,r,c+1)??""))){ws=sh;hr=r;cC=c;rg=g;break}}
+    if(ws)break}
+  if(!ws) throw new Error('No se encontró la tabla de personal (columna "CARGO" con "VALORES" al lado) en ninguna hoja del Excel');
+  const cV=cC+1;
+  // parámetros: etiqueta en una celda y el valor en la siguiente con dato (filas sobre la tabla)
+  const param=(re,{exact}={})=>{for(let r=rg.s.r;r<hr;r++)for(let c=rg.s.c;c<=Math.min(rg.e.c,8);c++){const t=N(cv(ws,r,c));if(!t)continue;
+      if(exact?re.test(t):re.test(t)){for(let c2=c+1;c2<=c+3;c2++){const v=cv(ws,r,c2);if(v!==undefined&&String(v).trim()!=="")return v}}}return undefined};
+  const D=clone(BASE),p=D.p;const pn=(v,d)=>isNum(v)?v:d;
   p.nave=String(nombre||"").replace(/\.(xlsx|xls|xlsm)$/i,"").replace(/[_-]+/g," ").trim();
-  p.sitio=txt("D3")||p.sitio; p.carga=txt("D4")||p.carga;
-  p.ton=nv(ws,"D5",p.ton); p.rate=nv(ws,"D6",p.rate); p.manos=nv(ws,"D11",p.manos);
-  p.usd=nv(ws,"D12",p.usd); p.hturno=nv(ws,"D13",p.hturno); p.diesel=nv(ws,"D14",p.diesel);
-  D.porteo.vturno=nv(ws,"D15",D.porteo.vturno);
-  p.uf=nv(tc,"D15",p.uf); p.usdFecha=""; p.ufFecha=""; p.fuenteInd="Valores del Excel cargado";
-  const ufHora=nv(tc,"B15",1.212), usdCargador=nv(tc,"D35",121);
-  const COLS="EFGHIJKLMNOPQRSTUVWX".split("");
-  // personal: desde fila 19 hasta la primera fila sin cargo
-  D.pers=[];
-  for(let r=19;r<19+80;r++){
-    const name=txt("C"+r); if(!name||/^total/i.test(name)) break;
-    const t=COLS.map(c=>{const x=val(ws,c+r);return typeof x==="number"?x:undefined});
-    const d1=t[0]??0;
-    const rest=t.slice(1).filter(x=>x!==undefined);
-    const freq={};rest.forEach(x=>freq[x]=(freq[x]||0)+1);
-    const dn=rest.length?+Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0]:0;
-    const ov={};t.forEach((x,k)=>{if(x!==undefined&&k>0&&x!==dn)ov[k]=x});
-    D.pers.push([name,nv(ws,"D"+r,0),d1,dn,ov]);
+  p.sitio=String(param(/^sitio/)??p.sitio).trim();
+  const carga=param(/tipo de carga|^productos?$|^carga$/);if(carga)p.carga=String(carga).trim();
+  p.ton=pn(param(/^tons?$|^toneladas?$/),p.ton);
+  p.rate=pn(param(/^rate$/),p.rate);
+  p.manos=pn(param(/manos/),p.manos);
+  p.usd=pn(param(/^dolar/),p.usd);
+  p.hturno=pn(param(/^horas? (por )?turnos?$/),p.hturno);
+  p.diesel=pn(param(/petroleo/),p.diesel);
+  D.porteo.vturno=pn(param(/turno camion/),D.porteo.vturno);
+  const totT=param(/^total turnos?$/);const nT=isNum(totT)?Math.ceil(totT-1e-6):Infinity;
+  // UF: celda "Valor UF" y el número bajo ella, en cualquier hoja
+  for(const nm of wb.SheetNames){const sh=wb.Sheets[nm];if(!sh["!ref"])continue;const g=XLSX.utils.decode_range(sh["!ref"]);let ok=false;
+    for(let r=g.s.r;r<=Math.min(g.e.r,80)&&!ok;r++)for(let c=g.s.c;c<=Math.min(g.e.c,12);c++){if(N(cv(sh,r,c))==="valor uf"){const v=cv(sh,r+1,c);if(isNum(v)&&v>10000){p.uf=v;ok=true}break}}
+    if(ok)break}
+  p.usdFecha="";p.ufFecha="";p.fuenteInd="Valores del Excel cargado";
+  // columnas de turnos: desde VALORES hacia la derecha hasta "Total"
+  const tcols=[];
+  for(let c=cV+1;c<=Math.min(rg.e.c,cV+80);c++){
+    const hs=[cv(ws,hr-1,c),cv(ws,hr,c),cv(ws,hr+1,c)].map(x=>x===undefined?"":String(x));
+    if(hs.some(h=>/total/i.test(h)))break;
+    if(hs.some(h=>/^\d+$/.test(h.trim())||/turno|dia/i.test(h)))tcols.push(c);else if(tcols.length)break;
   }
-  if(!D.pers.length) throw new Error("No se encontraron cargos desde la fila 19 de “Costos transferencia”");
-  // filas de secciones por título en la columna C
-  const findRow=re=>{for(let r=19;r<200;r++){if(re.test(txt("C"+r)))return r}return 0};
-  const ro=findRow(/^OTROS$/i);
-  if(ro){D.otros=[];for(let r=ro+1;r<ro+30;r++){const name=txt("C"+r);if(!name||/total/i.test(name))break;D.otros.push([name,nv(ws,"D"+r,0),nv(ws,"E"+r,0)])}}
-  const re=findRow(/^EQUIPOS$/i);
-  if(re){D.eq=[];for(let r=re+1;r<re+30;r++){const name=txt("C"+r);if(!name||/^costo/i.test(name))break;if(/petr/i.test(name))continue;
-    const ce=ws["E"+r]; const horas=(!ce||ce.f||typeof ce.v!=="number")?"":ce.v;
-    const esCarg=/cargador/i.test(name);
-    D.eq.push([name,nv(ws,"D"+r,0),horas,esCarg?usdCargador:ufHora,esCarg?"USD":"UF",0])}}
+  if(!tcols.length) throw new Error("No se encontraron las columnas de turnos junto a la tabla de personal");
+  const useCols=tcols.slice(0,Math.min(tcols.length,nT));
+  // filas de cargos
+  D.pers=[];let empezo=false;
+  for(let r=hr+1;r<=Math.min(rg.e.r,hr+80);r++){
+    const name=String(cv(ws,r,cC)??"").trim();
+    if(!name){if(empezo)break;continue}
+    if(/^total/i.test(name)||/^turno\s*\d/i.test(name))break;
+    empezo=true;
+    const t=useCols.map(c=>{const x=cv(ws,r,c);return isNum(x)?x:undefined});
+    const d1=t[0]??0;const rest=t.slice(1).filter(x=>x!==undefined);
+    const freq={};rest.forEach(x=>freq[x]=(freq[x]||0)+1);
+    const dn=rest.length?+Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0]:d1;
+    const ov={};t.forEach((x,k)=>{if(x!==undefined&&k>0&&x!==dn)ov[k]=x});
+    D.pers.push([name,pn(cv(ws,r,cV),0),d1,dn,ov]);
+  }
+  if(!D.pers.length) throw new Error("La tabla de personal no tiene cargos");
+  // tarifas de equipos en CLP/hora: fila con el nombre del equipo y un valor a su derecha (hojas de tarifas)
+  const tarifaCLP=nm=>{const k=N(nm);for(const sn of wb.SheetNames){if(wb.Sheets[sn]===ws)continue;const sh=wb.Sheets[sn];if(!sh["!ref"])continue;const g=XLSX.utils.decode_range(sh["!ref"]);
+      for(let r=g.s.r;r<=Math.min(g.e.r,120);r++)for(let c=g.s.c;c<=Math.min(g.e.c,6);c++){if(N(cv(sh,r,c))===k){const v=cv(sh,r,c+1);if(isNum(v)&&v>1000)return v}}}return null};
+  const tc=wb.Sheets["Tarifa por cargo"];
+  const usdCargador=tc&&isNum(cv(tc,34,3))?cv(tc,34,3):121;
+  // secciones bajo la tabla: OTROS / ITEMS (servicios o insumos) y EQUIPOS
+  let otros=null,eqs=null;
+  for(let r=hr+1;r<=Math.min(rg.e.r,hr+200);r++){
+    const h=N(cv(ws,r,cC)),d=N(cv(ws,r,cC+1));
+    if(!/^(otros|items?|equipos)$/.test(h))continue;
+    const esEq=h==="equipos"||/equipo/.test(d);
+    const filas=[];
+    for(let r2=r+1;r2<=r+30;r2++){const nm=String(cv(ws,r2,cC)??"").trim();if(!nm||/^(total|costo)/i.test(nm))break;filas.push(r2)}
+    if(esEq){eqs=eqs||[];
+      filas.forEach(r2=>{const nm=String(cv(ws,r2,cC)).trim();if(/petr/i.test(nm))return;const n=pn(cv(ws,r2,cC+1),0);
+        const hv=cv(ws,r2,cC+2),hf=cf(ws,r2,cC+2);
+        let horas="";if(isNum(hv)){if(!hf)horas=n>0?hv:"";else if(new RegExp("\\b"+XLSX.utils.encode_col(cC+1)+"\\$?"+(r2+1)+"\\b").test(hf.replace(/\$/g,"")))horas=n>0?Math.round(hv/n*100)/100:"";}
+        const clp=tarifaCLP(nm);const esCarg=/cargador/i.test(nm);
+        eqs.push([nm,n,horas,clp?Math.round(clp):(esCarg?usdCargador:1.212),clp?"CLP":(esCarg?"USD":"UF"),0])})}
+    else{otros=otros||[];filas.forEach(r2=>otros.push([String(cv(ws,r2,cC)).trim(),pn(cv(ws,r2,cC+1),0),pn(cv(ws,r2,cC+2),0)]))}
+  }
+  if(otros)D.otros=otros; if(eqs)D.eq=eqs;
   return D;
 }
 
