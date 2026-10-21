@@ -915,7 +915,7 @@ label textarea{min-height:64px;resize:vertical}
           <label>Correo <span class="req">obligatorio</span><input type="email" name="correo" required autocomplete="off"></label>
           <p class="help" id="p-mail-hint" hidden style="margin-top:-6px"></p>
           <label>Cargo<input name="cargo" placeholder="Ej.: Jefe de turno" autocomplete="off"></label>
-          <label>Empresa<input name="empresa" list="dl-empresas" placeholder="Ej.: HTP, Reloncaví, Mabe" autocomplete="off"></label>
+          <label>Empresa<input name="empresa" list="dl-empresas" placeholder="Ej.: HTP, Reloncaví, CSH" autocomplete="off"></label>
           <label>Acceso a la app<select name="acceso">
             <option value="Usuario">Usuario: ve, registra y cierra lo asignado</option>
             <option value="Lector">Lector: solo ve</option>
@@ -1324,6 +1324,8 @@ function fbErr(e,what){console.error(e);toast(e&&e.code==="permission-denied"?`N
 let auth, db, authUser=null, persona=null, isAdmin=false, myAcceso="", items=[], personas=[], unsubs=[], synced=false, esJefe=false, tareas=[], proyectos=[], mejoras=[], mjErr=false, mant=[];
 const MAX_POR_CORREO=3;
 // Correos compartidos con un máximo mayor (por ejemplo, supervisores de Reloncaví que no tienen correo propio)
+// Empresas que siempre aparecen para elegir, aunque aún no tengan registros ni personas
+const EMPRESAS_FIJAS=["CSH"];
 const MAX_ESPECIAL={"supervisorhuachipato@reloncavi.cl":5};
 const maxPara=c=>MAX_ESPECIAL[String(c||"").toLowerCase()]||MAX_POR_CORREO;
 let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=null, closeId=null, closeFile=null;
@@ -1495,7 +1497,7 @@ function renderDash(){
   document.querySelectorAll("#d-tipo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===dTipo)));
   $("#d-fecha").textContent="Actualizado al "+fmt(hoyISO());
   const allT=items.filter(i=>!dTipo||(i.tipo||"Compromiso")===dTipo).map(it=>{const d=it.estado==="Cerrado"?null:dias(it.fechaCompromiso);return{...it,_d:d,empresa:(it.empresa||"").trim()}});
-  const empList=[...new Set([...items.map(i=>(i.empresa||"").trim()),...personas.map(p=>(p.empresa||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  const empList=[...new Set([...items.map(i=>(i.empresa||"").trim()),...personas.map(p=>(p.empresa||"").trim()),...EMPRESAS_FIJAS].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
   const colorOf=e=>e?ECOLS[empList.indexOf(e)%ECOLS.length]:"#8A93A6";
   if(dEmp&&dEmp!=="__sin"&&!empList.includes(dEmp))dEmp="";
   $("#d-emp-sel").innerHTML='<option value="">Todas las empresas</option>'+empList.map(e=>`<option ${e===dEmp?"selected":""}>${esc(e)}</option>`).join("")+(allT.some(i=>!i.empresa)?`<option value="__sin" ${dEmp==="__sin"?"selected":""}>Sin empresa asignada</option>`:"");
@@ -1574,7 +1576,7 @@ function render(){
   const rs=[...new Set(all.map(i=>i.responsable).filter(Boolean))].sort(), cur=fr;
   $("#f-resp").innerHTML='<option value="">Todos los responsables</option><option value="__me">Asignados a mí</option>'+rs.map(r=>`<option ${r===cur?"selected":""}>${esc(r)}</option>`).join("");
   $("#f-resp").value=cur;
-  const ems=[...new Set(all.map(i=>i.empresa).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  const ems=[...new Set([...all.map(i=>i.empresa),...EMPRESAS_FIJAS].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
   $("#f-emp").innerHTML='<option value="">Todas las empresas</option>'+ems.map(x=>`<option ${x===fem?"selected":""}>${esc(x)}</option>`).join("");
   $("#f-emp").value=ems.includes(fem)?fem:"";
   {const nf=[fe,fr,fc,fem].filter(Boolean).length;$("#b-filt").textContent=nf?`Filtros (${nf})`:"Filtros";$("#b-filt").classList.toggle("on",nf>0)}
@@ -1604,7 +1606,7 @@ function render(){
   const em=$("#empty");
   if(!list.length){em.hidden=false;em.textContent=n?"Ningún registro coincide con los filtros. Limpie la búsqueda o elija otro filtro.":`Aún no hay ${label(tab)}s.${canWrite()?` Use Registrar ${label(tab)} para crear el primero.`:""}`}else em.hidden=true;
   $("#count").textContent=`Mostrando ${list.length} de ${n} ${label(tab)}s`;
-  $("#dl-empresas").innerHTML=[...new Set([...items.map(i=>i.empresa),...personas.map(p=>p.empresa)].filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
+  $("#dl-empresas").innerHTML=[...new Set([...items.map(i=>i.empresa),...personas.map(p=>p.empresa),...EMPRESAS_FIJAS].filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
   $("#dl-zonas").innerHTML=[...new Set(items.map(i=>i.zona).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("");
 }
 
