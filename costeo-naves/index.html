@@ -103,6 +103,13 @@ button.link{border:none;background:none;color:var(--steel);padding:2px 0;text-al
 .clist .m{grid-column:1/-1;font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center}
 .clist .m .x{margin-left:auto;font-size:12px;padding:0 4px}
 .who{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.turnos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:14px}
+.turnos>div{background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.turnos small{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.turnos b{font-family:var(--f-num);font-size:22px;font-weight:500}
+.turnos span{font-size:12px;color:var(--muted)}
+.turnos .hi{background:var(--steel-soft)}
+.turnos .hi b{color:var(--steel)}
 .saved{margin-top:12px}
 .saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .saved ul{list-style:none;margin:0;padding:0}
@@ -150,13 +157,14 @@ button.link{border:none;background:none;color:var(--steel);padding:2px 0;text-al
       <section class="card">
         <h2><span class="code">1</span>Personal muellaje (Reloncaví)<span class="sub" id="s_pers"></span></h2>
         <div class="body">
+          <div class="turnos" id="turnosBox"></div>
           <div class="tbl"><table>
             <thead><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Dot. turno 1</th><th class="n">Dot. turnos sig.</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th><th></th></tr></thead>
             <tbody id="t_pers"></tbody>
             <tfoot><tr><td>Total</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td><td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr></tfoot>
           </table></div>
           <button class="addrow" type="button" data-add="pers">+ Agregar cargo</button>
-          <p class="note">El turno 1 suele llevar dotación distinta (p. ej. movilizadores en muelle). Los turnos se pagan completos: turnos totales = días × turnos/día, redondeado hacia arriba.</p>
+          <p class="note">El turno 1 suele llevar dotación distinta (p. ej. movilizadores en muelle). Cada cargo se multiplica por los turnos completos de arriba: dotación del turno 1 + dotación de turnos siguientes × (turnos − 1).</p>
         </div>
       </section>
 
@@ -277,8 +285,9 @@ function calc(S){
   r.ratePorTurno=p.rate/p.tdia;
   r.dias=p.rate>0?p.ton/p.rate:0;
   r.turnosExact=r.dias*p.tdia;
-  r.turnos=Math.ceil(r.turnosExact-1e-9);
-  r.horas=r.turnosExact*p.hturno;
+  r.turnos=Math.ceil(r.turnosExact-1e-6);  // cualquier fracción sube al turno siguiente (9,1 → 10)
+  r.horasExact=r.turnosExact*p.hturno;
+  r.horas=r.turnos*p.hturno;              // horas de turnos completos
   r.pers=S.pers.map(([n,v,d1,dn])=>{const tp=r.turnos>0?num(d1)+num(dn)*(r.turnos-1):0;return{tp,clp:tp*num(v)}});
   r.persCLP=r.pers.reduce((a,x)=>a+x.clp,0);
   r.persUSD=r.persCLP/p.usd;
@@ -348,7 +357,11 @@ function fillParams(){
 }
 function render(){
   const r=calc(S), p=S.p;
-  $("derived").innerHTML=`<span>Rate/turno <b>${fN(r.ratePorTurno)} t</b></span><span>Días de operación <b>${fN(r.dias,2)}</b></span><span>Turnos <b>${fN(r.turnosExact,2)}</b> → pagados <b>${r.turnos}</b></span><span>Horas totales <b>${fN(r.horas,1)}</b></span><span>Rate/mano/turno <b>${fN(p.manos>0?r.ratePorTurno/p.manos:0)} t</b></span>`;
+  $("derived").innerHTML=`<span>Rate/turno <b>${fN(r.ratePorTurno)} t</b></span><span>Días de operación <b>${fN(r.dias,2)}</b></span><span>Turnos <b>${fN(r.turnosExact,2)}</b> → pagados <b>${r.turnos}</b></span><span>Horas totales <b>${fN(r.horas)}</b> (${r.turnos} × ${p.hturno} h)</span><span>Rate/mano/turno <b>${fN(p.manos>0?r.ratePorTurno/p.manos:0)} t</b></span>`;
+  $("turnosBox").innerHTML=`<div><small>Toneladas ÷ rate</small><b>${fN(p.ton)} ÷ ${fN(p.rate)}</b><span>= ${fN(r.dias,2)} días</span></div>
+    <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
+    <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${Math.abs(r.turnos-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto"}</span></div>
+    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`;
   let d1=0,dn=0,tp=0;
   r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tp);$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp});
   $("f_d1").textContent=fN(d1);$("f_dn").textContent=fN(dn);$("f_tp").textContent=fN(tp);$("f_pers").textContent=fCLP(r.persCLP);
