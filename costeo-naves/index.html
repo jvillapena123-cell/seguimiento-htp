@@ -110,6 +110,16 @@ button.link{border:none;background:none;color:var(--steel);padding:2px 0;text-al
 .turnos span{font-size:12px;color:var(--muted)}
 .turnos .hi{background:var(--steel-soft)}
 .turnos .hi b{color:var(--steel)}
+td input.g{width:46px;padding:4px 4px;text-align:center}
+td input.g.ov{background:var(--signal);color:var(--signal-ink);border-color:var(--signal);font-weight:600}
+th.day{text-align:center;background:var(--steel);color:var(--panel);letter-spacing:.08em}
+th.day.alt{background:var(--ink)}
+th.grp{text-align:center}
+td.tk,th.tk{padding-left:3px;padding-right:3px;text-align:center}
+td.tk.alt,th.tk.alt{background:var(--steel-soft)}
+.stk{position:sticky;left:0;z-index:1;background:var(--panel)}
+th.stk{background:var(--steel-soft);z-index:2}
+tfoot td.stk{background:var(--panel)}
 .saved{margin-top:12px}
 .saved h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .saved ul{list-style:none;margin:0;padding:0}
@@ -159,12 +169,13 @@ button.link{border:none;background:none;color:var(--steel);padding:2px 0;text-al
         <div class="body">
           <div class="turnos" id="turnosBox"></div>
           <div class="tbl"><table>
-            <thead><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Dot. turno 1</th><th class="n">Dot. turnos sig.</th><th class="n">Turnos-persona</th><th class="n">Total CLP</th><th></th></tr></thead>
+            <thead id="h_pers"></thead>
             <tbody id="t_pers"></tbody>
-            <tfoot><tr><td>Total</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td><td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr></tfoot>
+            <tfoot id="f_persRow"></tfoot>
           </table></div>
-          <button class="addrow" type="button" data-add="pers">+ Agregar cargo</button>
-          <p class="note">El turno 1 suele llevar dotación distinta (p. ej. movilizadores en muelle). Cada cargo se multiplica por los turnos completos de arriba: dotación del turno 1 + dotación de turnos siguientes × (turnos − 1).</p>
+          <p class="note" id="persWarn" hidden>Más de 60 turnos: la grilla muestra los primeros 60; el cálculo usa la dotación base para el resto.</p>
+          <div class="actions"><button class="addrow" type="button" data-add="pers">+ Agregar cargo</button><button class="addrow" type="button" id="btnClearOv">Quitar ajustes por turno</button></div>
+          <p class="note">El turno 1 suele llevar dotación distinta (p. ej. movilizadores en muelle). Las columnas T1, T2… se crean solas según los turnos a pagar. "Base T1" y "Base sig." rellenan la grilla; cualquier celda de un turno se puede cambiar a mano y queda marcada en amarillo. Si deja la celda vacía vuelve al valor base.</p>
         </div>
       </section>
 
@@ -280,6 +291,8 @@ const fUSD=(n,d=0)=>"US$ "+n.toLocaleString("es-CL",{minimumFractionDigits:d,max
 const fN=(n,d=0)=>n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFractionDigits:d});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+const MAXT=60;
+function dot(d1,dn,ov,k){return ov&&ov[k]!==undefined?num(ov[k]):(k===0?num(d1):num(dn))}
 function calc(S){
   const p=S.p, r={};
   r.ratePorTurno=p.rate/p.tdia;
@@ -288,7 +301,7 @@ function calc(S){
   r.turnos=Math.ceil(r.turnosExact-1e-6);  // cualquier fracción sube al turno siguiente (9,1 → 10)
   r.horasExact=r.turnosExact*p.hturno;
   r.horas=r.turnos*p.hturno;              // horas de turnos completos
-  r.pers=S.pers.map(([n,v,d1,dn])=>{const tp=r.turnos>0?num(d1)+num(dn)*(r.turnos-1):0;return{tp,clp:tp*num(v)}});
+  r.pers=S.pers.map(([n,v,d1,dn,ov])=>{let tp=0;for(let k=0;k<r.turnos;k++)tp+=dot(d1,dn,ov,k);return{tp,clp:tp*num(v)}});
   r.persCLP=r.pers.reduce((a,x)=>a+x.clp,0);
   r.persUSD=r.persCLP/p.usd;
   r.otros=S.otros.map(([n,c,v])=>{const clp=num(c)*num(v);return{clp,usd:clp/p.usd}});
@@ -324,15 +337,30 @@ function calc(S){
   return r;
 }
 
+let builtT=-1, builtTd=-1;
 function cell(v,cls,attrs){return `<input ${attrs} class="${cls||""}" value="${esc(v)}">`}
 function buildTables(){
-  $("t_pers").innerHTML=S.pers.map((x,i)=>`<tr>
-    <td>${cell(x[0],"name",`type="text" id="pe${i}_0" data-t="pers" data-i="${i}" data-j="0" aria-label="Cargo"`)}</td>
+  const r0=calc(S), T=Math.min(r0.turnos,MAXT), td=Math.max(1,S.p.tdia|0);
+  builtT=T; builtTd=td;
+  const dias=Math.ceil(T/td);
+  let h1=`<tr><th rowspan="2" class="stk">Cargo</th><th rowspan="2" class="n">CLP / turno</th><th colspan="2" class="n grp">Dotación base</th>`;
+  for(let d=0;d<dias;d++){const c=Math.min(td,T-d*td);h1+=`<th colspan="${c}" class="day${d%2?" alt":""}">Día ${d+1}</th>`}
+  h1+=`<th rowspan="2" class="n">Turnos-persona</th><th rowspan="2" class="n">Total CLP</th><th rowspan="2"></th></tr><tr><th class="n">Base T1</th><th class="n">Base sig.</th>`;
+  for(let k=0;k<T;k++)h1+=`<th class="n tk${Math.floor(k/td)%2?" alt":""}">T${k+1}</th>`;
+  $("h_pers").innerHTML=h1+"</tr>";
+  $("t_pers").innerHTML=S.pers.map((x,i)=>{
+    let g="";for(let k=0;k<T;k++)g+=`<td class="n tk${Math.floor(k/td)%2?" alt":""}"><input type="number" min="0" step="1" class="g" id="g${i}_${k}" data-g="${i}" data-k="${k}" aria-label="${esc(x[0])} turno ${k+1}"></td>`;
+    return `<tr>
+    <td class="stk">${cell(x[0],"name",`type="text" id="pe${i}_0" data-t="pers" data-i="${i}" data-j="0" aria-label="Cargo"`)}</td>
     <td class="n">${cell(x[1],"",`type="number" step="1" min="0" id="pe${i}_1" data-t="pers" data-i="${i}" data-j="1" aria-label="CLP por turno"`)}</td>
-    <td class="n">${cell(x[2],"sm",`type="number" step="1" min="0" id="pe${i}_2" data-t="pers" data-i="${i}" data-j="2" aria-label="Dotación turno 1"`)}</td>
-    <td class="n">${cell(x[3],"sm",`type="number" step="1" min="0" id="pe${i}_3" data-t="pers" data-i="${i}" data-j="3" aria-label="Dotación turnos siguientes"`)}</td>
-    <td class="n" id="pt${i}"></td><td class="n" id="pc${i}"></td>
-    <td><button class="x" type="button" data-del="pers" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
+    <td class="n">${cell(x[2],"sm",`type="number" step="1" min="0" id="pe${i}_2" data-t="pers" data-i="${i}" data-j="2" aria-label="Dotación base turno 1"`)}</td>
+    <td class="n">${cell(x[3],"sm",`type="number" step="1" min="0" id="pe${i}_3" data-t="pers" data-i="${i}" data-j="3" aria-label="Dotación base turnos siguientes"`)}</td>
+    ${g}<td class="n" id="pt${i}"></td><td class="n" id="pc${i}"></td>
+    <td><button class="x" type="button" data-del="pers" data-i="${i}" aria-label="Quitar">×</button></td></tr>`}).join("");
+  let f=`<tr><td class="stk">Total personas</td><td></td><td class="n" id="f_d1"></td><td class="n" id="f_dn"></td>`;
+  for(let k=0;k<T;k++)f+=`<td class="n tk${Math.floor(k/td)%2?" alt":""}" id="ft${k}"></td>`;
+  $("f_persRow").innerHTML=f+`<td class="n" id="f_tp"></td><td class="n" id="f_pers"></td><td></td></tr>`;
+  $("persWarn").hidden=r0.turnos<=MAXT;
   $("t_otros").innerHTML=S.otros.map((x,i)=>`<tr>
     <td>${cell(x[0],"name",`type="text" id="ot${i}_0" data-t="otros" data-i="${i}" data-j="0" aria-label="Servicio"`)}</td>
     <td class="n">${cell(x[1],"sm",`type="number" step="1" min="0" id="ot${i}_1" data-t="otros" data-i="${i}" data-j="1" aria-label="N° servicios"`)}</td>
@@ -362,8 +390,14 @@ function render(){
     <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
     <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${Math.abs(r.turnos-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto"}</span></div>
     <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`;
-  let d1=0,dn=0,tp=0;
-  r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tp);$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp});
+  if(Math.min(r.turnos,MAXT)!==builtT||Math.max(1,p.tdia|0)!==builtTd) buildTables();
+  let d1=0,dn=0,tp=0; const colT=new Array(builtT).fill(0);
+  r.pers.forEach((x,i)=>{$("pt"+i).textContent=fN(x.tp);$("pc"+i).textContent=fCLP(x.clp);d1+=num(S.pers[i][2]);dn+=num(S.pers[i][3]);tp+=x.tp;
+    const [,,b1,bn,ov]=S.pers[i];
+    for(let k=0;k<builtT;k++){const v=dot(b1,bn,ov,k);colT[k]+=v;const el=$(`g${i}_${k}`);if(!el)continue;
+      const isOv=!!(ov&&ov[k]!==undefined);el.classList.toggle("ov",isOv);if(document.activeElement!==el)el.value=v;}
+  });
+  colT.forEach((v,k)=>{$("ft"+k).textContent=fN(v)});
   $("f_d1").textContent=fN(d1);$("f_dn").textContent=fN(dn);$("f_tp").textContent=fN(tp);$("f_pers").textContent=fCLP(r.persCLP);
   $("s_pers").textContent=fUSD(r.persUSD)+" · "+fUSD(p.ton?r.persUSD/p.ton:0,3)+"/t";
   r.otros.forEach((x,i)=>{$("oc"+i).textContent=fCLP(x.clp);$("ou"+i).textContent=fUSD(x.usd)});
@@ -388,7 +422,12 @@ function render(){
 
 document.addEventListener("input",e=>{
   const el=e.target;
-  if(el.dataset.t){const v=el.type==="number"?(el.value===""&&el.dataset.j==="2"&&el.dataset.t==="eq"?"":num(el.value)):el.value;S[el.dataset.t][+el.dataset.i][+el.dataset.j]=v;}
+  if(el.dataset.g!==undefined){const row=S.pers[+el.dataset.g],k=+el.dataset.k;
+    const def=k===0?num(row[2]):num(row[3]);
+    if(!row[4]||typeof row[4]!=="object")row[4]={};
+    if(el.value===""||num(el.value)===def)delete row[4][k];else row[4][k]=num(el.value);
+  }
+  else if(el.dataset.t){const v=el.type==="number"?(el.value===""&&el.dataset.j==="2"&&el.dataset.t==="eq"?"":num(el.value)):el.value;S[el.dataset.t][+el.dataset.i][+el.dataset.j]=v;}
   else if(el.id.startsWith("p_")){const k=el.id.slice(2);S.p[k]=el.type==="number"?num(el.value):el.value;}
   else if(el.id.startsWith("q_")){const m={q_cam:"cam",q_turnos:"turnos",q_vturno:"vturno",q_km:"km",q_tciclo:"tciclo",q_lkm:"lkm"};S.porteo[m[el.id]]=(el.id==="q_turnos"&&el.value==="")?"":num(el.value);}
   else if(el.id==="inc_otros") S.incOtros=el.checked;
@@ -409,6 +448,8 @@ window.CN={
   set:d=>{S=Object.assign(clone(BASE),clone(d));fillParams();buildTables();render();persist();},
   base:()=>clone(BASE), onChange:null, toast:m=>toast(m)
 };
+$("btnClearOv").onclick=()=>{S.pers.forEach(x=>{x[4]={}});render();persist();if(window.CN&&CN.onChange)CN.onChange();toast("Ajustes por turno quitados")};
+document.addEventListener("focusout",e=>{if(e.target.dataset&&e.target.dataset.g!==undefined)render()});
 $("btnCopy").onclick=()=>{
   const r=calc(S),p=S.p;
   const txt=[`Costeo ${p.nave||"nave"} · ${p.carga} · Sitio ${p.sitio}`,`${fN(p.ton)} t a ${fN(p.rate)} t/día · ${fN(r.dias,2)} días · ${r.turnos} turnos`,
