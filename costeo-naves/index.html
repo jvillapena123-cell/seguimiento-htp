@@ -27,14 +27,26 @@
   --good:#5cc391; --warn:#f0965a; --input:#101b22; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.4}
-.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1780px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
 header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:18px}
 .brand small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .brand h1{margin:2px 0 0;font-size:30px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .brand h1 span{background:var(--signal);color:var(--signal-ink);padding:0 6px;margin-left:4px}
 .scen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.grid{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:20px;align-items:start}
-@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}.side{order:-1}}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 410px;gap:20px;align-items:start}
+.left{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow-y:auto}
+.left .cloud{margin-top:0}
+.left .clist{max-height:none}
+.menuBtn,.menuClose,.menuVeil{display:none}
+@media (max-width:1360px){
+  .grid{grid-template-columns:minmax(0,1fr) 410px}
+  .left{position:fixed;z-index:50;top:0;bottom:0;left:0;width:min(340px,88vw);max-height:none;background:var(--bg);padding:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-top:max(12px,env(safe-area-inset-top,0px));transform:translateX(-105%);transition:transform .2s;box-shadow:0 0 0 1px var(--line)}
+  body.menu-open .left{transform:none}
+  .menuBtn{display:inline-block}
+  .menuClose{display:block;margin-left:auto;font-size:22px}
+  body.menu-open .menuVeil{display:block;position:fixed;inset:0;z-index:40;background:rgba(10,20,28,.45)}
+}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)!important}.side{order:-1}}
 section.card{background:var(--panel);border:1px solid var(--line);margin-bottom:16px}
 .card>h2{margin:0;display:flex;gap:10px;align-items:baseline;font-size:16px;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
 .card>h2 .code{font-family:var(--f-num);font-size:12px;color:var(--steel);letter-spacing:0}
@@ -93,6 +105,8 @@ button.x:hover{color:var(--warn)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--c)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.toast.fixed{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:8px 14px;font-size:13px;max-width:90vw}
+.toast.fixed:empty{display:none}
 .toast{font-size:12px;color:var(--good);min-height:16px;margin-top:6px}
 .cloud{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--signal);margin-top:12px;padding:12px 16px}
 .cloud h3{margin:0 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
@@ -201,6 +215,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
       <h1>Costeo de Naves<span>HTP</span></h1>
     </div>
     <div class="scen">
+      <button type="button" id="btnMenu" class="menuBtn">☰ Costeos guardados</button>
       <button type="button" id="btnTar">Tarifas y costos por cargo</button>
       <button type="button" id="btnDesv">Turnos de resguardo</button>
       <label class="btnfile" for="xlsIn">Cargar Excel</label>
@@ -212,6 +227,33 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
   </header>
 
   <div class="grid">
+    <nav class="left" id="menu" aria-label="Costeos guardados">
+      <button type="button" class="x menuClose" id="menuClose" aria-label="Cerrar menú">×</button>
+      <div class="cloud">
+        <h3>Costeos guardados</h3>
+        <div id="c_login">
+          <p class="note">Ingrese con el mismo correo y contraseña de Seguimiento HTP para guardar y revisar costeos.</p>
+          <form id="f_login" class="lf">
+            <label class="f">Correo<input id="l_email" type="email" autocomplete="username" required></label>
+            <label class="f">Contraseña<input id="l_pass" type="password" autocomplete="current-password" required></label>
+            <button class="pri" type="submit">Ingresar</button>
+            <button class="link" id="l_forgot" type="button">Olvidé mi contraseña</button>
+          </form>
+        </div>
+        <div id="c_app" hidden>
+          <label class="f">Nombre del costeo<input id="c_nombre" type="text" placeholder="Ej: MV Ocean Star · chatarra · oct-2026"></label>
+          <div class="cstate" id="c_state"></div>
+          <div class="actions">
+            <button class="pri" id="c_save" type="button">Guardar</button>
+            <button id="c_saveNew" type="button">Guardar como nuevo</button>
+            <button id="c_new" type="button">Nuevo costeo</button>
+          </div>
+          <input id="c_buscar" type="search" placeholder="Buscar por nombre, nave o carga" aria-label="Buscar costeos">
+          <ul class="clist" id="c_list"></ul>
+        </div>
+      </div>
+    </nav>
+    <div class="menuVeil" id="menuVeil"></div>
     <main>
       <section class="card">
         <h2><span class="code">0</span>Parámetros de la faena</h2>
@@ -325,30 +367,6 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
         </div>
       </div>
 
-      <div class="cloud">
-        <h3>Costeos guardados</h3>
-        <div id="c_login">
-          <p class="note">Ingrese con el mismo correo y contraseña de Seguimiento HTP para guardar y revisar costeos.</p>
-          <form id="f_login" class="lf">
-            <label class="f">Correo<input id="l_email" type="email" autocomplete="username" required></label>
-            <label class="f">Contraseña<input id="l_pass" type="password" autocomplete="current-password" required></label>
-            <button class="pri" type="submit">Ingresar</button>
-            <button class="link" id="l_forgot" type="button">Olvidé mi contraseña</button>
-          </form>
-        </div>
-        <div id="c_app" hidden>
-          <label class="f">Nombre del costeo<input id="c_nombre" type="text" placeholder="Ej: MV Ocean Star · chatarra · oct-2026"></label>
-          <div class="cstate" id="c_state"></div>
-          <div class="actions">
-            <button class="pri" id="c_save" type="button">Guardar</button>
-            <button id="c_saveNew" type="button">Guardar como nuevo</button>
-            <button id="c_new" type="button">Nuevo costeo</button>
-          </div>
-          <input id="c_buscar" type="search" placeholder="Buscar por nombre, nave o carga" aria-label="Buscar costeos">
-          <ul class="clist" id="c_list"></ul>
-        </div>
-        <div class="toast" id="toast" role="status"></div>
-      </div>
     </aside>
   </div>
 </div>
@@ -371,6 +389,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
     </div>
   </div>
 </dialog>
+<div class="toast fixed" id="toast" role="status"></div>
 
 <dialog id="dlgTar" aria-labelledby="dlgTarT">
   <div class="dlg-h"><h2 id="dlgTarT">Tarifas y costos por cargo</h2><button type="button" class="x" id="dlgClose" aria-label="Cerrar">×</button></div>
@@ -811,6 +830,12 @@ $("btnXls").onclick=()=>{
 };
 
 
+
+/* ---------- Menú izquierdo ---------- */
+const abrirMenu=v=>document.body.classList.toggle("menu-open",v);
+$("btnMenu").onclick=()=>abrirMenu(true);$("menuClose").onclick=()=>abrirMenu(false);$("menuVeil").onclick=()=>abrirMenu(false);
+$("c_list").addEventListener("click",e=>{if(e.target.closest(".load"))setTimeout(()=>abrirMenu(false),50)});
+$("c_new").addEventListener("click",()=>setTimeout(()=>abrirMenu(false),50));
 
 /* ---------- Desviación % ---------- */
 function dvPrev(){const pt=num($("dv_turnos").value),pe=num($("dv_eq").value);const T=clone(S);T.p.desv={turnos:pt,eq:pe};const A=clone(S);A.p.desv={};const a=calc(A),b=calc(T);
