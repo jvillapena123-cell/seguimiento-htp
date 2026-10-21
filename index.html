@@ -2244,8 +2244,8 @@ $("#t-csv").onclick=()=>{
 
 /* ---------- Mantenimiento de equipos ---------- */
 const MT_AREAS=[
-  {id:"LSur",nombre:"LSur",equipos:["C-32","C-33","C-34","Apilador ST34","T1 LSur","T2","T3"]},
-  {id:"LNorte",nombre:"LNorte",equipos:["MKS1","Apilador Sumitomo","T1 LNorte"]},
+  {id:"LSur",nombre:"LSur",equipos:["C-32","C-33","C-34","Apilador ST34","T1","T2","T3"]},
+  {id:"LNorte",nombre:"LNorte",equipos:["MKS1","Apilador Sumitomo","T1"]},
   {id:"TTMM",nombre:"TTMM",equipos:["C-31","TD3"]}
 ];
 const MT_ABIERTOS=["Pendiente","En proceso","Esperando repuesto"];
@@ -2256,6 +2256,10 @@ let mtKpi="", mtEq="", mtSeg="", mtEditId=null, mtCloseId=null, mtCloseFile=null
 const verMant=()=>isAdmin||esJefe;
 const puedeCrearMt=()=>isAdmin||esJefe;
 const areaDe=eq=>{const a=MT_AREAS.find(a=>a.equipos.includes(eq));return a?a.id:""};
+// Un mismo nombre puede estar en dos áreas (T1 en LSur y LNorte): cada equipo se identifica por "área|equipo"
+const eqKey=(a,e)=>a+"|"+e;
+const mKey=m=>eqKey(m.area||areaDe(m.equipo),m.equipo);
+const eqDeKey=k=>{const i=k.indexOf("|");return i<0?{area:areaDe(k),equipo:k}:{area:k.slice(0,i),equipo:k.slice(i+1)}};
 const mtNum=m=>m.num?String(m.num).padStart(3,"0"):"";
 const mtAbierta=m=>m.estado!=="Cerrada";
 function mtAlerta(m){if(!mtAbierta(m))return"Cerrado";const d=dias(m.fechaCompromiso);if(d==null)return"Sin fecha";return d<0?"Vencido":d<=3?"Por vencer":"En plazo"}
@@ -2274,7 +2278,7 @@ function mtCloseBlock(m){
 }
 function mtStat(arr){const n=arr.length,c=arr.filter(m=>!mtAbierta(m)).length,v=arr.filter(m=>mtAlerta(m)==="Vencido").length,s=arr.filter(m=>mtAbierta(m)&&!String(m.avisoSap||"").trim()).length;
   return{n,c,a:n-c,v,s,pc:n?Math.round(c/n*100):0}}
-const mtEnFiltro=m=>!mtEq||(mtEq.startsWith("area:")?m.area===mtEq.slice(5):m.equipo===mtEq);
+const mtEnFiltro=m=>!mtEq||(mtEq.startsWith("area:")?m.area===mtEq.slice(5):mKey(m)===mtEq);
 
 /* Proceso: etapas de cada solicitud */
 const MT_ETAPAS=[{k:"solicitada",n:"Solicitada"},{k:"sap",n:"Aviso SAP"},{k:"ejecucion",n:"En ejecución"},{k:"repuesto",n:"Esperando repuesto"},{k:"cerrada",n:"Cerrada"}];
@@ -2334,7 +2338,7 @@ function renderMtRend(){
   const abiertas=arr.filter(mtAbierta), edad=prom(abiertas.map(m=>diasEntreISO(m.creado,nowISO())).filter(x=>x!=null));
   const max=v=>Math.max(1,...v.filter(x=>x!=null));
   // Por equipo
-  const eqs=MT_AREAS.flatMap(a=>a.equipos.map(e=>({k:e,a:a.nombre,...mrGrupo(arr.filter(m=>m.equipo===e))})));
+  const eqs=MT_AREAS.flatMap(a=>a.equipos.map(e=>({k:e,a:a.nombre,...mrGrupo(arr.filter(m=>mKey(m)===eqKey(a.id,e)))})));
   const mxE=max(eqs.map(e=>e.prom));
   const barE=eqs.map(e=>`<div class="mr-bar"><span title="${esc(e.a)}">${esc(e.k)}</span><div class="mr-track">${e.prom!=null?`<i style="width:${Math.max(3,e.prom/mxE*100)}%"></i>`:""}</div><em>${e.c?`<b>${fDias(e.prom)}</b> · ${e.c} cerr.`:'<span class="sub">Sin cierres</span>'}</em></div>`).join("");
   const barC=eqs.map(e=>`<div class="mr-bar"><span>${esc(e.k)}</span><div class="mr-track">${e.n?`<i class="ok" style="width:${e.c/e.n*100}%"></i><i class="o" style="width:${(e.n-e.c)/e.n*100}%"></i>`:""}</div><em>${e.n?`<b>${e.pc}%</b> · ${e.c} de ${e.n}`:'<span class="sub">Sin solicitudes</span>'}</em></div>`).join("");
@@ -2395,20 +2399,20 @@ function renderMant(){
   const S=mtStat(base);
   $("#mk-total").textContent=S.n;$("#mk-ab").textContent=S.a;$("#mk-ce").textContent=S.c;$("#mk-ce-l").textContent=`Cerradas (${S.pc}%)`;
   $("#mk-ve").textContent=S.v;$("#mk-sap").textContent=S.s;
-  $("#mk-total-l").textContent=mtEq?`Solicitudes de ${mtEq.startsWith("area:")?mtEq.slice(5):mtEq}`:"Solicitudes en total";
+  $("#mk-total-l").textContent=mtEq?`Solicitudes de ${mtEq.startsWith("area:")?mtEq.slice(5):(({area,equipo})=>`${equipo} · ${area}`)(eqDeKey(mtEq))}`:"Solicitudes en total";
   document.querySelectorAll("#mt-kpi button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mtKpi)));
   // Tarjetas por área y equipo
   $("#mt-areas").innerHTML=MT_AREAS.map(a=>{
     const arr=mant.filter(m=>m.area===a.id),ab=arr.filter(mtAbierta).length;
     return`<div class="mt-area" style="--ec:${MT_COLS[a.id]}">
       <button type="button" class="mt-ah" data-eq="area:${a.id}" aria-pressed="${mtEq==="area:"+a.id}"><span>${esc(a.nombre)}</span><small>${ab} abierta${ab===1?"":"s"}</small></button>
-      <div class="mt-eqs">${a.equipos.map(eq=>{const e=arr.filter(m=>m.equipo===eq),eab=e.filter(mtAbierta),alta=eab.some(m=>m.prioridad==="Alta"),venc=eab.some(m=>mtAlerta(m)==="Vencido");
-        return`<button type="button" class="mt-eq${eab.length?" on":""}" data-eq="${esc(eq)}" aria-pressed="${mtEq===eq}">
+      <div class="mt-eqs">${a.equipos.map(eq=>{const k=eqKey(a.id,eq),e=arr.filter(m=>mKey(m)===k),eab=e.filter(mtAbierta),alta=eab.some(m=>m.prioridad==="Alta"),venc=eab.some(m=>mtAlerta(m)==="Vencido");
+        return`<button type="button" class="mt-eq${eab.length?" on":""}" data-eq="${esc(k)}" aria-pressed="${mtEq===k}">
           <b>${esc(eq)}</b><span>${eab.length?`${eab.length} abierta${eab.length===1?"":"s"}`:"Sin pendientes"}</span>
           ${venc?'<i class="mt-dot r" title="Tiene solicitudes vencidas"></i>':alta?'<i class="mt-dot o" title="Tiene solicitudes de prioridad alta"></i>':""}</button>`}).join("")}</div></div>`}).join("");
   // Filtros
   const eqSel=$("#mt-f-eq");
-  eqSel.innerHTML='<option value="">Todos los equipos</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}"><option value="area:${a.id}">Todo ${esc(a.nombre)}</option>${a.equipos.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join("")}</optgroup>`).join("");
+  eqSel.innerHTML='<option value="">Todos los equipos</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}"><option value="area:${a.id}">Todo ${esc(a.nombre)}</option>${a.equipos.map(e=>`<option value="${esc(eqKey(a.id,e))}">${esc(e)}</option>`).join("")}</optgroup>`).join("");
   eqSel.value=mtEq;
   const segs=[...new Map(mant.filter(m=>m.seguidorId).map(m=>[m.seguidorId,m.seguidor||"(sin nombre)"])).entries()].sort((a,b)=>a[1].localeCompare(b[1],"es"));
   $("#mt-f-seg").innerHTML='<option value="">Todos los jefes de turno</option>'+segs.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");
@@ -2474,10 +2478,11 @@ function openMant(m){
   mtEditId=m?m.id:null;mtfrm.reset();mtPhotos=[];
   const closed=!!m&&!mtAbierta(m), edit=mtPuedeEditar(m);
   $("#mt-title").textContent=m?`Solicitud N° ${mtNum(m)} · ${m.equipo}`:"Nueva solicitud de mantenimiento";
-  mtfrm.equipo.innerHTML='<option value="">Elija el equipo</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}">${a.equipos.map(e=>`<option>${esc(e)}</option>`).join("")}</optgroup>`).join("");
+  mtfrm.equipo.innerHTML='<option value="">Elija el equipo</option>'+MT_AREAS.map(a=>`<optgroup label="${esc(a.nombre)}">${a.equipos.map(e=>`<option value="${esc(eqKey(a.id,e))}">${esc(e)}</option>`).join("")}</optgroup>`).join("");
   fillPersonSelect(mtfrm.responsableId,responsables(),m?m.responsableId:"",m?m.responsable:"","Elija el responsable");
   fillPersonSelect(mtfrm.seguidorId,jefesTurno(),m?m.seguidorId:(persona&&persona.jefeTurno?persona.id:""),m?m.seguidor:"","Elija un jefe de turno");
-  if(m){for(const k of["equipo","descripcion","avisoSap","prioridad","fechaCompromiso"])mtfrm[k].value=m[k]||"";
+  if(m){for(const k of["descripcion","avisoSap","prioridad","fechaCompromiso"])mtfrm[k].value=m[k]||"";
+    mtfrm.equipo.value=mKey(m);
     mtfrm.estado.value=MT_ABIERTOS.includes(m.estado)?m.estado:"Pendiente"}
   $("#mt-edit").hidden=!edit;
   [...$("#mt-edit").querySelectorAll("input,select,textarea")].forEach(x=>x.disabled=!edit);
@@ -2509,11 +2514,11 @@ mtfrm.addEventListener("submit",async e=>{
   const m=mtEditId?mant.find(x=>x.id===mtEditId):null;
   if(!mtPuedeEditar(m))return;
   const g=k=>mtfrm[k].value.trim();
-  const equipo=g("equipo"),descripcion=g("descripcion"),rid=mtfrm.responsableId.value,sid=mtfrm.seguidorId.value,fc=g("fechaCompromiso");
+  const {equipo,area}=eqDeKey(g("equipo")),descripcion=g("descripcion"),rid=mtfrm.responsableId.value,sid=mtfrm.seguidorId.value,fc=g("fechaCompromiso");
   if(!equipo||!descripcion||!rid||!sid){toast("Complete equipo, descripción, responsable y jefe de turno");return}
   if(!m&&!mtPhotos.length){toast("Agregue al menos una fotografía del problema");return}
   const rp=pById(rid),sp=pById(sid);
-  const data={equipo,area:areaDe(equipo),descripcion,avisoSap:g("avisoSap"),prioridad:g("prioridad")||"Media",fechaCompromiso:fc,
+  const data={equipo,area,descripcion,avisoSap:g("avisoSap"),prioridad:g("prioridad")||"Media",fechaCompromiso:fc,
     responsableId:rid,responsable:rp?rp.nombre:(m?m.responsable:""),responsableCorreo:rp?pCorreo(rp):(m?m.responsableCorreo:""),
     seguidorId:sid,seguidor:sp?sp.nombre:(m?m.seguidor:""),seguidorCorreo:sp?pCorreo(sp):(m?m.seguidorCorreo:""),
     actualizado:nowISO(),actualizadoPor:myName()};
@@ -2539,7 +2544,7 @@ mtfrm.addEventListener("submit",async e=>{
       if(m.seguidorId!==sid)ch.push(`cambió seguimiento a ${data.seguidor}`);
       if((m.avisoSap||"")!==data.avisoSap)ch.push(data.avisoSap?`registró aviso SAP ${data.avisoSap}`:"quitó el aviso SAP");
       if((m.fechaCompromiso||"")!==fc)ch.push(`fecha comprometida ${fmt(fc)||"sin fecha"}`);
-      if(m.equipo!==equipo)ch.push(`cambió equipo a ${equipo}`);
+      if(m.equipo!==equipo||m.area!==area)ch.push(`cambió equipo a ${equipo} (${area})`);
       if(m.descripcion!==descripcion||m.prioridad!==data.prioridad)ch.push("editó la solicitud");
       const est=MT_ABIERTOS.includes(mtfrm.estado.value)?mtfrm.estado.value:"Pendiente";if(est!==(m.estado||"Pendiente"))ch.push(`cambió estado a ${est}`);
       data.estado=est;
