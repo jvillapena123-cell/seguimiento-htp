@@ -689,25 +689,49 @@ function hoyISO(){return new Date().toLocaleDateString("en-CA",{timeZone:"Americ
 function fFechaInd(iso){if(!iso)return "sin fecha";const [y,m,d]=iso.slice(0,10).split("-");return `${d}-${m}-${y}`}
 function pintarInd(estado){
   const p=S.p;
-  const st=estado==="ok"?`<span class="ok">Actualizado en línea</span>`:estado==="err"?`<span class="bad">No se pudo conectar; se usan los valores ingresados</span>`:estado==="load"?"Consultando…":"";
+  const st=estado==="ok"?`<span class="ok">Actualizado en línea</span>`:estado==="err"?`<span class="bad">No se pudo conectar con ninguna fuente; se usan los valores ingresados (puede escribirlos a mano)</span>`:estado==="load"?"Consultando…":"";
   $("indTxt").innerHTML=`Dólar observado <b>$ ${fN(p.usd,2)}</b> del ${fFechaInd(p.usdFecha)} · UF <b>$ ${fN(p.uf,2)}</b> del ${fFechaInd(p.ufFecha)} · <span>${esc(p.fuenteInd||"")}</span> ${st}`;
 }
+async function getJSON(url,ms=9000){
+  const ac=new AbortController(); const t=setTimeout(()=>ac.abort(),ms);
+  try{const r=await fetch(url,{signal:ac.signal,cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); return await r.json();}
+  finally{clearTimeout(t)}
+}
+/* toma {valor,fecha} o {serie:[{valor,fecha}]} */
+function leerInd(x){
+  if(!x) return null;
+  const o=(Array.isArray(x.serie)&&x.serie.length)?x.serie[0]:x;
+  const v=Number(o.valor); if(!isFinite(v)||v<=0) return null;
+  return {valor:v,fecha:o.fecha||new Date().toISOString()};
+}
+const MI="https://mindicador.cl/api";
+const FUENTES_IND=[
+  {n:"mindicador.cl (Banco Central de Chile)", f:async()=>{const j=await getJSON(MI);return [leerInd(j.dolar),leerInd(j.uf)]}},
+  {n:"mindicador.cl (Banco Central de Chile)", f:async()=>{const [a,b]=await Promise.all([getJSON(MI+"/dolar"),getJSON(MI+"/uf")]);return [leerInd(a),leerInd(b)]}},
+  {n:"findic.cl (Banco Central de Chile)", f:async()=>{const j=await getJSON("https://findic.cl/api/");return [leerInd(j.dolar),leerInd(j.uf)]}},
+  {n:"mindicador.cl vía allorigins (Banco Central de Chile)", f:async()=>{const j=await getJSON("https://api.allorigins.win/raw?url="+encodeURIComponent(MI),12000);return [leerInd(j.dolar),leerInd(j.uf)]}},
+  {n:"mindicador.cl vía corsproxy (Banco Central de Chile)", f:async()=>{const j=await getJSON("https://corsproxy.io/?url="+encodeURIComponent(MI),12000);return [leerInd(j.dolar),leerInd(j.uf)]}}
+];
+let indOcupado=false;
 async function actualizarInd(){
-  pintarInd("load");
+  if(indOcupado) return false; indOcupado=true;
+  pintarInd("load"); if($("btnInd")) $("btnInd").disabled=true;
+  const f=x=>new Date(x).toLocaleDateString("en-CA",{timeZone:"America/Santiago"});
   try{
-    const res=await fetch("https://mindicador.cl/api",{cache:"no-store"});
-    if(!res.ok) throw new Error(res.status);
-    const j=await res.json();
-    const d=j.dolar, u=j.uf;
-    if(!d||!u) throw new Error("sin datos");
-    const f=x=>new Date(x).toLocaleDateString("en-CA",{timeZone:"America/Santiago"});
-    S.p.usd=Math.round(d.valor*100)/100; S.p.usdFecha=f(d.fecha);
-    S.p.uf=u.valor; S.p.ufFecha=f(u.fecha);
-    S.p.fuenteInd="mindicador.cl (Banco Central de Chile)";
-    $("p_usd").value=S.p.usd; $("p_uf").value=S.p.uf;
-    render(); persist(); if(window.CN&&CN.onChange) CN.onChange();
-    pintarInd("ok"); return true;
-  }catch(e){pintarInd("err");return false}
+    for(const src of FUENTES_IND){
+      try{
+        const [d,u]=await src.f();
+        if(!d||!u) throw new Error("sin datos");
+        S.p.usd=Math.round(d.valor*100)/100; S.p.usdFecha=f(d.fecha);
+        S.p.uf=Math.round(u.valor*100)/100; S.p.ufFecha=f(u.fecha);
+        S.p.fuenteInd=src.n;
+        $("p_usd").value=S.p.usd; $("p_uf").value=S.p.uf;
+        render(); persist(); if(window.CN&&CN.onChange) CN.onChange();
+        pintarInd("ok"); return true;
+      }catch(e){console.warn("Indicadores: falló",src.n,e&&e.message)}
+    }
+    pintarInd("err"); return false;
+  }finally{indOcupado=false; if($("btnInd")) $("btnInd").disabled=false;}
 }
 $("btnInd").onclick=actualizarInd;
 
