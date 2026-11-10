@@ -1437,6 +1437,8 @@ let tab="Compromiso", editId=null, sortKey="num", sortDir=1, fAlerta="", pEdit=n
 const myEmail=()=>authUser?authUser.email.toLowerCase():"";
 const myName=()=>persona&&persona.nombre?persona.nombre:myEmail();
 const canWrite=()=>isAdmin||myAcceso==="Usuario";
+const esMioH=it=>String(it.responsableCorreo||"").toLowerCase()===myEmail();
+const puedeEstadoH=it=>it.estado!=="Cerrado"&&(isAdmin||(canWrite()&&esMioH(it)));
 const canReadH=()=>isAdmin||["Usuario","Lector"].includes(myAcceso);
 const verTareas=()=>isAdmin||esJefe;
 const activos=()=>personas.filter(p=>p.activo!==false).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
@@ -1590,6 +1592,7 @@ for(const c of CATS){$("#f-cat").add(new Option(c));frm.categoria.add(new Option
 /* ---------- Permiso de cierre ---------- */
 function closeBlock(it){
   if(it.estado==="Cerrado")return"Ya está cerrado";
+  if(isAdmin)return"";
   if(!it.responsableCorreo)return it.responsable?`Asigne a ${it.responsable} desde la lista de personas`:"Asigne un responsable para poder cerrar";
   if(!canWrite())return"Solo lectura";
   if(String(it.responsableCorreo).toLowerCase()!==myEmail())return`Solo ${it.responsable||it.responsableCorreo} puede cerrar (está asignado al correo ${it.responsableCorreo})`;
@@ -1699,7 +1702,7 @@ function render(){
   $("#tbody").innerHTML=list.map(i=>{
     const d=dias(i.fechaCompromiso);
     const dtxt=i.estado==="Cerrado"?(i.fechaCierre?`Cerrado el ${fmt(i.fechaCierre)}`:""):(d==null?"":d<0?`${-d} día${d===-1?"":"s"} de atraso`:d===0?"Vence hoy":`Faltan ${d} día${d===1?"":"s"}`);
-    const estadoCell=i.estado==="Cerrado"?'<span class="pill p-cerr">Cerrado</span>':canWrite()?`<select class="estado" data-id="${esc(i.id)}" aria-label="Estado">${ABIERTOS.map(e=>`<option ${e===i.estado?"selected":""}>${e}</option>`).join("")}</select>`:esc(i.estado);
+    const estadoCell=i.estado==="Cerrado"?'<span class="pill p-cerr">Cerrado</span>':puedeEstadoH(i)?`<select class="estado" data-id="${esc(i.id)}" aria-label="Estado">${ABIERTOS.map(e=>`<option ${e===i.estado?"selected":""}>${e}</option>`).join("")}</select>`:esc(i.estado);
     const b=closeBlock(i);
     const cierreCell=i.estado==="Cerrado"?`<span class="sub">${esc(i.cierre&&i.cierre.por||"")}</span>`:b?`<span class="lock">${esc(b)}</span>`:`<button class="btn btn-close btn-sm" data-close="${esc(i.id)}">Cerrar</button>`;
     return `<tr class="row ${rowCls[i.alerta]||""}" data-id="${esc(i.id)}" tabindex="0">
@@ -1849,7 +1852,8 @@ function openForm(it,forceTipo){
   fillPersonSelect(frm.responsableCorreo,responsables(),respId(v),v.responsable,v.responsable&&!v.responsableCorreo?`${v.responsable} (sin persona asociada)`:"Por asignar");
   frm.estado.innerHTML=closed?"<option>Cerrado</option>":ABIERTOS.map(e=>`<option ${e===v.estado?"selected":""}>${e}</option>`).join("");
   for(const k of ["fechaDeteccion","origen","tipo","zona","categoria","descripcion","accion","prioridad","fechaCompromiso","observaciones","empresa"])if(v[k]!=null)frm[k].value=v[k];
-  const lock=closed||!canWrite();
+  // registros existentes: solo el administrador los edita
+  const lock=closed||!canWrite()||(!!it&&!isAdmin);
   for(const el of frm.elements)if(el.name)el.disabled=lock;
   // reasignar responsable: solo administrador, o si aún no tiene uno
   if(!lock&&it&&it.responsableCorreo&&!isAdmin)frm.responsableCorreo.disabled=true;
@@ -1870,6 +1874,7 @@ frm.addEventListener("submit",async ev=>{
   ev.preventDefault();
   const prev=items.find(x=>x.id===editId);
   if(prev&&prev.estado==="Cerrado")return;
+  if(prev&&!isAdmin){toast("Solo el administrador puede editar registros");return}
   const g=k=>frm[k].value.trim();
   const data={tipo:g("tipo"),fechaDeteccion:g("fechaDeteccion"),origen:g("origen"),zona:g("zona"),categoria:g("categoria"),descripcion:g("descripcion"),
     accion:g("accion"),prioridad:g("prioridad"),fechaCompromiso:g("fechaCompromiso"),empresa:g("empresa"),estado:ABIERTOS.includes(g("estado"))?g("estado"):"Pendiente",observaciones:g("observaciones")};
@@ -2145,6 +2150,7 @@ const tPlazoTxt=t=>{if(!tAbierta(t))return t.fechaCierre?`Cerrada el ${fmt(t.fec
 const esMiTarea=t=>String(t.responsableCorreo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||t.responsableId===persona.id);
 function tCloseBlock(t){
   if(!tAbierta(t))return"Ya está cerrada";
+  if(isAdmin)return"";
   if(!t.responsableCorreo)return"La tarea no tiene responsable";
   if(!esMiTarea(t))return`Solo ${t.responsable||"el jefe de turno asignado"} puede cerrarla`;
   return"";
@@ -3035,6 +3041,7 @@ const mPlazoTxt=m=>{if(!mAbierta(m))return m.fechaCierre?`Cerrado el ${fmt(m.fec
 const esMiMejora=m=>String(m.responsableCorreo||"").toLowerCase()===myEmail()&&(!persona||mios().length<2||m.responsableId===persona.id);
 function mCloseBlock(m){
   if(!mAbierta(m))return"Ya está cerrado";
+  if(isAdmin)return"";
   if(!m.responsableCorreo)return"No tiene responsable asignado";
   if(!esMiMejora(m))return`Solo ${m.responsable||"el responsable asignado"} puede cerrarlo`;
   if(!canWrite())return"Su acceso es de solo lectura. Pida acceso Usuario al administrador";

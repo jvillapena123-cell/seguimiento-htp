@@ -48,8 +48,8 @@ GitHub Pages gratis requiere que el repositorio sea **público**. Eso deja visib
 
 | Acceso | Qué puede hacer |
 |---|---|
-| Administrador | Todo, además gestionar personas, reasignar responsables, reabrir y eliminar |
-| Usuario | Ver, registrar compromisos y hallazgos, cambiar estados y cerrar lo que tiene asignado |
+| Administrador | Todo: editar registros y tareas, cerrar cualquier registro con evidencia, gestionar personas, reasignar, reabrir y eliminar |
+| Usuario | Ver, registrar compromisos y hallazgos; en lo que tiene asignado, cambiar el estado y cerrar con evidencia (editar es solo del administrador) |
 | Lector | Solo ver |
 | Sin acceso | No ingresa; solo figura como responsable |
 
