@@ -320,7 +320,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
         <h2><span class="code">3</span>Equipos<span class="sub" id="s_eq"></span></h2>
         <div class="body">
           <div class="tbl"><table>
-            <thead><tr><th>Equipo</th><th class="n">N° equipos</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th>Unidad</th><th class="n">L/hora</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th><th></th></tr></thead>
+            <thead><tr><th>Equipo</th><th class="n">N° equipos</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th>Unidad</th><th class="n">L/hora</th><th class="n">Traslado CLP c/u</th><th class="n">Arriendo + traslado USD</th><th class="n">Petróleo USD</th><th></th></tr></thead>
             <tbody id="t_eq"></tbody>
           </table></div>
           <button class="addrow" type="button" data-add="eq">+ Agregar equipo</button>
@@ -469,7 +469,7 @@ const BASE = {
   incOtros:true,
   eq:[
     ["Cargador frontal",2,"",121,"USD",0],["Horquilla 4,5 t",0,"",1.212,"UF",0],["Horquilla 16 t",0,"",1.212,"UF",0],
-    ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",0.396,"UF",0]
+    ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",0.396,"UF",7.4,200000]
   ],
   porteo:{cam:8,turnos:"",vturno:180000,km:0,tciclo:30,lkm:0},
   incPorteo:false,
@@ -514,13 +514,14 @@ function calc(S){
   r.persUSD=r.persCLP/p.usd;
   r.otros=S.otros.map(([n,c,v])=>{const clp=num(c)*num(v);return{clp,usd:clp/p.usd}});
   r.otrosUSD=r.otros.reduce((a,x)=>a+x.usd,0);
-  r.eq=S.eq.map(([n,c,h,t,u,l])=>{
+  r.eq=S.eq.map(([n,c,h,t,u,l,tr])=>{
     const auto=(h===""||h===null);
     const hrs=auto?r.horas:num(h), hrsB=auto?r.turnosCalc*p.hturno:num(h);
     const tarifaUSD=u==="UF"?num(t)*p.uf/p.usd:u==="CLP"?num(t)/p.usd:num(t);
-    const arr=num(c)*hrs*tarifaUSD, arrB=num(c)*hrsB*tarifaUSD;
+    const tras=num(c)*num(tr)/p.usd;                 // traslado fijo por equipo (CLP)
+    const arr=num(c)*hrs*tarifaUSD+tras, arrB=num(c)*hrsB*tarifaUSD+tras;
     const pet=num(c)*hrs*num(l)*p.diesel/p.usd, petB=num(c)*hrsB*num(l)*p.diesel/p.usd;
-    return{hrs,arr,pet,arrB,petB};
+    return{hrs,arr,pet,arrB,petB,tras};
   });
   r.eqArr=r.eq.reduce((a,x)=>a+x.arr,0);
   r.eqPet=r.eq.reduce((a,x)=>a+x.pet,0);
@@ -605,6 +606,7 @@ function buildTables(){
     <td class="n">${cell(x[3],"sm",`type="number" step="0.001" min="0" id="eq${i}_3" data-t="eq" data-i="${i}" data-j="3" aria-label="Tarifa"`)}</td>
     <td><select id="eq${i}_4" data-t="eq" data-i="${i}" data-j="4" aria-label="Unidad tarifa"><option value="USD"${x[4]==="USD"?" selected":""}>USD/h</option><option value="UF"${x[4]==="UF"?" selected":""}>UF/h</option><option value="CLP"${x[4]==="CLP"?" selected":""}>CLP/h</option></select></td>
     <td class="n">${cell(x[5],"sm",`type="number" step="0.1" min="0" id="eq${i}_5" data-t="eq" data-i="${i}" data-j="5" aria-label="Litros por hora"`)}</td>
+    <td class="n">${cell(x[6]??0,"",`type="number" step="10000" min="0" id="eq${i}_6" data-t="eq" data-i="${i}" data-j="6" aria-label="Traslado CLP por equipo" title="Costo fijo de traslado por cada equipo (ida y vuelta)"`)}</td>
     <td class="n" id="ea${i}"></td><td class="n" id="ep${i}"></td>
     <td><button class="x" type="button" data-del="eq" data-i="${i}" aria-label="Quitar">×</button></td></tr>`).join("");
 }
@@ -693,7 +695,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{if(e.target.tagName==="SELECT"||e.target.type==="checkbox") e.target.dispatchEvent(new Event("input",{bubbles:true}))});
 document.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
-  if(b.dataset.add){const t=b.dataset.add;S[t].push(t==="pers"?["Nuevo cargo",0,0,0]:t==="otros"?["Nuevo servicio",0,0]:["Nuevo equipo",0,"",0,"USD",0]);buildTables();render();persist();}
+  if(b.dataset.add){const t=b.dataset.add;S[t].push(t==="pers"?["Nuevo cargo",0,0,0]:t==="otros"?["Nuevo servicio",0,0]:["Nuevo equipo",0,"",0,"USD",0,0]);buildTables();render();persist();}
   if(b.dataset.del){S[b.dataset.del].splice(+b.dataset.i,1);buildTables();render();persist();}
   if((b.dataset.add||b.dataset.del)&&window.CN&&CN.onChange) CN.onChange();
 });
@@ -859,7 +861,7 @@ function leerExcel(wb,nombre){
         const hv=cv(ws,r2,cC+2),hf=cf(ws,r2,cC+2);
         let horas="";if(isNum(hv)){if(!hf)horas=n>0?hv:"";else if(new RegExp("\\b"+XLSX.utils.encode_col(cC+1)+"\\$?"+(r2+1)+"\\b").test(hf.replace(/\$/g,"")))horas=n>0?Math.round(hv/n*100)/100:"";}
         const clp=tarifaCLP(nm);const esCarg=/cargador/i.test(nm);
-        eqs.push([nm,n,horas,clp?Math.round(clp):(esCarg?usdCargador:(/\b7\s*t/i.test(nm)?0.396:1.212)),clp?"CLP":(esCarg?"USD":"UF"),0])})}
+        eqs.push([nm,n,horas,clp?Math.round(clp):(esCarg?usdCargador:(/\b7\s*t/i.test(nm)?0.396:1.212)),clp?"CLP":(esCarg?"USD":"UF"),(!clp&&/horquilla.*\b7\s*t/i.test(nm))?7.4:0,/horquilla.*\b7\s*t/i.test(nm)?200000:0])})}
     else{otros=otros||[];filas.forEach(r2=>otros.push([String(cv(ws,r2,cC)).trim(),pn(cv(ws,r2,cC+1),0),pn(cv(ws,r2,cC+2),0)]))}
   }
   if(otros)D.otros=otros; if(eqs)D.eq=eqs;
@@ -871,7 +873,7 @@ function folio(){const d=new Date();const z=n=>String(n).padStart(2,"0");return 
 function armarInforme(){
   const r=calc(S),p=S.p,hoy=new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"});
   const filas=S.pers.map((x,i)=>({n:x[0],v:num(x[1]),tp:r.pers[i].tp,tb:r.pers[i].tb,ex:r.pers[i].extra,clp:r.pers[i].clp})).filter(x=>x.tp>0);
-  const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
+  const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],tr:num(x[6]),a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
   const ots=S.incOtros?S.otros.map((x,i)=>({n:x[0],c:num(x[1]),v:num(x[2]),usd:r.otros[i].usd})).filter(x=>x.c>0):[];
   $("informe").innerHTML=`
   <div class="hd"><div><img src="logo-htp.png" alt="HTP Huachipato Terminal Portuario" style="height:34px;display:block;margin-bottom:6px"><h1>Cotización de servicio de transferencia</h1></div>
@@ -893,8 +895,8 @@ function armarInforme(){
     <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tb,0))}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.ex,0))||"—"}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
   ${(S.incRel!==false&&(S.rel||[]).length)?`<h2>Servicios contrato Reloncaví</h2><table><tr><th>Ítem</th><th>Unidad</th><th class="n">Tarifa CLP</th><th class="n">Pers./equipos</th><th class="n">Cantidad</th><th class="n">Total CLP</th></tr>
     ${S.rel.map((x,i)=>`<tr><td>${esc(x.desc)} <small>${esc(x.grupo||"")}</small></td><td>${esc(x.unidad)}</td><td class="n">${fCLP(num(x.tarifa))}</td><td class="n">${fN(num(x.mult))}</td><td class="n">${fN(r.rel[i].q)}</td><td class="n">${fCLP(r.rel[i].clp)}</td></tr>`).join("")}</table>`:""}
-  ${eqs.length?`<h2>Equipos</h2><table><tr><th>Equipo</th><th class="n">N°</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th class="n">Arriendo USD</th><th class="n">Petróleo USD</th></tr>
-    ${eqs.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fN(x.h,1)}</td><td class="n">${fN(num(x.t),3)} ${x.u}/h</td><td class="n">${fUSD(x.a)}</td><td class="n">${fUSD(x.pe)}</td></tr>`).join("")}</table>`:""}
+  ${eqs.length?`<h2>Equipos</h2><table><tr><th>Equipo</th><th class="n">N°</th><th class="n">Horas c/u</th><th class="n">Tarifa</th><th class="n">Traslado c/u</th><th class="n">Arriendo + traslado USD</th><th class="n">Petróleo USD</th></tr>
+    ${eqs.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fN(x.h,1)}</td><td class="n">${fN(num(x.t),3)} ${x.u}/h</td><td class="n">${x.tr?fCLP(x.tr):"—"}</td><td class="n">${fUSD(x.a)}</td><td class="n">${fUSD(x.pe)}</td></tr>`).join("")}</table>`:""}
   ${ots.length?`<h2>Otros servicios</h2><table><tr><th>Servicio</th><th class="n">N°</th><th class="n">CLP / servicio</th><th class="n">USD</th></tr>
     ${ots.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fUSD(x.usd)}</td></tr>`).join("")}</table>`:""}
   ${S.incPorteo?`<h2>Porteo</h2><table><tr><td>${fN(num(S.porteo.cam))} camiones · ${fN(r.camTurnos)} turnos · petróleo ${fN(r.litros)} L</td><td class="n">${fUSD(r.portUSD)}</td></tr></table>`:""}
@@ -1008,11 +1010,11 @@ $("btnXls").onclick=async()=>{
 
   /* Hoja 3: Equipos y servicios */
   const we=wb.addWorksheet("Equipos y servicios",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
-  we.columns=[{width:32},{width:12},{width:12},{width:14},{width:10},{width:10},{width:16},{width:16}];
-  encabezado(we,"Equipos y servicios",8);row=5;
-  row=seccion(we,row,"Equipos",8);row=cabecera(we,row,["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Arriendo USD","Petróleo USD"]);
-  S.eq.forEach((x,i)=>{if(!num(x[1]))return;row=fila(we,row,[x[0],num(x[1]),r.eq[i].hrs,num(x[3]),x[4]+"/h",num(x[5]),r.eq[i].arr,r.eq[i].pet],[null,F_N,F_N2,F_N3,null,F_N2,F_USD,F_USD])});
-  row=fila(we,row,["Total equipos","","","","","",r.eqArr,r.eqPet],[null,null,null,null,null,null,F_USD,F_USD],{bold:true,fill:LIGHT});row++;
+  we.columns=[{width:32},{width:12},{width:12},{width:14},{width:10},{width:10},{width:16},{width:16},{width:16}];
+  encabezado(we,"Equipos y servicios",9);row=5;
+  row=seccion(we,row,"Equipos",9);row=cabecera(we,row,["Equipo","N°","Horas c/u","Tarifa","Unidad","L/hora","Traslado CLP c/u","Arriendo + traslado USD","Petróleo USD"]);
+  S.eq.forEach((x,i)=>{if(!num(x[1]))return;row=fila(we,row,[x[0],num(x[1]),r.eq[i].hrs,num(x[3]),x[4]+"/h",num(x[5]),num(x[6]),r.eq[i].arr,r.eq[i].pet],[null,F_N,F_N2,F_N3,null,F_N2,F_N,F_USD,F_USD])});
+  row=fila(we,row,["Total equipos","","","","","","",r.eqArr,r.eqPet],[null,null,null,null,null,null,null,F_USD,F_USD],{bold:true,fill:LIGHT});row++;
   if((S.rel||[]).length){row=seccion(we,row,"Servicios contrato Reloncaví",8);row=cabecera(we,row,["Ítem","Unidad","Tarifa CLP","Pers./equipos","Cantidad","","Total CLP","USD"]);
     S.rel.forEach((x,i)=>{row=fila(we,row,[x.desc+(x.grupo?" · "+x.grupo:""),x.unidad,num(x.tarifa),num(x.mult),r.rel[i].q,"",Math.round(r.rel[i].clp),r.rel[i].usd],[null,null,F_CLP,F_N,F_N,null,F_CLP,F_USD])});row++}
   const ots=S.otros.filter(x=>num(x[1])>0);
