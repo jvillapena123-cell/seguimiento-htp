@@ -235,6 +235,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
       <button type="button" id="btnDesv">Turnos de resguardo</button>
       <label class="btnfile" for="xlsIn">Cargar Excel</label>
       <input id="xlsIn" type="file" accept=".xlsx,.xls,.xlsm" hidden>
+      <button type="button" id="btnRes">Descargar resumen (PDF)</button>
       <button type="button" id="btnPdf">Descargar cotización (PDF)</button>
       <button type="button" id="btnXls">Descargar Excel</button>
       <span id="who"></span>
@@ -878,13 +879,13 @@ function leerExcel(wb,nombre){
 
 /* ---------- Informe de cotización ---------- */
 function folio(){const d=new Date();const z=n=>String(n).padStart(2,"0");return `HTP-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`}
-function armarInforme(){
+function armarInforme(resumen){
   const r=calc(S),p=S.p,hoy=new Date().toLocaleDateString("es-CL",{timeZone:"America/Santiago"});
   const filas=S.pers.map((x,i)=>({n:x[0],v:num(x[1]),tp:r.pers[i].tp,tb:r.pers[i].tb,ex:r.pers[i].extra,clp:r.pers[i].clp})).filter(x=>x.tp>0);
   const eqs=S.eq.map((x,i)=>({n:x[0],c:num(x[1]),h:r.eq[i].hrs,t:x[3],u:x[4],tr:num(x[6]),a:r.eq[i].arr,pe:r.eq[i].pet})).filter(x=>x.c>0);
   const ots=S.incOtros?S.otros.map((x,i)=>({n:x[0],c:num(x[1]),v:num(x[2]),usd:r.otros[i].usd})).filter(x=>x.c>0):[];
   $("informe").innerHTML=`
-  <div class="hd"><div><img src="logo-htp.png" alt="HTP Huachipato Terminal Portuario" style="height:34px;display:block;margin-bottom:6px"><h1>Cotización de servicio de transferencia</h1></div>
+  <div class="hd"><div><img src="logo-htp.png" alt="HTP Huachipato Terminal Portuario" style="height:34px;display:block;margin-bottom:6px"><h1>${resumen?"Resumen de cotización":"Cotización de servicio de transferencia"}</h1></div>
     <div class="meta">Folio ${folio()}<br>Emitida el ${hoy}</div></div>
   <table><tr><th>Nave</th><td>${esc(p.nave||"—")}</td><th>Carga</th><td>${esc(p.carga)}</td></tr>
     <tr><th>Sitio</th><td>${esc(p.sitio)}</td><th>Toneladas</th><td>${fN(p.ton)} t</td></tr>
@@ -897,7 +898,7 @@ function armarInforme(){
     ${r.parts.filter(x=>x.usd>0).map(x=>`<tr><td>${x.k}</td><td class="n">${fUSD(x.usd)}</td><td class="n">${x.desvTxt||"—"}</td><td class="n">${fN(x.util,1)}%</td><td class="n">${fUSD(x.venta)}</td><td class="n">${fCLP(x.venta*p.usd)}</td><td class="n">${fN(x.venta/p.ton,3)}</td></tr>`).join("")}
     <tr class="tot"><td>Total</td><td class="n">${fUSD(r.costoUSD)}</td><td></td><td class="n">${fN(r.utilProm,1)}%</td><td class="n">${fUSD(r.ventaUSD)}</td><td class="n">${fCLP(r.ventaUSD*p.usd)}</td><td class="n">${fN(r.tarifaT,3)}</td></tr></table>
   ${r.desvUSD?`<p><b>Resguardo incluido:</b> ${r.turnosRes} turno(s) adicional(es) de personal sobre ${r.turnosCalc} turnos de operación (rendimiento sin cambios)${r.desvEq?`, equipos +${fN(r.desvEq,1)}% en costo`:""} (${fUSD(r.desvUSD)}).${S.p.desv&&S.p.desv.nota?" Motivo: "+esc(S.p.desv.nota):""}</p>`:""}
-  <h2>Personal de muellaje</h2>
+  ${resumen?"":`<h2>Personal de muellaje</h2>
   <table><tr><th>Cargo</th><th class="n">CLP / turno</th><th class="n">Turnos-persona</th><th class="n">Resguardo</th><th class="n">Total turnos-persona</th><th class="n">Total CLP</th></tr>
     ${filas.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fN(x.tb)}</td><td class="n">${x.ex?"+"+fN(x.ex):"—"}</td><td class="n">${fN(x.tp)}</td><td class="n">${fCLP(x.clp)}</td></tr>`).join("")}
     <tr class="tot"><td>Total personal</td><td></td><td class="n">${fN(filas.reduce((a,x)=>a+x.tb,0))}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.ex,0))||"—"}</td><td class="n">${fN(filas.reduce((a,x)=>a+x.tp,0))}</td><td class="n">${fCLP(r.persCLP)}</td></tr></table>
@@ -907,14 +908,15 @@ function armarInforme(){
     ${eqs.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fN(x.h,1)}</td><td class="n">${fN(num(x.t),3)} ${x.u}/h</td><td class="n">${x.tr?fCLP(x.tr):"—"}</td><td class="n">${fUSD(x.a)}</td><td class="n">${fUSD(x.pe)}</td></tr>`).join("")}</table>`:""}
   ${ots.length?`<h2>Otros servicios</h2><table><tr><th>Servicio</th><th class="n">N°</th><th class="n">CLP / servicio</th><th class="n">USD</th></tr>
     ${ots.map(x=>`<tr><td>${esc(x.n)}</td><td class="n">${x.c}</td><td class="n">${fCLP(x.v)}</td><td class="n">${fUSD(x.usd)}</td></tr>`).join("")}</table>`:""}
-  ${S.incPorteo?`<h2>Porteo</h2><table><tr><td>${fN(num(S.porteo.cam))} camiones · ${fN(r.camTurnos)} turnos · petróleo ${fN(r.litros)} L</td><td class="n">${fUSD(r.portUSD)}</td></tr></table>`:""}
+  ${S.incPorteo?`<h2>Porteo</h2><table><tr><td>${fN(num(S.porteo.cam))} camiones · ${fN(r.camTurnos)} turnos · petróleo ${fN(r.litros)} L</td><td class="n">${fUSD(r.portUSD)}</td></tr></table>`:""}`}
   <div class="ref"><b>Valores de referencia utilizados</b><br>
     Dólar observado: <b>$ ${fN(p.usd,2)}</b> del día <b>${fFechaInd(p.usdFecha)}</b><br>
     UF: <b>$ ${fN(p.uf,2)}</b> del día <b>${fFechaInd(p.ufFecha)}</b><br>
     Fuente: ${esc(p.fuenteInd||"—")}</div>
   <div class="pie">Valores en USD calculados al dólar indicado. Turnos pagados completos de ${p.hturno} h. Cotización referencial sujeta a confirmación de programación de la nave.</div>`;
 }
-$("btnPdf").onclick=()=>{armarInforme();toast("En la ventana de impresión elija “Guardar como PDF”");setTimeout(()=>window.print(),50)};
+$("btnRes").onclick=()=>{armarInforme(true);toast("En la ventana de impresión elija “Guardar como PDF”");setTimeout(()=>window.print(),50)};
+$("btnPdf").onclick=()=>{armarInforme(false);toast("En la ventana de impresión elija “Guardar como PDF”");setTimeout(()=>window.print(),50)};
 
 /* ---------- Descargar Excel ---------- */
 /* ---------- Descargar Excel: informe para gerencia (ExcelJS) ---------- */
