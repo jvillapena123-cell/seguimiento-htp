@@ -38,6 +38,11 @@ header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justif
 .left .cloud{margin-top:0}
 .left .clist{max-height:none}
 .menuBtn,.menuClose,.menuVeil{display:none}
+/* Bloqueo: sin sesión autorizada solo se ve el ingreso */
+body.lock main,body.lock .side,body.lock .scen>*:not(#who),body.lock .menuVeil,body.lock .menuClose{display:none!important}
+body.lock .grid{display:block!important;max-width:420px;margin:40px auto 0}
+body.lock .left{position:static!important;transform:none!important;width:auto!important;max-height:none!important;padding:0!important}
+body.lock .left .cloud h3::after{content:" · Ingreso";}
 @media (max-width:1360px){
   .grid{grid-template-columns:minmax(0,1fr) 410px}
   .left{position:fixed;z-index:50;top:0;bottom:0;left:0;width:min(340px,88vw);max-height:none;background:var(--bg);padding:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-top:max(12px,env(safe-area-inset-top,0px));transform:translateX(-105%);transition:transform .2s;box-shadow:0 0 0 1px var(--line)}
@@ -221,7 +226,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
 </style>
 </head>
-<body>
+<body class="lock">
 
 <div class="wrap">
   <header class="top">
@@ -263,6 +268,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
             <button class="pri" id="c_save" type="button">Guardar</button>
             <button id="c_saveNew" type="button">Guardar como nuevo</button>
             <button id="c_new" type="button">Nuevo costeo</button>
+            <button id="c_base" type="button" hidden title="Guarda los valores actuales (cargos, dotación, equipos, servicios) como modelo para los costeos nuevos">Guardar como modelo base</button>
           </div>
           <input id="c_buscar" type="search" placeholder="Buscar por nombre, nave o carga" aria-label="Buscar costeos">
           <ul class="clist" id="c_list"></ul>
@@ -721,7 +727,10 @@ document.addEventListener("click",e=>{
 window.CN={
   get:()=>clone(S), calc:()=>calc(S),
   set:d=>{S=Object.assign(clone(BASE),clone(d));S.p=Object.assign(clone(BASE.p),clone(d.p||{}));fillParams();buildTables();render();persist();pintarInd();},
-  base:()=>window.TARIFAS?TARIFAS.base():clone(BASE), onChange:null, toast:m=>toast(m)
+  base:()=>window.TARIFAS?TARIFAS.base():clone(BASE), onChange:null, toast:m=>toast(m),
+  setBase:d=>{if(!d||!d.p||!d.pers)return;const sinTocar=!store().draft;Object.keys(BASE).forEach(k=>delete BASE[k]);Object.assign(BASE,clone(d));
+    if(sinTocar){S=window.TARIFAS?TARIFAS.base():clone(BASE);fillParams();buildTables();render();pintarInd()}},
+  modelo:()=>{const d=clone(S);d.p=Object.assign({},d.p,{nave:"",usdFecha:"",ufFecha:""});delete d.p.desv;return d}
 };
 $("btnClearOv").onclick=()=>{S.pers.forEach(x=>{x[4]={}});render();persist();if(window.CN&&CN.onChange)CN.onChange();toast("Ajustes por turno quitados")};
 document.addEventListener("focusout",e=>{if(e.target.dataset&&e.target.dataset.g!==undefined)render()});
@@ -1266,6 +1275,7 @@ const CURKEY="costeo-naves-htp-actual";
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 auth.languageCode="es";
 let unsubT=[];
+let baseInfo="";
 let user=null, puedeEscribir=false, esAdmin=false, lista=[], cur=null, dirty=false, unsub=null, pendLoad=null, pendDel=null;
 try{cur=JSON.parse(localStorage.getItem(CURKEY))||null}catch(e){}
 try{dirty=!!(cur&&cur.dirty)}catch(e){}
@@ -1286,7 +1296,7 @@ $("l_forgot").onclick=async()=>{
 
 onAuthStateChanged(auth,async u=>{
   user=u; if(unsub){unsub();unsub=null} unsubT.forEach(f=>f());unsubT=[]; lista=[];
-  if(!u){$("c_login").hidden=false;$("c_app").hidden=true;$("who").innerHTML="";return}
+  if(!u){document.body.classList.add("lock");$("c_login").hidden=false;$("c_app").hidden=true;$("who").innerHTML="";return}
   const em=u.email.toLowerCase();
   let acc=null; try{const a=await getDoc(doc(db,"accesos",em)); if(a.exists()) acc=a.data()}catch(e){}
   const boot=(ADMIN_EMAILS||[]).map(x=>x.toLowerCase()).includes(em);
@@ -1297,6 +1307,9 @@ onAuthStateChanged(auth,async u=>{
   $("who").innerHTML=`<span class="who">${esc(u.email)} <button type="button" id="b_out">Salir</button></span>`;
   $("b_out").onclick=()=>signOut(auth);
   $("c_login").hidden=true;$("c_app").hidden=false;
+  document.body.classList.toggle("lock",!puedeLeer);
+  $("c_base").hidden=!esAdmin;
+  if(puedeLeer){try{const mb=await getDoc(doc(db,"costeoConfig","modeloBase"));if(mb.exists()){const x=mb.data();CN.setBase(JSON.parse(x.data));baseInfo=`Modelo base guardado ${fFecha(x.actualizado)} por ${x.actualizadoPor||""}`}else baseInfo="Aún no hay modelo base en la nube"}catch(e){baseInfo=""}}
   if(!puedeLeer){$("c_list").innerHTML=`<li><span>Su correo no tiene acceso. Pida al administrador de Seguimiento HTP que lo agregue como Usuario.</span></li>`;pintarEstado();return}
   unsubT.push(onSnapshot(doc(db,"costeoConfig","costosCargo"),d=>{if(d.exists()){const x=d.data();window.TARIFAS&&TARIFAS.setCargos(x.cargos,{el:fFecha(x.actualizado),por:x.actualizadoPor})}},()=>{}));
   unsubT.push(onSnapshot(query(collection(db,"tarifasReloncavi"),orderBy("creado","desc"),limit(1)),q=>{const d=q.docs[0];if(d){const R=d.data();try{R.items=JSON.parse(R.items)}catch(e){R.items=[]}window.TARIFAS&&TARIFAS.setRel(R,false)}},()=>{}));
@@ -1315,6 +1328,7 @@ function pintarEstado(){
     :`Editando <b>${esc(cur.nombre)}</b>${c?` · guardado ${fFecha(c.actualizado)} por ${esc(c.actualizadoPor||c.actualizadoPorCorreo||"")}`:""}${dirty?` · <span class="dirty">cambios sin guardar</span>`:""}`;
   $("c_save").disabled=!puedeEscribir; $("c_saveNew").disabled=!puedeEscribir||!cur;
   $("c_save").textContent=cur?"Guardar cambios":"Guardar";
+  if(esAdmin&&baseInfo)$("c_state").innerHTML+=`<br><small>${esc(baseInfo)}</small>`;
 }
 function indTxt(x){let p=x;if(x.usd===undefined){try{p=JSON.parse(x.data).p||{}}catch(e){p={}}}
   const fd=s=>{if(!s)return"";const [y,m,d]=String(s).slice(0,10).split("-");return ` (${d}-${m}-${y})`};
@@ -1380,6 +1394,14 @@ CN.saveRel=async R=>{if(!user||!puedeEscribir)return false;
 CN.loaded=nombre=>{cur=null;dirty=true;$("c_nombre").value=nombre||"";guardarCur();pintarLista();pintarEstado()};
 $("c_save").onclick=()=>guardar(false);
 $("c_saveNew").onclick=()=>guardar(true);
+$("c_base").onclick=async()=>{
+  if(!esAdmin)return;
+  if(pendLoad!=="__base"){pendLoad="__base";CN.toast("Presione de nuevo para guardar los valores actuales como modelo base");return}
+  pendLoad=null;
+  try{await setDoc(doc(db,"costeoConfig","modeloBase"),{data:JSON.stringify(CN.modelo()),actualizado:serverTimestamp(),actualizadoPor:user.email});
+    baseInfo="Modelo base guardado recién";CN.toast("Modelo base guardado en la nube")}
+  catch(e){CN.toast("No se pudo guardar el modelo base ("+(e.code||"error")+")")}
+};
 $("c_new").onclick=()=>{
   if(dirty&&pendLoad!=="__new"){pendLoad="__new";CN.toast("Hay cambios sin guardar. Presione de nuevo para empezar uno nuevo");return}
   pendLoad=null; CN.set(CN.base()); cur=null; dirty=false; $("c_nombre").value=""; guardarCur(); pintarLista(); pintarEstado(); CN.toast("Costeo nuevo con el modelo base");
