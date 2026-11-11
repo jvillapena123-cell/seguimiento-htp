@@ -184,6 +184,13 @@ td.dvc{color:var(--warn);font-weight:600}
 .dv-chip{display:inline-block;margin-left:6px;background:var(--warn);color:var(--panel);font-size:11px;font-weight:600;padding:1px 6px}
 #btnDesv.on{border-color:var(--warn);color:var(--warn);font-weight:600}
 dialog#dlgTar{width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+dialog#dlgImpCC{width:min(860px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+dialog#dlgImpCC::backdrop{background:rgba(10,20,28,.45)}
+.icc-per{display:flex;flex-wrap:wrap;gap:6px 10px;margin:8px 0 12px;align-items:center;font-size:13px}
+.icc-per label{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);padding:5px 10px;cursor:pointer}
+.icc-per label.on{border-color:var(--signal);background:color-mix(in srgb,var(--signal) 10%,var(--panel));font-weight:600}
+.icc-up{color:#b5532a;font-weight:600}.icc-dn{color:var(--good);font-weight:600}
+tr.icc-skip td{opacity:.45}
 dialog#dlgTar::backdrop{background:rgba(10,20,28,.55)}
 .dlg-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:3px solid var(--ink)}
 .dlg-h h2{margin:0;font-size:18px}
@@ -407,6 +414,8 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
       <tbody id="t_cc"></tbody>
     </table></div>
     <div class="actions">
+      <label class="btnfile" for="ccIn">Cargar tarifas por cargo (Excel)</label>
+      <input id="ccIn" type="file" accept=".xlsx,.xls,.xlsm,.csv" hidden>
       <button type="button" id="ccAdd">+ Agregar cargo</button>
       <button type="button" class="pri" id="ccSave">Guardar costos por cargo</button>
       <button type="button" id="ccApply">Aplicar al costeo actual</button>
@@ -425,6 +434,24 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
     </table></div>
   </div>
   <div class="toast" id="toast2" role="status"></div>
+</dialog>
+
+<dialog id="dlgImpCC" aria-labelledby="dlgImpCCT">
+  <div class="dlg-h"><h2 id="dlgImpCCT">Cargar tarifas por cargo</h2><button type="button" class="x" id="iccClose" aria-label="Cerrar">×</button></div>
+  <div class="dlg-b">
+    <p class="note" id="iccInfo"></p>
+    <div class="icc-per" id="iccPer"></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Especialidad (Excel)</th><th>Cargo en la página</th><th class="n">Valor actual</th><th class="n">Valor nuevo</th><th class="n">Variación</th></tr></thead>
+      <tbody id="t_icc"></tbody>
+    </table></div>
+    <p class="note">Los cargos que no están en el Excel conservan su valor. Los vinculados a otro cargo (p. ej. Cafetero = Mov. muelle) se actualizan solos.</p>
+    <div class="actions">
+      <button type="button" class="pri" id="iccOk">Aplicar tarifas</button>
+      <label style="display:inline-flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="iccSave" checked style="width:auto"> Guardar en línea y aplicar al costeo actual</label>
+      <button type="button" id="iccCancel">Cancelar</button>
+    </div>
+  </div>
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1071,6 +1098,61 @@ $("ccApply").onclick=()=>{const n=aplicarCostosAlCosteo();toast2(n?`${n} cargo(s
 $("ccSave").onclick=async()=>{guardarTARlocal();
   if(window.CN&&CN.saveCargos){const ok=await CN.saveCargos(TAR.cargos);toast2(ok?"Costos por cargo guardados en línea":"Guardado solo en este navegador (ingrese con su cuenta para guardarlos en línea)")}
   else toast2("Guardado en este navegador");};
+// Importar tarifas por cargo (formato: Especialidad | período 1 | período 2 | ...)
+const keyC=t=>normT(t).replace(/ /g,"");
+function leerTarifasCargo(wb){
+  for(const nm of wb.SheetNames){const sh=wb.Sheets[nm];if(!sh["!ref"])continue;const rg=XLSX.utils.decode_range(sh["!ref"]);
+    const cv=(r,c)=>{const x=sh[XLSX.utils.encode_cell({r,c})];return x?x.v:undefined};
+    for(let r=rg.s.r;r<=Math.min(rg.e.r,60);r++)for(let c=rg.s.c;c<=rg.e.c;c++){const v=cv(r,c);
+      if(typeof v!=="string"||!/^(especialidad|cargo|cargos|especialidades)$/.test(normT(v)))continue;
+      // fila de períodos: la misma o la siguiente (encabezado combinado "Reajuste")
+      const etiq=rr=>{const o=[];for(let c2=c+1;c2<=rg.e.c;c2++){const h=cv(rr,c2);if(h!==undefined&&String(h).trim()&&typeof h!=="number")o.push({c:c2,t:String(h).trim()})}return o};
+      let pr=r,cols=etiq(r);const sig=etiq(r+1);if(sig.length>=cols.length&&sig.length){pr=r+1;cols=sig}
+      if(!cols.length){for(let c2=c+1;c2<=rg.e.c;c2++)if(typeof cv(r+1,c2)==="number")cols.push({c:c2,t:"Columna "+XLSX.utils.encode_col(c2)})}
+      const titulo=cols.length&&pr>r?String(cv(r,cols[0].c)??"").trim():"";
+      const filas=[];
+      for(let r2=pr+1;r2<=rg.e.r;r2++){const n=cv(r2,c);if(n===undefined||!String(n).trim()){if(filas.length)break;continue}
+        const vals=cols.map(k=>{const x=cv(r2,k.c);return typeof x==="number"?Math.round(x):num(String(x??"").replace(/\./g,"").replace(",","."))});
+        if(vals.some(x=>x>0))filas.push({esp:String(n).trim(),vals})}
+      if(filas.length&&cols.length){const cnt={};cols.forEach(k=>cnt[k.t]=(cnt[k.t]||0)+1);const seen={};
+        cols.forEach(k=>{if(cnt[k.t]>1){seen[k.t]=(seen[k.t]||0)+1;k.t+=` (${seen[k.t]}°)`}});
+        return {hoja:nm,titulo,cols,filas}}
+    }}
+  throw new Error("No se encontró una tabla con la columna Especialidad (o Cargo) y valores por período");
+}
+let ICC=null;
+function pintarICC(){const D=ICC;const ci=D.col;
+  $("iccPer").innerHTML=`<span>Período a aplicar${D.titulo?` (${esc(D.titulo)})`:""}:</span>`+D.cols.map((k,i)=>`<label class="${i===ci?"on":""}"><input type="radio" name="iccP" value="${i}"${i===ci?" checked":""} style="width:auto"> ${esc(k.t)}</label>`).join("");
+  const opts=sel=>`<option value="__new"${sel==="__new"?" selected":""}>+ Agregar como cargo nuevo</option><option value="__skip"${sel==="__skip"?" selected":""}>— No importar</option>`+TAR.cargos.map((c,i)=>`<option value="${i}"${String(sel)===String(i)?" selected":""}>${esc(c.cargo)}</option>`).join("");
+  $("t_icc").innerHTML=D.filas.map((f,i)=>{const m=f.map;const cur=m!=="__new"&&m!=="__skip"?num(TAR.cargos[m].clp):null;const nv=f.vals[ci];
+    const dif=cur?((nv-cur)/cur*100):null;
+    return `<tr class="${m==="__skip"?"icc-skip":""}"><td>${esc(f.esp)}</td><td><select data-icc="${i}">${opts(m)}</select></td>
+      <td class="n">${cur===null?"—":fCLP(cur)}</td><td class="n"><b>${fCLP(nv)}</b></td>
+      <td class="n">${dif===null?(m==="__new"?"nuevo":""):`<span class="${dif>0?"icc-up":dif<0?"icc-dn":""}">${dif>0?"+":""}${fN(dif,2)}%</span>`}</td></tr>`}).join("");
+}
+$("ccIn").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  if(!window.XLSX){toast2("No se pudo cargar el lector de Excel");return}
+  try{const D=leerTarifasCargo(XLSX.read(await f.arrayBuffer(),{type:"array"}));
+    D.archivo=f.name;D.col=D.cols.length-1;
+    D.filas.forEach(r=>{const k=keyC(r.esp);const i=TAR.cargos.findIndex(c=>keyC(c.cargo)===k);r.map=i>=0?i:"__new"});
+    ICC=D;$("iccInfo").innerHTML=`Archivo <b>${esc(f.name)}</b> · hoja ${esc(D.hoja)} · ${D.filas.length} especialidades. Revise a qué cargo corresponde cada fila y elija el período.`;
+    pintarICC();$("dlgImpCC").showModal();
+  }catch(err){toast2(err.message||"No se pudo leer el archivo")}
+});
+$("iccPer").addEventListener("change",e=>{if(e.target.name==="iccP"){ICC.col=+e.target.value;pintarICC()}});
+$("t_icc").addEventListener("change",e=>{const i=+e.target.dataset.icc;if(isNaN(i))return;const v=e.target.value;ICC.filas[i].map=v.startsWith("__")?v:+v;pintarICC()});
+$("iccClose").onclick=$("iccCancel").onclick=()=>$("dlgImpCC").close();
+$("iccOk").onclick=async()=>{const D=ICC;if(!D)return;let act=0,nue=0;const usados=new Set();
+  D.filas.forEach(f=>{const v=f.vals[D.col];if(f.map==="__skip"||!(v>0))return;
+    if(f.map==="__new"){if(!TAR.cargos.find(c=>keyC(c.cargo)===keyC(f.esp))){TAR.cargos.push({cargo:f.esp,clp:v,rel:""});nue++}return}
+    const c=TAR.cargos[f.map];if(!c||usados.has(f.map))return;usados.add(f.map);
+    if(c.rel)c.rel="";if(num(c.clp)!==v){c.clp=v;act++}});
+  aplicarVinculos();TAR.cargosEl=new Date().toLocaleString("es-CL",{timeZone:"America/Santiago"});guardarTARlocal();
+  $("dlgImpCC").close();pintarCC();
+  let msg=`Tarifas ${D.cols[D.col].t}: ${act} cargo(s) actualizados`+(nue?`, ${nue} nuevo(s)`:"");
+  if($("iccSave").checked){let ok=false;if(window.CN&&CN.saveCargos)ok=await CN.saveCargos(TAR.cargos);const n=aplicarCostosAlCosteo();
+    msg+=(ok?" · guardado en línea":" · guardado en este navegador")+(n?` · ${n} en el costeo actual`:"")}
+  toast2(msg)};
 function toast2(m){$("toast2").textContent=m;clearTimeout(toast2.t);toast2.t=setTimeout(()=>$("toast2").textContent="",3500)}
 $("btnTar").onclick=()=>{pintarCC();pintarRel();$("dlgTar").showModal()};
 $("dlgClose").onclick=()=>$("dlgTar").close();
