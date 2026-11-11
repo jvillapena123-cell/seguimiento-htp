@@ -58,6 +58,8 @@ input,select{font:inherit;color:var(--ink);background:var(--input);border:1px so
 input[type=number]{font-family:var(--f-num);font-size:14px;text-align:right}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
 .derived{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:13px;color:var(--muted)}
+.f.calc input{font-family:var(--f-num);font-size:14px;text-align:right;background:#fff4ec;border-color:#E8804A;color:#1F3A6E;font-weight:600;cursor:default}
+.f.calc small{font-size:11px;color:var(--muted);margin-top:3px;text-transform:none;letter-spacing:0}
 .derived b{font-family:var(--f-num);font-weight:500;color:var(--ink)}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -271,6 +273,7 @@ tr.grp td{background:var(--steel-soft);font-weight:600;font-size:12px;text-trans
             <label class="f">Valor UF (CLP)<input id="p_uf" type="number" min="1" step="0.01"></label>
             <label class="f">Petróleo (CLP/L)<input id="p_diesel" type="number" min="0" step="1"></label>
             <label class="f">Utilidad general %<input id="p_margen" type="number" min="0" step="0.5" title="Al cambiarla se aplica a todos los servicios"></label>
+            <label class="f calc">Horas totales de operación<input id="p_htot" type="text" readonly tabindex="-1" title="Se calcula solo: (toneladas ÷ rate) días × 24 h"><small id="p_htot_d"></small></label>
           </div>
           <div class="ind" id="indBox">
             <span id="indTxt">Buscando dólar y UF del día…</span>
@@ -587,6 +590,7 @@ function fillParams(){
 }
 function render(){
   const r=calc(S), p=S.p;
+  $("p_htot").value=fN(r.dias*24,1)+" h";$("p_htot_d").textContent=`${fN(r.dias,2)} días × 24 h`;
   $("derived").innerHTML=`<span>Rate/turno <b>${fN(r.ratePorTurno)} t</b></span><span>Días de operación <b>${fN(r.dias,2)}</b></span><span>Turnos <b>${fN(r.turnosExact,2)}</b> → pagados <b>${r.turnos}</b></span><span>Horas totales <b>${fN(r.horas)}</b> (${r.turnos} × ${p.hturno} h)</span><span>Rate/mano/turno <b>${fN(p.manos>0?r.ratePorTurno/p.manos:0)} t</b></span>`;
   $("turnosBox").innerHTML=`<div><small>Toneladas ÷ rate</small><b>${fN(p.ton)} ÷ ${fN(p.rate)}</b><span>= ${fN(r.dias,2)} días</span></div>
     <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
