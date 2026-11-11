@@ -469,7 +469,7 @@ const BASE = {
   incOtros:true,
   eq:[
     ["Cargador frontal",2,"",121,"USD",0],["Horquilla 4,5 t",0,"",1.212,"UF",0],["Horquilla 16 t",0,"",1.212,"UF",0],
-    ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",1.212,"UF",0]
+    ["Horquilla 12 t",0,"",1.212,"UF",0],["Horquilla 7 t",0,"",0.396,"UF",0]
   ],
   porteo:{cam:8,turnos:"",vturno:180000,km:0,tciclo:30,lkm:0},
   incPorteo:false,
@@ -859,7 +859,7 @@ function leerExcel(wb,nombre){
         const hv=cv(ws,r2,cC+2),hf=cf(ws,r2,cC+2);
         let horas="";if(isNum(hv)){if(!hf)horas=n>0?hv:"";else if(new RegExp("\\b"+XLSX.utils.encode_col(cC+1)+"\\$?"+(r2+1)+"\\b").test(hf.replace(/\$/g,"")))horas=n>0?Math.round(hv/n*100)/100:"";}
         const clp=tarifaCLP(nm);const esCarg=/cargador/i.test(nm);
-        eqs.push([nm,n,horas,clp?Math.round(clp):(esCarg?usdCargador:1.212),clp?"CLP":(esCarg?"USD":"UF"),0])})}
+        eqs.push([nm,n,horas,clp?Math.round(clp):(esCarg?usdCargador:(/\b7\s*t/i.test(nm)?0.396:1.212)),clp?"CLP":(esCarg?"USD":"UF"),0])})}
     else{otros=otros||[];filas.forEach(r2=>otros.push([String(cv(ws,r2,cC)).trim(),pn(cv(ws,r2,cC+1),0),pn(cv(ws,r2,cC+2),0)]))}
   }
   if(otros)D.otros=otros; if(eqs)D.eq=eqs;
