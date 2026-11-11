@@ -177,6 +177,12 @@ tfoot td.stk{background:var(--panel)}
 }
 dialog#dlgDesv{width:min(560px,calc(100vw - 32px));padding:0;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 dialog#dlgDesv::backdrop{background:rgba(10,20,28,.55)}
+.turnos .rsg .stp{display:flex;align-items:center;gap:10px}
+.turnos .rsg .stp button{width:30px;height:30px;padding:0;font-size:18px;line-height:1;border:1px solid var(--line);background:var(--panel);cursor:pointer}
+.turnos .rsg .stp button:disabled{opacity:.35;cursor:default}
+.turnos .rsg span strong{color:var(--warn)}
+.turnos .rsg a{color:var(--steel)}
+.turnos .dvt{background:color-mix(in srgb,var(--warn) 10%,var(--panel))}
 .turnos .dvt b{color:var(--warn)}
 th.rg{background:var(--warn)!important;color:var(--panel)!important;font-size:10px;line-height:1.1}
 td.rg{background:color-mix(in srgb,var(--warn) 14%,var(--panel))}
@@ -624,7 +630,9 @@ function render(){
   $("turnosBox").innerHTML=`<div><small>Toneladas ÷ rate</small><b>${fN(p.ton)} ÷ ${fN(p.rate)}</b><span>= ${fN(r.dias,2)} días</span></div>
     <div><small>Turnos calculados</small><b>${fN(r.turnosExact,2)}</b><span>${fN(r.dias,2)} días × ${p.tdia} turnos</span></div>
     <div class="hi"><small>Turnos a pagar</small><b>${r.turnos}</b><span>${Math.abs(r.turnosCalc-r.turnosExact)>1e-6?"redondeado hacia arriba":"exacto"}</span></div>
-    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div>`+(r.turnosRes?`<div class="dvt"><small>Resguardo personal</small><b>+${r.turnosRes} turnos</b><span>se pagan ${r.turnosPers} turnos al personal</span></div>`:"");;
+    <div class="hi"><small>Horas totales</small><b>${fN(r.horas)}</b><span>${r.turnos} turnos × ${p.hturno} h</span></div><div class="rsg${r.turnosRes?" dvt":""}"><small>Turnos de resguardo</small>
+      <div class="stp"><button type="button" data-rsg="-1" aria-label="Quitar un turno de resguardo"${r.turnosRes?"":" disabled"}>−</button><b>${r.turnosRes?"+"+r.turnosRes:"0"}</b><button type="button" data-rsg="1" aria-label="Agregar un turno de resguardo">+</button></div>
+      <span>${r.turnosRes?`${r.turnos} trabajo + ${r.turnosRes} resguardo = <strong>${r.turnosPers} turnos</strong> al personal`:"Sume turnos que se pagan al personal"} · <a href="#" data-rsg="dlg">detalle</a></span></div>`;
   if(r.turnosCalc!==builtTc){builtTc=r.turnosCalc;builtT=-1}
   if(Math.min(r.turnosPers,MAXT)!==builtT||Math.max(1,p.tdia|0)!==builtTd) buildTables();
   let d1=0,dn=0,tp=0; const colT=new Array(builtT).fill(0);
@@ -1046,6 +1054,9 @@ function dvPrev(){const pt=num($("dv_turnos").value),pe=num($("dv_eq").value);co
 $("btnDesv").onclick=()=>{const d=S.p.desv||{};$("dv_turnos").value=d.turnos||0;$("dv_eq").value=d.eq||0;$("dv_nota").value=d.nota||"";dvPrev();$("dlgDesv").showModal()};
 $("dv_turnos").addEventListener("input",dvPrev);$("dv_eq").addEventListener("input",dvPrev);
 $("desvClose").onclick=()=>$("dlgDesv").close();
+$("turnosBox").addEventListener("click",e=>{const b=e.target.closest("[data-rsg]");if(!b)return;e.preventDefault();
+  if(b.dataset.rsg==="dlg"){$("btnDesv").click();return}
+  const d=Object.assign({turnos:0,eq:0,nota:""},S.p.desv||{});d.turnos=Math.max(0,Math.round(num(d.turnos))+(+b.dataset.rsg));setDesv(d)});
 function setDesv(d){S.p.desv=d;render();persist();if(window.CN&&CN.onChange)CN.onChange();$("dlgDesv").close()}
 $("dv_ok").onclick=()=>{setDesv({turnos:Math.max(0,Math.round(num($("dv_turnos").value))),eq:num($("dv_eq").value),nota:$("dv_nota").value.trim()});toast("Resguardo aplicado")};
 $("dv_zero").onclick=()=>{setDesv({turnos:0,eq:0,nota:""});toast("Resguardo quitado")};
