@@ -1144,6 +1144,10 @@ label textarea{min-height:64px;resize:vertical}
         <label>Fecha de término <span class="req">obligatorio</span><input type="date" name="fechaTermino" required></label>
         <p class="help full" id="t-mail-help" style="margin:0">Al guardar, el jefe de turno recibe un correo con la tarea y recordatorios 3 días antes, 1 día antes y el día del vencimiento.</p>
       </div>
+      <fieldset id="t-photos-box" style="margin-top:14px"><legend>Fotografías <small style="font-weight:400;color:var(--muted)">opcional, hasta 3</small></legend>
+        <div class="photos" id="t-photos"></div>
+        <input type="file" id="t-ph-in" accept="image/*" multiple hidden>
+      </fieldset>
       <div id="t-estado-box" class="grid" style="margin-top:12px" hidden>
         <label>Estado<select name="estado"><option>Pendiente</option><option>En proceso</option></select></label>
       </div>
@@ -2139,7 +2143,27 @@ frm.responsableCorreo.addEventListener("change",()=>{const p=pById(frm.responsab
 
 /* ---------- Tareas de turno ---------- */
 const tDlg=$("#dlg-t"), tfrm=$("#tfrm"), tcDlg=$("#dlg-tc"), tcfrm=$("#tcfrm");
-let tKpi="", tJefe="", tEditId=null, tCloseId=null, tCloseFile=null;
+let tKpi="", tJefe="", tEditId=null, tCloseId=null, tCloseFile=null, tPhotos=[];
+/* Fotos de la tarea */
+function renderTPhotos(t,lock){
+  const box=$("#t-photos"), saved=(t&&t.fotos)||[];
+  box.innerHTML="";
+  saved.forEach(f=>{const d=document.createElement("div");d.className="ph";d.innerHTML='<div class="ld">Cargando…</div>';box.appendChild(d);
+    evidData(f.evidId).then(src=>{if(!src){d.innerHTML='<div class="ld">No disponible</div>';return}d.innerHTML="";const im=new Image();im.src=src;im.alt="Foto de la tarea";im.onclick=()=>openViewer(src);d.appendChild(im)}).catch(()=>{d.innerHTML='<div class="ld">Error</div>'})});
+  tPhotos.forEach((p,k)=>{const d=document.createElement("div");d.className="ph";const im=new Image();im.src=p.url;im.alt="Foto nueva";im.onclick=()=>openViewer(p.url);
+    const x=document.createElement("button");x.type="button";x.textContent="×";x.setAttribute("aria-label","Quitar foto");x.onclick=()=>{tPhotos.splice(k,1);renderTPhotos(t,lock)};d.append(im,x);box.appendChild(d)});
+  if(!lock&&saved.length+tPhotos.length<3){const b=document.createElement("button");b.type="button";b.className="ph-add";b.innerHTML="<span>📷</span>Agregar foto";b.onclick=()=>$("#t-ph-in").click();box.appendChild(b)}
+  $("#t-photos-box").hidden=lock&&!saved.length;
+  renderTPhotos._t=t;renderTPhotos._lock=lock;
+}
+$("#t-ph-in").addEventListener("change",e=>{
+  const files=[...e.target.files];e.target.value="";
+  for(const f of files){const t=renderTPhotos._t,tot=((t&&t.fotos)||[]).length+tPhotos.length;
+    if(tot>=3){toast("Máximo 3 fotos");break}
+    if(!f.type.startsWith("image/")){toast("Solo se aceptan fotos");continue}
+    tPhotos.push({file:f,url:URL.createObjectURL(f)})}
+  renderTPhotos(renderTPhotos._t,renderTPhotos._lock);
+});
 const JCOLS=["#1F3A6E","#7A4FA0","#2A8FA8","#B8860B","#4A6FA5","#8E5B3A","#5D6D7E","#A0457A"];
 const jefesTurno=()=>activos().filter(p=>p.jefeTurno);
 const tNum=t=>t.num?String(t.num).padStart(3,"0"):"";
@@ -2203,7 +2227,7 @@ function renderTareas(){
     const acc=!tAbierta(t)?`<span class="sub">${esc(t.cierre&&t.cierre.por||"")}</span>`:b?(esMiTarea(t)?`<span class="lock">${esc(b)}</span>`:""):`<button class="btn btn-close btn-sm" data-tclose="${esc(t.id)}">Cerrar</button>`;
     return`<tr class="row ${rowCls[a]||""}" data-tid="${esc(t.id)}" tabindex="0">
       <td class="num">${tNum(t)}</td>
-      <td><b>${esc(t.titulo)}</b>${t.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${t.descripcion?`<div class="sub">${esc(t.descripcion.length>110?t.descripcion.slice(0,110)+"…":t.descripcion)}</div>`:""}</td>
+      <td><b>${esc(t.titulo)}</b>${t.prioridad==="Alta"?' <span class="tag u">Alta</span>':""}${t.fotos&&t.fotos.length?` <span class="camicon">📷 ${t.fotos.length}</span>`:""}${t.descripcion?`<div class="sub">${esc(t.descripcion.length>110?t.descripcion.slice(0,110)+"…":t.descripcion)}</div>`:""}</td>
       <td data-l="Jefe de turno">${esc(t.responsable||"")}</td>
       <td data-l="Inicio" style="white-space:nowrap">${fmt(t.fechaInicio)}</td>
       <td data-l="Término" style="white-space:nowrap">${fmt(t.fechaTermino)}</td>
@@ -2226,7 +2250,7 @@ document.querySelectorAll(".tcx").forEach(b=>b.onclick=()=>tcDlg.close());
 
 function openTarea(t){
   if(!t&&!isAdmin)return;
-  tEditId=t?t.id:null;tfrm.reset();
+  tEditId=t?t.id:null;tfrm.reset();tPhotos=[];
   const closed=!!t&&!tAbierta(t), edit=isAdmin&&!closed;
   $("#t-title").textContent=t?`Tarea N° ${tNum(t)}`:"Asignar tarea";
   fillPersonSelect(tfrm.responsableId,jefesTurno(),t?t.responsableId:"",t?t.responsable:"","Elija un jefe de turno");
@@ -2242,6 +2266,7 @@ function openTarea(t){
     <div><span>Jefe de turno</span>${esc(t.responsable||"")}</div><div><span>Prioridad</span>${esc(t.prioridad||"")}</div>
     <div><span>Fecha de inicio</span>${fmt(t.fechaInicio)}</div><div><span>Fecha de término</span>${fmt(t.fechaTermino)} · <span class="pill ${pillCls[tAlerta(t)]}" style="display:inline-block;font-size:11px">${esc(tPlazoTxt(t))}</span></div>
     <div><span>Asignada por</span>${esc(t.creadoPor||"")}${t.creado?` el ${fmtDT(t.creado)}`:""}</div>${puedeEstado?"":`<div><span>Estado</span>${esc(closed?"Cerrada":t.estado||"Pendiente")}</div>`}`;
+  renderTPhotos(t,!edit);
   $("#t-estado-box").hidden=!puedeEstado;if(puedeEstado)tfrm.estado.value=t.estado==="En proceso"?"En proceso":"Pendiente";
   tfrm.estado.disabled=!puedeEstado;
   // Cierre
@@ -2268,14 +2293,23 @@ tfrm.addEventListener("submit",async e=>{
       if(!titulo||!rid||!fi||!ft){toast("Complete tarea, jefe de turno y fechas");return}
       if(ft<fi){toast("La fecha de término no puede ser anterior a la de inicio");return}
       const rp=pById(rid);
-      const data={titulo,descripcion:tfrm.descripcion.value.trim(),prioridad:tfrm.prioridad.value,fechaInicio:fi,fechaTermino:ft,
+      const tid=t?t.id:doc(collection(db,"tareas")).id;
+      const fotos=[...(t&&t.fotos||[])];
+      if(tPhotos.length)btn.textContent="Subiendo fotos…";
+      for(const ph of tPhotos){
+        const d=await compressImage(ph.file);if(!d)throw{code:"too_large"};
+        const meta={nombre:(ph.file.name||"foto").replace(/\.[^.]+$/,"")+".jpg",tipo:"image/jpeg",kb:Math.round(d.length*.75/1024)};
+        const ref=await addDoc(collection(db,"evidencias"),{...meta,data:d,uso:"tarea",tareaId:tid,creadoPor:myEmail(),creado:nowISO()});
+        fotos.push({...meta,evidId:ref.id});
+      }
+      const data={titulo,descripcion:tfrm.descripcion.value.trim(),prioridad:tfrm.prioridad.value,fechaInicio:fi,fechaTermino:ft,fotos,
         responsableId:rid,responsable:rp?rp.nombre:(t?t.responsable:""),responsableCorreo:rp?pCorreo(rp):(t?t.responsableCorreo:""),
         actualizado:nowISO(),actualizadoPor:myName()};
       if(!t){
         const num=tareas.reduce((m,x)=>Math.max(m,x.num||0),0)+1;
         Object.assign(data,{num,estado:"Pendiente",creado:nowISO(),creadoPor:myName(),creadoPorCorreo:myEmail(),fechaCierre:"",cierre:null,
-          historial:[{fecha:nowISO(),por:myName(),accion:`Asignó la tarea a ${data.responsable} con término el ${fmt(ft)}`}]});
-        await addDoc(collection(db,"tareas"),data);
+          historial:[{fecha:nowISO(),por:myName(),accion:`Asignó la tarea a ${data.responsable} con término el ${fmt(ft)}${fotos.length?` (${fotos.length} foto${fotos.length>1?"s":""})`:""}`}]});
+        await setDoc(doc(db,"tareas",tid),data);
         toast(`Tarea asignada a ${data.responsable}. Recibirá un correo en los próximos minutos`);
       }else{
         const cambios=[];
@@ -2283,6 +2317,7 @@ tfrm.addEventListener("submit",async e=>{
         if(t.fechaTermino!==ft)cambios.push(`cambió término al ${fmt(ft)}`);
         if(t.fechaInicio!==fi)cambios.push(`cambió inicio al ${fmt(fi)}`);
         if(t.titulo!==titulo||(t.descripcion||"")!==data.descripcion||t.prioridad!==data.prioridad)cambios.push("editó la tarea");
+        if(tPhotos.length)cambios.push(`agregó ${tPhotos.length} foto${tPhotos.length>1?"s":""}`);
         const est=tfrm.estado.value;if(est!==(t.estado||"Pendiente"))cambios.push(`cambió estado a ${est}`);
         data.estado=est;
         if(cambios.length)data.historial=addHistT(t,cambios.join(", ").replace(/^./,c=>c.toUpperCase()));
@@ -2297,12 +2332,12 @@ tfrm.addEventListener("submit",async e=>{
       }
     }
     tDlg.close();
-  }catch(err){fbErr(err,"guardar la tarea")}
-  finally{btn.disabled=false}
+  }catch(err){if(err&&err.code==="too_large")toast("Una foto es demasiado pesada. Pruebe con otra");else fbErr(err,"guardar la tarea")}
+  finally{btn.disabled=false;btn.textContent=tEditId?"Guardar":"Asignar tarea"}
 });
 $("#t-del").onclick=async()=>{const t=tareas.find(x=>x.id===tEditId);if(!t||!isAdmin)return;
   if(!confirm(`¿Eliminar la tarea N° ${tNum(t)} "${t.titulo}"? No se puede deshacer.`))return;
-  try{await deleteDoc(doc(db,"tareas",t.id));tDlg.close();toast("Tarea eliminada")}catch(err){fbErr(err,"eliminar la tarea")}};
+  try{await deleteDoc(doc(db,"tareas",t.id));for(const f of t.fotos||[])deleteDoc(doc(db,"evidencias",f.evidId)).catch(()=>{});tDlg.close();toast("Tarea eliminada")}catch(err){fbErr(err,"eliminar la tarea")}};
 $("#t-reopen").onclick=async()=>{const t=tareas.find(x=>x.id===tEditId);if(!t||!isAdmin)return;
   const motivo=prompt("Motivo de la reapertura:");if(!motivo||!motivo.trim())return;
   const nf=prompt("Nueva fecha de término (dd-mm-aaaa). Deje vacío para mantener la actual:",fmt(t.fechaTermino));

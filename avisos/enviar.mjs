@@ -34,7 +34,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const num = t => (t.num ? String(t.num).padStart(3, "0") : "");
 
 // ---------- Plantilla del correo ----------
-function plantilla({ titulo, color = "#1F3A6E", intro, t, nota }) {
+function plantilla({ titulo, color = "#1F3A6E", intro, t, nota, conFoto }) {
   const fila = (k, v) => `<tr><td style="padding:6px 12px 6px 0;color:#5A6478;font-size:13px;white-space:nowrap;vertical-align:top">${k}</td><td style="padding:6px 0;font-size:14px;color:#1A2233">${v}</td></tr>`;
   return `<!doctype html><html><body style="margin:0;background:#F6F6F8;font-family:Segoe UI,Arial,sans-serif">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F6F8;padding:24px 12px"><tr><td align="center">
@@ -54,6 +54,7 @@ function plantilla({ titulo, color = "#1F3A6E", intro, t, nota }) {
         ${fila("Prioridad", esc(t.prioridad || "Media"))}
         ${t.creadoPor ? fila("Asignada por", esc(t.creadoPor)) : ""}
       </table>
+      ${conFoto ? `<img src="cid:foto-tarea" alt="Foto de la tarea" style="display:block;max-width:100%;border-radius:8px;border:1px solid #D9DBE3;margin:0 0 16px">` : ""}
       ${nota ? `<p style="margin:0 0 16px;font-size:13.5px;color:#5A6478;line-height:1.5">${nota}</p>` : ""}
       <a href="${APP_URL}#tareas" style="display:inline-block;background:#E8804A;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:7px;font-size:14px">Abrir Tareas de turno</a>
     </td></tr>
@@ -61,8 +62,8 @@ function plantilla({ titulo, color = "#1F3A6E", intro, t, nota }) {
   </table></td></tr></table></body></html>`;
 }
 
-async function enviar({ to, cc, subject, html }) {
-  await mailer.sendMail({ from: `"Seguimiento HTP" <${SMTP_USER}>`, to, cc: cc && cc !== to ? cc : undefined, subject, html });
+async function enviar({ to, cc, subject, html, attachments }) {
+  await mailer.sendMail({ from: `"Seguimiento HTP" <${SMTP_USER}>`, to, cc: cc && cc !== to ? cc : undefined, subject, html, attachments });
   console.log(`Enviado: "${subject}" → ${to}${cc && cc !== to ? " (cc " + cc + ")" : ""}`);
 }
 
@@ -98,13 +99,16 @@ for (const d of snap.docs) {
 
     // 1) Asignación o reasignación
     if (n.asignadoA !== asignadoA) {
+      const foto = await fotoDe(t);
+      const nf = (t.fotos || []).length;
       await enviar({
         to: para,
+        attachments: foto ? [{ filename: "foto-tarea.jpg", path: foto, cid: "foto-tarea" }] : undefined,
         subject: `Nueva tarea asignada: N° ${num(t)} · ${t.titulo} (vence ${fmt(t.fechaTermino)})`,
         html: plantilla({
-          titulo: n.asignadoA ? "Se le reasignó una tarea" : "Se le asignó una nueva tarea", t,
+          titulo: n.asignadoA ? "Se le reasignó una tarea" : "Se le asignó una nueva tarea", t, conFoto: !!foto,
           intro: `Hola ${esc(t.responsable)}, se le asignó la siguiente tarea. Debe quedar cerrada a más tardar el <b>${fmt(t.fechaTermino)}</b>.`,
-          nota: "Para cerrarla, ingrese a la aplicación, abra la tarea y use <b>Cerrar con evidencia</b>: escriba qué se hizo y adjunte una foto o un PDF. Recibirá recordatorios antes del vencimiento."
+          nota: (nf > 1 ? `La tarea tiene ${nf} fotos; puede verlas todas en la aplicación.<br>` : "") + "Para cerrarla, ingrese a la aplicación, abra la tarea y use <b>Cerrar con evidencia</b>: escriba qué se hizo y adjunte una foto o un PDF. Recibirá recordatorios antes del vencimiento."
         })
       });
       upd["notif.asignadoA"] = asignadoA;
